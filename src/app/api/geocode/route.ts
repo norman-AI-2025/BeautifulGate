@@ -211,3 +211,4 @@ export async function GET(request: Request) {
   // Fallback to local verified registry
   return NextResponse.json(matchedHospitals);
 }
+

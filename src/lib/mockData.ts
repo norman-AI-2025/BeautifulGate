@@ -297,7 +297,7 @@ export const INITIAL_WORK_LOGS: CardWorkLog[] = [
 ];
 
 export const INITIAL_TRANSIT_BOOKINGS: TransitBooking[] = [
-  // 1. Current active booking ready for Driver Johan
+  // 1. Current slot 08:30 AM - Passenger 1
   {
     id: 'bk-201',
     passenger_id: 'user-cust-1',
@@ -305,20 +305,21 @@ export const INITIAL_TRANSIT_BOOKINGS: TransitBooking[] = [
     oku_id: 'DE0502198901',
     phone: '+60 12-491 8832',
     pickup_address: 'No. 18, Jalan SS 2/19, 47300 Petaling Jaya, Selangor',
-    hospital_name: "Hospital Tuanku Ja'afar",
+    hospital_name: "Hospital Tuanku Ja'afar (HTJ)",
     clinic_department: 'Hemodialysis Unit (Level 2)',
-    appointment_time: '09:30 AM',
+    appointment_time: '08:30 AM',
     mobility_type: 'Motorized Wheelchair',
     assigned_space: 'Row 3: Wheelchair Bay 1',
     assigned_driver: 'Johan bin Ariffin',
     assigned_vehicle: DEFAULT_VEHICLE,
     status: 'approved',
+    date: 'Tuesday, 10 Nov 2026',
     timestamps: {
       requested: '2026-11-10T07:15:00+08:00',
       approved: '2026-11-10T07:45:00+08:00',
     },
   },
-  // 2. Second in queue for Driver Johan
+  // 2. Current slot 08:30 AM - Passenger 2 (co-riding in the same van!)
   {
     id: 'bk-202',
     passenger_id: 'user-cust-2',
@@ -326,20 +327,21 @@ export const INITIAL_TRANSIT_BOOKINGS: TransitBooking[] = [
     oku_id: 'DE1204197502',
     phone: '+60 16-728 1190',
     pickup_address: 'Block C-04-12, PPR Taman Medan, 46000 Petaling Jaya',
-    hospital_name: "Hospital Tuanku Ja'afar",
+    hospital_name: "Hospital Tuanku Ja'afar (HTJ)",
     clinic_department: 'Orthopedic Specialist Clinic',
-    appointment_time: '10:30 AM',
+    appointment_time: '08:30 AM',
     mobility_type: 'Manual Wheelchair',
     assigned_space: 'Row 3: Wheelchair Bay 2',
     assigned_driver: 'Johan bin Ariffin',
     assigned_vehicle: DEFAULT_VEHICLE,
     status: 'approved',
+    date: 'Tuesday, 10 Nov 2026',
     timestamps: {
       requested: '2026-11-10T07:30:00+08:00',
       approved: '2026-11-10T08:00:00+08:00',
     },
   },
-  // 3. Third in queue
+  // 3. Next upcoming slot 10:30 AM - Passenger 1
   {
     id: 'bk-203',
     passenger_id: 'user-cust-3',
@@ -347,20 +349,21 @@ export const INITIAL_TRANSIT_BOOKINGS: TransitBooking[] = [
     oku_id: 'DE0308198203',
     phone: '+60 17-644 2099',
     pickup_address: 'No. 45, Lorong Maarof, Bangsar, 59000 Kuala Lumpur',
-    hospital_name: "Hospital Tuanku Ja'afar",
+    hospital_name: "Hospital Tuanku Ja'afar (HTJ)",
     clinic_department: 'Cardiology Clinic (Block B)',
-    appointment_time: '11:30 AM',
+    appointment_time: '10:30 AM',
     mobility_type: 'Assisted Walk',
     assigned_space: 'Row 2: Passenger Seat 1',
     assigned_driver: 'Johan bin Ariffin',
     assigned_vehicle: DEFAULT_VEHICLE,
     status: 'approved',
+    date: 'Tuesday, 10 Nov 2026',
     timestamps: {
       requested: '2026-11-10T08:00:00+08:00',
       approved: '2026-11-10T08:20:00+08:00',
     },
   },
-  // 4. Pending Booking for Admin to test "Approve" or "Decline"
+  // 4. Next upcoming slot 10:30 AM - Passenger 2
   {
     id: 'bk-204',
     passenger_id: 'user-cust-4',
@@ -368,19 +371,42 @@ export const INITIAL_TRANSIT_BOOKINGS: TransitBooking[] = [
     oku_id: 'DE1109199304',
     phone: '+60 13-882 1435',
     pickup_address: '22, Jalan Bukit Segambut, 51200 Kuala Lumpur',
-    hospital_name: "Hospital Tuanku Ja'afar",
+    hospital_name: "Hospital Tuanku Ja'afar (HTJ)",
     clinic_department: 'Rehabilitation & Physiotherapy',
-    appointment_time: '02:00 PM',
+    appointment_time: '10:30 AM',
     mobility_type: 'Manual Wheelchair',
-    assigned_space: 'Row 2: Passenger Seat 3',
+    assigned_space: 'Row 2: Passenger Seat 2',
+    assigned_driver: 'Johan bin Ariffin',
+    assigned_vehicle: DEFAULT_VEHICLE,
+    status: 'approved',
+    date: 'Tuesday, 10 Nov 2026',
+    timestamps: {
+      requested: '2026-11-10T08:45:00+08:00',
+      approved: '2026-11-10T09:00:00+08:00',
+    },
+  },
+  // 5. Afternoon slot 02:00 PM (pending approval by supervisor)
+  {
+    id: 'bk-205',
+    passenger_id: 'user-cust-1',
+    passenger_name: 'Siti Nurhaliza binti Mansor',
+    oku_id: 'DE0502198901',
+    phone: '+60 12-491 8832',
+    pickup_address: 'No. 18, Jalan SS 2/19, 47300 Petaling Jaya, Selangor',
+    hospital_name: 'University Malaya Medical Centre (PPUM)',
+    clinic_department: 'Physiotherapy Clinic',
+    appointment_time: '02:00 PM',
+    mobility_type: 'Motorized Wheelchair',
+    assigned_space: 'Row 3: Wheelchair Bay 1',
     assigned_driver: 'Johan bin Ariffin',
     assigned_vehicle: DEFAULT_VEHICLE,
     status: 'pending',
+    date: 'Tuesday, 10 Nov 2026',
     timestamps: {
-      requested: '2026-11-10T08:45:00+08:00',
+      requested: '2026-11-10T09:15:00+08:00',
     },
   },
-  // 5. Completed earlier ride
+  // 6. Completed earlier ride (08:00 AM)
   {
     id: 'bk-200',
     passenger_id: 'user-cust-2',
@@ -388,7 +414,7 @@ export const INITIAL_TRANSIT_BOOKINGS: TransitBooking[] = [
     oku_id: 'DE1204197502',
     phone: '+60 16-728 1190',
     pickup_address: 'Block C-04-12, PPR Taman Medan, Petaling Jaya',
-    hospital_name: "Hospital Tuanku Ja'afar",
+    hospital_name: "Hospital Tuanku Ja'afar (HTJ)",
     clinic_department: 'Pathology & Blood Collection Lab',
     appointment_time: '08:00 AM',
     mobility_type: 'Manual Wheelchair',
