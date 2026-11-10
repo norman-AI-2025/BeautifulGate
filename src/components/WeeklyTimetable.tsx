@@ -1,8 +1,25 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useLanguage } from '@/context/LanguageContext';
-import { ChevronLeft, ChevronRight, CalendarDays, ChevronDown, ChevronUp } from 'lucide-react';
+import { 
+  ChevronLeft, 
+  ChevronRight, 
+  CalendarDays, 
+  ChevronDown, 
+  ChevronUp, 
+  Car, 
+  Phone, 
+  MessageSquare, 
+  ShieldCheck, 
+  CheckCircle2, 
+  Star, 
+  X, 
+  Sparkles,
+  Accessibility,
+  Armchair
+} from 'lucide-react';
 import { TransitBooking } from '@/types';
 
 interface WeeklyTimetableProps {
@@ -62,6 +79,9 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
   const [isCalendarExpanded, setIsCalendarExpanded] = useState<boolean>(false);
   const [calendarMonth, setCalendarMonth] = useState<number>(10); // 0-indexed: 10 is November
   const [calendarYear, setCalendarYear] = useState<number>(2026);
+
+  // USER SPEC: "at book a service tab , toyota Hiace (WVV 4108 ) , make it allow click to expand to see the image and details of the van and driver"
+  const [isVanDetailsExpanded, setIsVanDetailsExpanded] = useState<boolean>(false);
 
   const monthNamesEn = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -303,7 +323,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
 
       {/* 2. EXPANDED TIMETABLE FOR THAT PARTICULAR DATE ONLY */}
       <div className="p-5 space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-extrabold text-neutral-900 tracking-tight">
               2. {t('timetable.availableTimeslotsFor', 'Available Timeslots for')} {getLocalizedDayName(selectedDayObj.name)}, {selectedDayObj.dateStr}
@@ -314,10 +334,240 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
               </span>
             )}
           </div>
-          <span className="text-xs font-mono font-bold text-neutral-500">
-            Toyota HiAce (WVV 4108)
-          </span>
+
+          {/* USER SPEC: Clickable to expand van and driver image & details */}
+          <button
+            type="button"
+            onClick={() => setIsVanDetailsExpanded(!isVanDetailsExpanded)}
+            className={`group flex items-center gap-2 px-3.5 py-1.5 rounded-xl border text-xs font-mono font-bold transition-all tap-target self-start sm:self-auto shadow-2xs hover:shadow-xs active:scale-95 ${
+              isVanDetailsExpanded
+                ? 'border-[#F37021] bg-[#18181B] text-white shadow-sm'
+                : 'border-orange-200 bg-orange-50/80 hover:bg-orange-100 text-orange-950'
+            }`}
+            title={t('vanInfo.clickToView', 'Click to view vehicle & driver details')}
+          >
+            <Car className={`h-4 w-4 ${isVanDetailsExpanded ? 'text-[#F37021]' : 'text-[#F37021]'}`} />
+            <span className="font-extrabold">Toyota HiAce (WVV 4108)</span>
+            {isVanDetailsExpanded ? (
+              <ChevronUp className="h-4 w-4 text-orange-400" />
+            ) : (
+              <ChevronDown className="h-4 w-4 text-neutral-500 group-hover:text-[#F37021]" />
+            )}
+          </button>
         </div>
+
+        {/* EXPANDED VAN & DRIVER IMAGE AND SPECIFICATION PANEL */}
+        {isVanDetailsExpanded && (
+          <div className="rounded-3xl border-2 border-orange-400 bg-gradient-to-br from-white via-orange-50/30 to-amber-50/40 p-5 sm:p-6 shadow-xl space-y-5 animate-in fade-in-50 duration-200">
+            {/* Header with Title, Badge, and Close Button */}
+            <div className="flex items-center justify-between pb-3 border-b border-orange-200/80">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-xl bg-[#F37021] text-white flex items-center justify-center shadow-xs">
+                  <Car className="h-4 w-4" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-neutral-900 tracking-tight">
+                    {t('vanInfo.title', 'Vehicle & Driver Specifications')}
+                  </h4>
+                  <p className="text-[11px] text-neutral-500 font-medium">
+                    {t('vanInfo.cleanliness', 'Daily hospital-grade UV & cabin surface sanitization')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-orange-100 text-orange-900 border border-orange-300 px-2.5 py-1 rounded-full">
+                  <ShieldCheck className="h-3 w-3 text-[#F37021]" />
+                  {t('vanInfo.badge', 'Official NGO Fleet')}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsVanDetailsExpanded(false)}
+                  className="h-8 w-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-200/60 transition-colors tap-target"
+                  aria-label="Close vehicle details"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* 2-Column Responsive Card: Van Details (Left) & Driver Details (Right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+              {/* 1. VAN CARD (7 Cols) */}
+              <div className="lg:col-span-7 rounded-2xl border border-neutral-200/90 bg-white p-4 sm:p-5 shadow-xs space-y-4 flex flex-col justify-between">
+                <div>
+                  {/* Van Photo */}
+                  <div className="relative w-full h-48 sm:h-56 rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-200 shadow-inner group">
+                    <Image
+                      src="/images/toyota-hiace-van.jpg"
+                      alt="Toyota HiAce High-Roof Commuter Accessible Van"
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      priority
+                    />
+                    <div className="absolute top-3 left-3 bg-neutral-950/80 backdrop-blur-xs text-white text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border border-white/20 flex items-center gap-1.5 shadow-sm">
+                      <Accessibility className="h-3.5 w-3.5 text-[#F37021]" />
+                      <span>Hydraulic Lift Equipped</span>
+                    </div>
+
+                    <div className="absolute bottom-3 right-3 font-mono text-xs font-black bg-neutral-900 text-white px-3 py-1 rounded-lg border-2 border-amber-400 shadow-md">
+                      WVV 4108
+                    </div>
+                  </div>
+
+                  {/* Van Details Header */}
+                  <div className="mt-4 flex flex-wrap items-baseline justify-between gap-2">
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#F37021] block">
+                        Toyota Mobility Service
+                      </span>
+                      <h5 className="text-base sm:text-lg font-black text-neutral-900 mt-0.5">
+                        {t('vanInfo.model', 'Toyota HiAce High-Roof Commuter')}
+                      </h5>
+                    </div>
+                    <span className="text-[11px] font-bold text-neutral-600 bg-neutral-100 border border-neutral-200 px-2.5 py-0.5 rounded-full">
+                      Pearl White
+                    </span>
+                  </div>
+
+                  {/* Seating Specs Pill Grid */}
+                  <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                    <div className="rounded-xl border border-orange-200 bg-orange-50/60 p-2.5 flex items-center gap-2">
+                      <Accessibility className="h-4 w-4 text-[#F37021] shrink-0" />
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-orange-900 block">Wheelchair Bays</span>
+                        <p className="font-mono font-black text-neutral-900 text-xs">2 Dedicated Spaces</p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-2.5 flex items-center gap-2">
+                      <Armchair className="h-4 w-4 text-neutral-600 shrink-0" />
+                      <div>
+                        <span className="text-[10px] uppercase font-bold text-neutral-500 block">Cabin Seating</span>
+                        <p className="font-mono font-black text-neutral-900 text-xs">5 Regular Seats</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Built-in Accessibility Equipment List */}
+                <div className="pt-3 border-t border-neutral-100 space-y-1.5 text-xs">
+                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 block mb-1">
+                    {t('vanInfo.equipment', 'Accessibility & Safety Equipment')}
+                  </span>
+                  <div className="flex items-start gap-2 text-neutral-800">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                    <span className="font-medium text-[11px]">{t('vanInfo.spec1', 'Heavy-Duty Rear Hydraulic Wheelchair Lift (350kg capacity)')}</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-neutral-800">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                    <span className="font-medium text-[11px]">{t('vanInfo.spec2', '4-Point Q’Straint Wheelchair Floor Anchor Clamps')}</span>
+                  </div>
+                  <div className="flex items-start gap-2 text-neutral-800">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                    <span className="font-medium text-[11px]">{t('vanInfo.spec3', 'High-Roof Clearance with Ergonomic Interior Grab Rails')}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. DRIVER CARD (5 Cols) */}
+              <div className="lg:col-span-5 rounded-2xl border border-neutral-200/90 bg-white p-4 sm:p-5 shadow-xs flex flex-col justify-between space-y-4">
+                <div>
+                  {/* Driver Portrait & Bio Header */}
+                  <div className="flex items-center gap-3.5">
+                    <div className="relative h-18 w-18 sm:h-20 sm:w-20 rounded-2xl overflow-hidden border-2 border-orange-400 shadow-md shrink-0">
+                      <Image
+                        src="/images/driver-johan.jpg"
+                        alt="Driver Johan bin Ariffin"
+                        fill
+                        className="object-cover"
+                      />
+                      <div className="absolute bottom-1 right-1 bg-emerald-600 text-white rounded-full p-0.5 shadow-xs">
+                        <CheckCircle2 className="h-3 w-3 stroke-[3]" />
+                      </div>
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full inline-block mb-1">
+                        Verified Operator
+                      </span>
+                      <h5 className="text-base font-black text-neutral-900 leading-tight truncate">
+                        {t('vanInfo.driverName', 'Johan bin Ariffin')}
+                      </h5>
+                      <p className="text-[11px] text-neutral-500 font-medium mt-0.5">
+                        {t('vanInfo.driverTitle', 'Dedicated NGO Assisted Transit Driver')}
+                      </p>
+                      
+                      {/* Rating Stars */}
+                      <div className="flex items-center gap-1 text-amber-500 mt-1">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star key={s} className="h-3 w-3 fill-amber-400 text-amber-500" />
+                        ))}
+                        <span className="text-[11px] font-black text-neutral-800 ml-1">5.0</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Experience & Certification Badges */}
+                  <div className="mt-4 space-y-2 text-xs">
+                    <div className="rounded-xl bg-orange-50/70 border border-orange-200 p-2.5">
+                      <span className="text-[10px] font-bold text-orange-950 uppercase tracking-wider block">
+                        Experience
+                      </span>
+                      <p className="text-xs font-black text-orange-900 mt-0.5">
+                        {t('vanInfo.experience', '8 Years Certified Accessible Transit Experience')}
+                      </p>
+                    </div>
+
+                    <div className="rounded-xl bg-neutral-50 border border-neutral-200 p-2.5 space-y-1">
+                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">
+                        Safety Accreditations
+                      </span>
+                      <p className="text-[11px] font-semibold text-neutral-800 flex items-center gap-1.5">
+                        <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                        <span>Defensive Driving & Emergency Evasion</span>
+                      </p>
+                      <p className="text-[11px] font-semibold text-neutral-800 flex items-center gap-1.5">
+                        <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                        <span>Wheelchair Tie-Down (WTORS) Specialist</span>
+                      </p>
+                      <p className="text-[11px] font-semibold text-neutral-800 flex items-center gap-1.5">
+                        <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                        <span>St. John Certified First Aid & CPR</span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Direct Driver Contact Action Buttons */}
+                <div className="pt-3 border-t border-neutral-100 space-y-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block text-center">
+                    {t('vanInfo.contact', 'Contact Driver')} (Johan)
+                  </span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <a
+                      href="tel:+60193827104"
+                      className="h-10 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 font-extrabold text-xs flex items-center justify-center gap-1.5 tap-target shadow-xs transition-all active:scale-95"
+                    >
+                      <Phone className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>{t('vanInfo.call', 'Call')}</span>
+                    </a>
+
+                    <a
+                      href="https://wa.me/60193827104"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="h-10 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 font-extrabold text-xs flex items-center justify-center gap-1.5 tap-target shadow-xs transition-all active:scale-95"
+                    >
+                      <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
+                      <span>{t('vanInfo.whatsapp', 'WhatsApp')}</span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {selectedDayObj.isHoliday ? (
           <div className="rounded-3xl bg-[#8B1E24] text-white p-8 text-center space-y-2 shadow-inner">
