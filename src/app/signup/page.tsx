@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { MobilityType, UserRole } from '@/types';
@@ -46,10 +47,17 @@ export default function SignUpPage() {
     <div className="min-h-screen bg-neutral-100/60 flex flex-col justify-center items-center px-4 py-12">
       {/* Brand Header */}
       <div className="mb-6 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-black text-white shadow-md mb-3">
-          <span className="font-bold text-xl tracking-tight">BG</span>
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white border border-neutral-200/80 shadow-md p-2 mb-3">
+          <Image
+            src="/images/beautiful-gate-logo.png"
+            alt="Beautiful Gate Foundation"
+            width={72}
+            height={72}
+            priority
+            className="object-contain"
+          />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Beautiful Gate</h1>
+        <h1 className="text-2xl font-black tracking-tight text-neutral-900">Beautiful Gate</h1>
         <p className="text-sm text-neutral-500 font-medium mt-1">
           Assisted Mobility & Artisan Registration
         </p>
@@ -185,7 +193,7 @@ export default function SignUpPage() {
                     onClick={() => setMobilityProfile(type)}
                     className={`p-3 rounded-xl border text-xs font-bold text-left transition-all tap-target ${
                       mobilityProfile === type
-                        ? 'border-black bg-neutral-900 text-white shadow-xs'
+                        ? 'border-[#F37021] bg-[#F37021] text-white shadow-xs'
                         : 'border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-400'
                     }`}
                   >
@@ -199,7 +207,7 @@ export default function SignUpPage() {
           <div className="pt-3">
             <button
               type="submit"
-              className="apple-btn-primary w-full text-base font-bold"
+              className="w-full py-3.5 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white font-extrabold text-sm shadow-md transition-all active:scale-[0.99] tap-target"
             >
               Create Account
             </button>
@@ -208,7 +216,7 @@ export default function SignUpPage() {
 
         <div className="mt-6 text-center text-xs text-neutral-600">
           <span>Already registered? </span>
-          <Link href="/login" className="font-bold text-black hover:underline">
+          <Link href="/login" className="font-bold text-[#F37021] hover:underline">
             Sign In here
           </Link>
         </div>

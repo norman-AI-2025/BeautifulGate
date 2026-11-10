@@ -122,12 +122,12 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                 <p className="text-xs text-neutral-500 mt-0.5">{artisan.weekUnits} cards</p>
               </div>
 
-              <div className="rounded-xl border border-neutral-900 p-3.5 bg-neutral-900 text-white">
-                <p className="text-xs text-neutral-300 font-medium">This Month</p>
+              <div className="rounded-xl border-2 border-[#F37021] p-3.5 bg-[#18181B] text-white">
+                <p className="text-xs text-orange-300 font-medium">This Month</p>
                 <p className="text-lg font-bold text-white mt-1">
                   RM {artisan.monthEarned.toFixed(2)}
                 </p>
-                <p className="text-xs text-neutral-300 mt-0.5">{artisan.monthUnits} cards</p>
+                <p className="text-xs text-orange-200 mt-0.5">{artisan.monthUnits} cards</p>
               </div>
 
               <div className="rounded-xl border border-neutral-200 p-3.5 bg-white">

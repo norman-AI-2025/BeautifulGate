@@ -90,7 +90,7 @@ export const LinearStageIndicator: React.FC<LinearStageIndicatorProps> = ({ stat
         {/* Connecting line */}
         <div className="absolute left-6 right-6 top-4 h-1 -translate-y-1/2 bg-neutral-200 rounded-full" aria-hidden="true">
           <div
-            className="h-full bg-gradient-to-r from-teal-600 to-emerald-500 rounded-full transition-all duration-300"
+            className="h-full bg-gradient-to-r from-[#F37021] to-emerald-500 rounded-full transition-all duration-300"
             style={{
               width:
                 status === 'approved'
@@ -120,9 +120,9 @@ export const LinearStageIndicator: React.FC<LinearStageIndicatorProps> = ({ stat
                   state === 'completed'
                     ? 'bg-emerald-600 text-white shadow-emerald-200'
                     : state === 'current'
-                    ? 'bg-teal-700 text-white ring-4 ring-teal-100 scale-110 shadow-teal-300'
+                    ? 'bg-[#F37021] text-white ring-4 ring-orange-100 scale-110 shadow-orange-200'
                     : state === 'upcoming_ready'
-                    ? 'border-2 border-teal-600 bg-white text-teal-800'
+                    ? 'border-2 border-[#F37021] bg-white text-[#F37021]'
                     : 'border border-neutral-300 bg-white text-neutral-400'
                 }`}
               >
@@ -138,7 +138,7 @@ export const LinearStageIndicator: React.FC<LinearStageIndicatorProps> = ({ stat
                 <p
                   className={`text-[11px] sm:text-xs font-bold leading-tight ${
                     state === 'current'
-                      ? 'text-teal-900 font-extrabold'
+                      ? 'text-[#F37021] font-extrabold'
                       : state === 'completed'
                       ? 'text-emerald-700'
                       : 'text-neutral-400'

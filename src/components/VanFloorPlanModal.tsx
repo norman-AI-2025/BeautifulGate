@@ -200,10 +200,10 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
             <h2 className="text-base font-extrabold text-neutral-900">
               Seat Selection
             </h2>
-            <span className="rounded-md bg-teal-800 text-white px-2.5 py-0.5 text-xs font-bold">
+            <span className="rounded-md bg-[#F37021] text-white px-2.5 py-0.5 text-xs font-bold">
               {selectedDay.split(',')[0]}
             </span>
-            <span className="rounded-md bg-cyan-100 text-cyan-950 border border-cyan-300 px-2.5 py-0.5 font-mono text-xs font-black">
+            <span className="rounded-md bg-orange-50 text-orange-950 border border-orange-200 px-2.5 py-0.5 font-mono text-xs font-black">
               {selectedTimeSlot}
             </span>
           </div>
@@ -235,7 +235,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                 Available
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="h-3 w-3 rounded-md bg-teal-800" />
+                <span className="h-3 w-3 rounded-md bg-[#F37021]" />
                 Selected
               </span>
               <span className="flex items-center gap-1.5">
@@ -279,10 +279,10 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                       onClick={() => handleSeatClick(spaceName)}
                       className={`h-10 rounded-xl flex items-center justify-center transition-all tap-target border-2 ${
                         isSelected
-                          ? 'bg-teal-800 text-white border-teal-800 shadow-md scale-105'
+                          ? 'bg-[#F37021] text-white border-[#F37021] shadow-md scale-105'
                           : isOccupied
                           ? 'bg-neutral-200 text-neutral-400 border-neutral-300 cursor-not-allowed'
-                          : 'bg-white text-neutral-800 border-neutral-300 hover:border-teal-700 hover:scale-105'
+                          : 'bg-white text-neutral-800 border-neutral-300 hover:border-[#F37021] hover:scale-105'
                       }`}
                       title={spaceName}
                     >
@@ -306,10 +306,10 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                       onClick={() => handleSeatClick(spaceName)}
                       className={`h-9 rounded-xl flex items-center justify-center transition-all tap-target border-2 ${
                         isSelected
-                          ? 'bg-teal-800 text-white border-teal-800 shadow-md scale-105'
+                          ? 'bg-[#F37021] text-white border-[#F37021] shadow-md scale-105'
                           : isOccupied
                           ? 'bg-neutral-200 text-neutral-400 border-neutral-300 cursor-not-allowed'
-                          : 'bg-white text-neutral-800 border-neutral-300 hover:border-teal-700 hover:scale-105'
+                          : 'bg-white text-neutral-800 border-neutral-300 hover:border-[#F37021] hover:scale-105'
                       }`}
                       title={spaceName}
                     >
@@ -333,10 +333,10 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                       onClick={() => handleSeatClick(spaceName)}
                       className={`h-11 rounded-xl flex items-center justify-center transition-all tap-target border-2 ${
                         isSelected
-                          ? 'bg-teal-800 text-white border-teal-800 shadow-md scale-105'
+                          ? 'bg-[#F37021] text-white border-[#F37021] shadow-md scale-105'
                           : isOccupied
                           ? 'bg-neutral-200 text-neutral-400 border-neutral-300 cursor-not-allowed'
-                          : 'bg-white text-neutral-800 border-neutral-300 hover:border-teal-700 hover:scale-105'
+                          : 'bg-white text-neutral-800 border-neutral-300 hover:border-[#F37021] hover:scale-105'
                       }`}
                       title={`${spaceName} (Floor Clamps Equipped)`}
                     >
@@ -362,7 +362,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                 {selectedSeats.map((seat) => (
                   <span
                     key={seat}
-                    className="text-[11px] font-mono font-black text-white bg-teal-900 border border-teal-950 px-2.5 py-0.5 rounded-lg shadow-xs"
+                    className="text-[11px] font-mono font-black text-white bg-[#F37021] border border-orange-600 px-2.5 py-0.5 rounded-lg shadow-xs"
                   >
                     {seat}
                   </span>
@@ -378,9 +378,9 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
           {/* ============================================================== */}
           {/* USER SPEC: AUTO-FILLED ACCOUNT INFORMATION                     */}
           {/* ============================================================== */}
-          <div className="rounded-2xl bg-teal-50/60 border border-teal-200 p-3 flex items-center justify-between text-xs">
+          <div className="rounded-2xl bg-orange-50/70 border border-orange-200 p-3 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-full bg-teal-800 text-white flex items-center justify-center font-bold">
+              <div className="h-8 w-8 rounded-full bg-[#F37021] text-white flex items-center justify-center font-bold">
                 <User className="h-4 w-4" />
               </div>
               <div>
@@ -392,7 +392,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                 </p>
               </div>
             </div>
-            <span className="rounded-md bg-teal-200/80 text-teal-950 font-bold px-2 py-0.5 text-[10px]">
+            <span className="rounded-md bg-orange-100 text-orange-950 border border-orange-300 font-bold px-2 py-0.5 text-[10px]">
               {mobilityType}
             </span>
           </div>
@@ -403,14 +403,14 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs">
               <label className="font-bold text-neutral-700 flex items-center gap-1.5">
-                <MapPin className="h-3.5 w-3.5 text-teal-700" />
+                <MapPin className="h-3.5 w-3.5 text-[#F37021]" />
                 Pickup Address
               </label>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleAutoLocate}
-                  className="text-[10px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-0.5"
+                  className="text-[10px] font-bold text-[#F37021] hover:text-[#D9530F] flex items-center gap-0.5"
                 >
                   <Locate className="h-2.5 w-2.5" />
                   Auto-Locate GPS
@@ -449,7 +449,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
           {/* DESTINATION INPUT (DIRECT, REWRITABLE & RESELECTABLE) */}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
-              <Building2 className="h-3.5 w-3.5 text-cyan-700" />
+              <Building2 className="h-3.5 w-3.5 text-[#F37021]" />
               Destination Hospital / Medical Facility
             </label>
 
@@ -471,7 +471,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                   className="apple-input w-full pl-10 pr-4 text-xs font-medium"
                 />
                 {isLoadingGeo && (
-                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-teal-600 animate-pulse">
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#F37021] animate-pulse">
                     Searching...
                   </span>
                 )}
@@ -484,9 +484,9 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                     <div
                       key={item.id}
                       onClick={() => handleSelectDestination(item)}
-                      className="p-3 hover:bg-neutral-50 cursor-pointer text-xs transition-colors flex items-start gap-2.5"
+                      className="p-3 hover:bg-orange-50/70 cursor-pointer text-xs transition-colors flex items-start gap-2.5"
                     >
-                      <MapPin className="h-4 w-4 text-neutral-400 shrink-0 mt-0.5" />
+                      <MapPin className="h-4 w-4 text-[#F37021] shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-neutral-900 truncate">
                           {item.name}
@@ -507,10 +507,10 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
             <button
               type="submit"
               disabled={selectedSeats.length === 0 || !destQuery.trim()}
-              className={`w-full py-3 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 shadow-md tap-target transition-all ${
+              className={`w-full py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-md tap-target transition-all active:scale-[0.99] ${
                 selectedSeats.length === 0 || !destQuery.trim()
                   ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed shadow-none'
-                  : 'bg-teal-800 hover:bg-teal-900 text-white'
+                  : 'bg-[#F37021] hover:bg-[#D9530F] text-white'
               }`}
             >
               Confirm Van Booking ({selectedSeats.length} {selectedSeats.length === 1 ? 'Seat' : 'Seats'}) · {selectedTimeSlot}

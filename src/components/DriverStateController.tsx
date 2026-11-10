@@ -94,7 +94,7 @@ export const DriverStateController: React.FC<DriverStateControllerProps> = ({
         className={`w-full h-16 rounded-2xl flex items-center justify-center gap-3 font-bold text-lg tracking-tight transition-all active:scale-[0.98] shadow-md tap-target ${
           stepNumber === 5 && !hasNextBooking
             ? 'bg-neutral-300 text-neutral-600 cursor-default shadow-none'
-            : 'bg-teal-900 text-white hover:bg-teal-800'
+            : 'bg-[#F37021] text-white hover:bg-[#D9530F]'
         }`}
       >
         <IconComponent className="h-6 w-6 stroke-[2.2]" />

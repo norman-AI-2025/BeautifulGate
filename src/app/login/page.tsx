@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { ArrowRight, UserCheck, Car, Shield } from 'lucide-react';
@@ -37,11 +38,18 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-neutral-100/60 flex flex-col justify-center items-center px-4 py-12">
       {/* Brand Header */}
-      <div className="mb-8 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-black text-white shadow-md mb-3">
-          <span className="font-bold text-xl tracking-tight">BG</span>
+      <div className="mb-6 text-center">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white border border-neutral-200/80 shadow-md p-2 mb-3">
+          <Image
+            src="/images/beautiful-gate-logo.png"
+            alt="Beautiful Gate Foundation"
+            width={72}
+            height={72}
+            priority
+            className="object-contain"
+          />
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Beautiful Gate</h1>
+        <h1 className="text-2xl font-black tracking-tight text-neutral-900">Beautiful Gate</h1>
         <p className="text-sm text-neutral-500 font-medium mt-1">
           Assisted Mobility & Artisan Workshop Platform
         </p>
@@ -98,7 +106,7 @@ export default function LoginPage() {
           <div className="pt-2">
             <button
               type="submit"
-              className="apple-btn-primary w-full text-base font-bold"
+              className="w-full py-3.5 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white font-extrabold text-sm shadow-md transition-all active:scale-[0.99] tap-target"
             >
               Sign In
             </button>
@@ -107,7 +115,7 @@ export default function LoginPage() {
 
         <div className="mt-6 text-center text-xs text-neutral-600">
           <span>Don&apos;t have an account? </span>
-          <Link href="/signup" className="font-bold text-black hover:underline">
+          <Link href="/signup" className="font-bold text-[#F37021] hover:underline">
             Create an account
           </Link>
         </div>
@@ -125,24 +133,24 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => handleQuickSignIn('customer')}
-              className="w-full flex items-center justify-between p-3 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 hover:border-black transition-all tap-target"
+              className="w-full flex items-center justify-between p-3 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-orange-50 hover:border-[#F37021] transition-all tap-target group"
             >
               <div className="flex items-center gap-3 text-left">
-                <div className="h-8 w-8 rounded-lg bg-neutral-200 flex items-center justify-center text-neutral-800">
+                <div className="h-8 w-8 rounded-lg bg-orange-100 flex items-center justify-center text-[#F37021]">
                   <UserCheck className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-neutral-900">Beneficiary / Caregiver</p>
+                  <p className="text-xs font-bold text-neutral-900 group-hover:text-[#F37021] transition-colors">Beneficiary / Caregiver</p>
                   <p className="text-[11px] text-neutral-500 font-medium">Siti Nurhaliza (Wheelchair Transit & Workshop)</p>
                 </div>
               </div>
-              <ArrowRight className="h-4 w-4 text-neutral-400" />
+              <ArrowRight className="h-4 w-4 text-neutral-400 group-hover:text-[#F37021] transition-colors" />
             </button>
 
             <button
               type="button"
               onClick={() => handleQuickSignIn('driver')}
-              className="w-full flex items-center justify-between p-3 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 hover:border-black transition-all tap-target"
+              className="w-full flex items-center justify-between p-3 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 hover:border-black transition-all tap-target group"
             >
               <div className="flex items-center gap-3 text-left">
                 <div className="h-8 w-8 rounded-lg bg-neutral-200 flex items-center justify-center text-neutral-800">
@@ -159,7 +167,7 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => handleQuickSignIn('admin')}
-              className="w-full flex items-center justify-between p-3 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 hover:border-black transition-all tap-target"
+              className="w-full flex items-center justify-between p-3 rounded-xl border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 hover:border-black transition-all tap-target group"
             >
               <div className="flex items-center gap-3 text-left">
                 <div className="h-8 w-8 rounded-lg bg-neutral-200 flex items-center justify-center text-neutral-800">

@@ -165,7 +165,7 @@ export default function DriverPage() {
           nextStatus: 'en_route_pickup' as TransitStatus,
           label: 'Start Route to Pickup',
           icon: Navigation,
-          bgClass: 'bg-teal-900 hover:bg-teal-800 text-white',
+          bgClass: 'bg-[#F37021] hover:bg-[#D9530F] text-white',
         };
       case 'en_route_pickup':
         return {
@@ -179,7 +179,7 @@ export default function DriverPage() {
           nextStatus: 'en_route_hospital' as TransitStatus,
           label: 'Depart to Hospital',
           icon: Navigation,
-          bgClass: 'bg-teal-900 hover:bg-teal-800 text-white',
+          bgClass: 'bg-[#F37021] hover:bg-[#D9530F] text-white',
         };
       case 'en_route_hospital':
         return {
@@ -254,17 +254,17 @@ export default function DriverPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-neutral-900 pb-28">
       {/* Driver Mobile Header */}
-      <div className="bg-gradient-to-r from-teal-900 via-teal-800 to-cyan-900 text-white shadow-md sticky top-0 z-30">
+      <div className="bg-gradient-to-r from-neutral-950 via-stone-900 to-orange-950 text-white shadow-md sticky top-0 z-30">
         <div className="max-w-xl mx-auto px-4 py-3.5 sm:px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-400 text-teal-950 font-black shadow-sm">
+              <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#F37021] text-white font-black shadow-sm">
                 <Car className="h-5 w-5" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h1 className="text-base font-extrabold">Driver Console</h1>
-                  <span className="rounded-md bg-cyan-400 text-teal-950 px-2 py-0.5 text-xs font-mono font-black">
+                  <span className="rounded-md bg-[#F37021] text-white px-2 py-0.5 text-xs font-mono font-black">
                     WVV 4108
                   </span>
                 </div>
@@ -272,7 +272,7 @@ export default function DriverPage() {
             </div>
 
             <div className="text-right">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-teal-300 block">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-orange-300 block">
                 Queue Status
               </span>
               <span className="text-xs font-extrabold text-white">
@@ -292,7 +292,7 @@ export default function DriverPage() {
             <h2 className="text-xl font-extrabold text-neutral-900 tracking-tight">
               Transit Schedule Queue
             </h2>
-            <span className="text-xs font-bold text-teal-900 bg-teal-100 border border-teal-300 px-3 py-1 rounded-full">
+            <span className="text-xs font-bold text-orange-950 bg-orange-100 border border-orange-300 px-3 py-1 rounded-full">
               {queueTimeSlots.length} Time Slots
             </span>
           </div>
@@ -322,7 +322,7 @@ export default function DriverPage() {
                     className={`rounded-3xl transition-all duration-200 overflow-hidden shadow-xs ${
                       isGreenAlert
                         ? 'border-2 border-emerald-500 ring-4 ring-emerald-100 bg-white'
-                        : 'border-2 border-neutral-200 bg-white hover:border-teal-600'
+                        : 'border-2 border-neutral-200 bg-white hover:border-[#F37021]'
                     }`}
                   >
                     {/* Time Slot Header (Clickable to Expand / Collapse) */}
@@ -333,7 +333,7 @@ export default function DriverPage() {
                       <div className="flex-1 pr-2">
                         <div className="flex flex-wrap items-center gap-2 mb-1.5">
                           {/* Large Focus on Time */}
-                          <span className="font-mono text-base font-black text-teal-950 bg-cyan-100 border border-cyan-300 px-3 py-0.5 rounded-xl shadow-xs">
+                          <span className="font-mono text-base font-black text-orange-950 bg-orange-100 border border-orange-300 px-3 py-0.5 rounded-xl shadow-xs">
                             {slotGroup.displayTime}
                           </span>
 
@@ -357,13 +357,13 @@ export default function DriverPage() {
                       <div className="flex flex-col items-end gap-1.5">
                         <span className={`text-[10px] font-mono font-black uppercase px-2.5 py-1 rounded-md whitespace-nowrap ${
                           slotGroup.isActive
-                            ? 'bg-teal-900 text-white shadow-xs'
+                            ? 'bg-[#F37021] text-white shadow-xs'
                             : 'bg-emerald-100 text-emerald-900 font-extrabold'
                         }`}>
                           {slotGroup.isActive ? 'Active Mission' : 'Upcoming'}
                         </span>
 
-                        <div className="flex items-center text-xs font-extrabold text-teal-800 gap-1">
+                        <div className="flex items-center text-xs font-extrabold text-[#F37021] gap-1">
                           <span>{isExpanded ? 'Collapse' : 'Expand'}</span>
                           {isExpanded ? (
                             <ChevronDown className="h-4 w-4 stroke-[2.5]" />
@@ -389,14 +389,14 @@ export default function DriverPage() {
                         {/* Optional collective Slot Progress Action if multiple passengers */}
                         {paxCount > 1 && (
                           <div className="flex items-center justify-between pb-2 border-b border-neutral-200">
-                            <span className="text-xs font-extrabold uppercase tracking-wider text-teal-900 flex items-center gap-1.5">
-                              <Navigation className="h-4 w-4 text-teal-700" />
+                            <span className="text-xs font-extrabold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
+                              <Navigation className="h-4 w-4 text-[#F37021]" />
                               Active Manifest ({paxCount} Riders)
                             </span>
                             <button
                               type="button"
                               onClick={() => handleAdvanceEntireSlot(slotGroup)}
-                              className="text-[11px] font-bold text-teal-900 bg-white hover:bg-teal-100 border border-teal-300 px-3 py-1 rounded-xl shadow-xs transition-all active:scale-95"
+                              className="text-[11px] font-bold text-neutral-900 bg-white hover:bg-orange-50 border border-orange-300 px-3 py-1 rounded-xl shadow-xs transition-all active:scale-95"
                             >
                               Advance All in Slot
                             </button>
@@ -423,11 +423,11 @@ export default function DriverPage() {
                                       {booking.passenger_name}
                                     </h3>
                                     <div className="flex items-center gap-1.5 mt-1">
-                                      <span className="inline-flex items-center gap-1 font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-teal-50 text-teal-900 border border-teal-200">
+                                      <span className="inline-flex items-center gap-1 font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-orange-50 text-orange-950 border border-orange-200">
                                         {isWheelchair ? (
-                                          <Accessibility className="h-3.5 w-3.5 text-teal-700" />
+                                          <Accessibility className="h-3.5 w-3.5 text-[#F37021]" />
                                         ) : (
-                                          <Armchair className="h-3.5 w-3.5 text-teal-700" />
+                                          <Armchair className="h-3.5 w-3.5 text-[#F37021]" />
                                         )}
                                         {booking.assigned_space}
                                       </span>
@@ -438,8 +438,8 @@ export default function DriverPage() {
                                     booking.status === 'dropped_off'
                                       ? 'bg-neutral-100 text-neutral-600'
                                       : booking.status === 'en_route_pickup' || booking.status === 'picked_up' || booking.status === 'en_route_hospital'
-                                      ? 'bg-teal-900 text-white'
-                                      : 'bg-cyan-100 text-cyan-900'
+                                      ? 'bg-[#F37021] text-white'
+                                      : 'bg-orange-100 text-orange-900'
                                   }`}>
                                     {booking.status.replace(/_/g, ' ')}
                                   </span>
@@ -458,7 +458,7 @@ export default function DriverPage() {
                                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.pickup_address)}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-xs font-bold text-neutral-900 hover:text-teal-700 hover:underline leading-snug block mt-0.5"
+                                        className="text-xs font-bold text-neutral-900 hover:text-[#F37021] hover:underline leading-snug block mt-0.5"
                                       >
                                         {booking.pickup_address}
                                       </a>
@@ -467,16 +467,16 @@ export default function DriverPage() {
 
                                   {/* Destination */}
                                   <div className="flex items-start gap-2 pt-1.5 border-t border-neutral-100">
-                                    <Building2 className="h-4 w-4 text-cyan-700 shrink-0 mt-0.5" />
+                                    <Building2 className="h-4 w-4 text-[#F37021] shrink-0 mt-0.5" />
                                     <div className="flex-1">
-                                      <span className="text-[10px] font-extrabold uppercase text-cyan-900 tracking-wider block">
+                                      <span className="text-[10px] font-extrabold uppercase text-[#F37021] tracking-wider block">
                                         Destination
                                       </span>
                                       <a
                                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.hospital_name)}`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-xs font-bold text-neutral-900 hover:text-teal-700 hover:underline leading-snug block mt-0.5"
+                                        className="text-xs font-bold text-neutral-900 hover:text-[#F37021] hover:underline leading-snug block mt-0.5"
                                       >
                                         {booking.hospital_name}
                                       </a>
@@ -503,7 +503,7 @@ export default function DriverPage() {
                                       rel="noopener noreferrer"
                                       className="h-11 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 font-extrabold text-xs flex items-center justify-center gap-1.5 tap-target shadow-xs transition-all active:scale-[0.98]"
                                     >
-                                      <MessageSquare className="h-4 w-4 text-teal-600" />
+                                      <MessageSquare className="h-4 w-4 text-emerald-600" />
                                       <span>WhatsApp</span>
                                     </a>
                                   </div>

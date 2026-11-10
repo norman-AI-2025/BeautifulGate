@@ -179,9 +179,9 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
           <button
             type="button"
             onClick={() => setIsCalendarExpanded(!isCalendarExpanded)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-800 text-white font-extrabold text-xs shadow-xs hover:bg-teal-900 transition-all tap-target self-start sm:self-auto"
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F37021] text-white font-black text-xs shadow-xs hover:bg-[#D9530F] transition-all tap-target self-start sm:self-auto"
           >
-            <CalendarDays className="h-4 w-4 text-cyan-300" />
+            <CalendarDays className="h-4 w-4 text-orange-200" />
             <span>Select Date: {selectedDayObj.name}, {selectedDayObj.dateStr}</span>
             {isCalendarExpanded ? (
               <ChevronUp className="h-4 w-4 ml-1" />
@@ -193,10 +193,10 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
 
         {/* EXPANDED INTERACTIVE CALENDAR FOR ANY UPCOMING DATE */}
         {isCalendarExpanded && (
-          <div className="rounded-2xl border-2 border-teal-800 bg-white p-4 shadow-xl space-y-3 animate-in fade-in-50 duration-200">
+          <div className="rounded-2xl border-2 border-[#F37021] bg-white p-4 shadow-xl space-y-3 animate-in fade-in-50 duration-200">
             {/* Calendar Month Navigation Header */}
             <div className="flex items-center justify-between pb-2 border-b border-neutral-200">
-              <span className="font-extrabold text-sm text-teal-950">
+              <span className="font-extrabold text-sm text-neutral-950">
                 {monthNames[calendarMonth]} {calendarYear}
               </span>
               <div className="flex items-center gap-1">
@@ -253,24 +253,24 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
                     onClick={() => handleSelectCalendarDate(calendarYear, calendarMonth, dayNum)}
                     className={`h-9 rounded-xl font-bold text-xs flex flex-col items-center justify-center transition-all tap-target ${
                       isSelected
-                        ? 'bg-teal-800 text-white font-black shadow-md scale-105'
+                        ? 'bg-[#F37021] text-white font-black shadow-md scale-105'
                         : isToday
-                        ? 'bg-cyan-100 text-cyan-950 border border-cyan-400 font-extrabold hover:bg-cyan-200'
+                        ? 'bg-orange-100 text-orange-950 border border-orange-300 font-extrabold hover:bg-orange-200'
                         : isHoliday
                         ? 'bg-red-50 text-red-900 border border-red-300'
                         : isUpcoming
-                        ? 'hover:bg-teal-50 text-neutral-800 hover:border-teal-400 border border-transparent'
+                        ? 'hover:bg-orange-50 text-neutral-800 hover:border-orange-400 border border-transparent'
                         : 'text-neutral-300 cursor-not-allowed'
                     }`}
                   >
                     <span>{dayNum}</span>
-                    {isToday && <span className="h-1 w-1 rounded-full bg-cyan-700 -mt-0.5" />}
+                    {isToday && <span className="h-1 w-1 rounded-full bg-[#F37021] -mt-0.5" />}
                   </button>
                 );
               })}
             </div>
 
-            <p className="text-[10px] text-teal-800 text-center font-medium pt-1">
+            <p className="text-[10px] text-[#F37021] text-center font-bold pt-1">
               Click any upcoming date to expand its accessible transit timetable
             </p>
           </div>
@@ -285,7 +285,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
               2. Available Timeslots for {selectedDayObj.name}, {selectedDayObj.dateStr}
             </h3>
             {selectedDayObj.isToday && (
-              <span className="text-[10px] font-bold bg-cyan-100 text-cyan-900 px-2 py-0.5 rounded-full border border-cyan-300">
+              <span className="text-[10px] font-black bg-orange-100 text-orange-950 px-2 py-0.5 rounded-full border border-orange-300">
                 Today
               </span>
             )}
@@ -316,9 +316,9 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
                   onClick={() => handleCellClick(selectedDayObj, slot, status)}
                   className={`h-16 px-4 rounded-2xl border-2 transition-all flex items-center justify-between tap-target ${
                     isAvailable
-                      ? 'bg-white border-neutral-200 hover:border-teal-700 hover:shadow-md cursor-pointer'
+                      ? 'bg-white border-neutral-200 hover:border-[#F37021] hover:shadow-md cursor-pointer'
                       : status === 'booked'
-                      ? 'bg-[#00c0f0] border-[#00c0f0] text-teal-950 font-bold cursor-not-allowed opacity-90'
+                      ? 'bg-[#00c0f0] border-[#00c0f0] text-neutral-950 font-bold cursor-not-allowed opacity-90'
                       : status === 'pending'
                       ? 'bg-yellow-400 border-yellow-400 text-yellow-950 font-bold'
                       : 'bg-neutral-100 border-neutral-200 text-neutral-400 cursor-not-allowed'
@@ -330,7 +330,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
 
                   {/* USER SPEC: FOR AVAILABLE JUST LEAVE IT BLANK, DONT PUT NOTES! */}
                   {status === 'booked' && (
-                    <span className="text-[10px] uppercase font-black bg-teal-950 text-white px-2 py-0.5 rounded">
+                    <span className="text-[10px] uppercase font-black bg-neutral-900 text-white px-2 py-0.5 rounded">
                       Booked
                     </span>
                   )}

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { 
   HeartHandshake, 
@@ -28,8 +29,22 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-12 pb-16 sm:pt-16 sm:pb-24 border-b border-neutral-200 bg-white">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-neutral-100 px-3.5 py-1 text-xs font-semibold text-neutral-700 mb-6">
-            <span className="h-2 w-2 rounded-full bg-neutral-900" />
+          {/* Beautiful Gate Official NGO Logo */}
+          <div className="flex justify-center mb-6">
+            <div className="relative h-24 w-24 sm:h-28 sm:w-28 flex items-center justify-center p-2.5 rounded-3xl bg-white shadow-md border border-neutral-200/80">
+              <Image
+                src="/images/beautiful-gate-logo.png"
+                alt="Beautiful Gate Foundation for the Disabled"
+                width={104}
+                height={104}
+                priority
+                className="object-contain"
+              />
+            </div>
+          </div>
+
+          <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3.5 py-1 text-xs font-semibold text-[#D9530F] mb-6">
+            <span className="h-2 w-2 rounded-full bg-[#F37021]" />
             Beautiful Gate Foundation for the Disabled
           </div>
 
@@ -42,7 +57,7 @@ export default function HomePage() {
             <Link
               href="/portal"
               onClick={() => handleLaunchRole('customer')}
-              className="px-6 py-3.5 rounded-2xl bg-teal-800 hover:bg-teal-900 text-white font-extrabold text-sm shadow-md flex items-center tap-target"
+              className="px-6 py-3.5 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white font-extrabold text-sm shadow-md flex items-center tap-target"
             >
               <HeartHandshake className="h-4 w-4 mr-2" />
               Launch Beneficiary Portal
@@ -51,9 +66,9 @@ export default function HomePage() {
             <Link
               href="/driver"
               onClick={() => handleLaunchRole('driver')}
-              className="px-6 py-3.5 rounded-2xl bg-cyan-100 hover:bg-cyan-200 text-teal-950 font-extrabold text-sm border border-cyan-300 shadow-xs flex items-center tap-target"
+              className="px-6 py-3.5 rounded-2xl bg-[#18181B] hover:bg-black text-white font-extrabold text-sm shadow-md flex items-center tap-target"
             >
-              <Car className="h-4 w-4 mr-2 text-teal-800" />
+              <Car className="h-4 w-4 mr-2 text-[#F37021]" />
               Driver Console
             </Link>
 
@@ -62,7 +77,7 @@ export default function HomePage() {
               onClick={() => handleLaunchRole('admin')}
               className="px-6 py-3.5 rounded-2xl bg-white hover:bg-neutral-100 text-neutral-800 font-extrabold text-sm border border-neutral-300 shadow-xs flex items-center tap-target"
             >
-              <Shield className="h-4 w-4 mr-2 text-teal-800" />
+              <Shield className="h-4 w-4 mr-2 text-[#F37021]" />
               Supervisor Control Tower
             </Link>
           </div>
@@ -82,9 +97,9 @@ export default function HomePage() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1: Beneficiary Portal */}
-          <div className="rounded-3xl border border-neutral-200 bg-white p-7 shadow-xs flex flex-col justify-between hover:border-teal-700 transition-all group">
+          <div className="rounded-3xl border border-neutral-200 bg-white p-7 shadow-xs flex flex-col justify-between hover:border-[#F37021] transition-all group">
             <div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 text-teal-800 mb-6 group-hover:bg-teal-800 group-hover:text-white transition-colors">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-[#F37021] mb-6 group-hover:bg-[#F37021] group-hover:text-white transition-colors">
                 <HeartHandshake className="h-6 w-6 stroke-[2]" />
               </div>
               <h3 className="text-xl font-extrabold tracking-tight text-neutral-900">
@@ -96,7 +111,7 @@ export default function HomePage() {
               <Link
                 href="/portal"
                 onClick={() => handleLaunchRole('customer')}
-                className="w-full py-3 px-4 rounded-xl bg-teal-800 text-white text-xs font-bold flex items-center justify-between shadow-xs tap-target"
+                className="w-full py-3 px-4 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-bold flex items-center justify-between shadow-xs tap-target"
               >
                 <span>Enter as Siti Nurhaliza</span>
                 <ArrowRight className="h-4 w-4" />
@@ -105,9 +120,9 @@ export default function HomePage() {
           </div>
 
           {/* Card 2: Driver Console */}
-          <div className="rounded-3xl border border-neutral-200 bg-white p-7 shadow-xs flex flex-col justify-between hover:border-teal-700 transition-all group">
+          <div className="rounded-3xl border border-neutral-200 bg-white p-7 shadow-xs flex flex-col justify-between hover:border-[#18181B] transition-all group">
             <div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-cyan-50 text-cyan-800 mb-6 group-hover:bg-cyan-800 group-hover:text-white transition-colors">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 text-stone-800 mb-6 group-hover:bg-[#18181B] group-hover:text-white transition-colors">
                 <Car className="h-6 w-6 stroke-[2]" />
               </div>
               <h3 className="text-xl font-extrabold tracking-tight text-neutral-900">
@@ -119,7 +134,7 @@ export default function HomePage() {
               <Link
                 href="/driver"
                 onClick={() => handleLaunchRole('driver')}
-                className="w-full py-3 px-4 rounded-xl bg-cyan-100 text-teal-950 border border-cyan-300 text-xs font-bold flex items-center justify-between shadow-xs tap-target"
+                className="w-full py-3 px-4 rounded-xl bg-[#18181B] hover:bg-black text-white text-xs font-bold flex items-center justify-between shadow-xs tap-target"
               >
                 <span>Enter as Johan bin Ariffin</span>
                 <ArrowRight className="h-4 w-4" />
@@ -128,7 +143,7 @@ export default function HomePage() {
           </div>
 
           {/* Card 3: Control Tower */}
-          <div className="rounded-3xl border border-neutral-200 bg-white p-7 shadow-xs flex flex-col justify-between hover:border-teal-700 transition-all group">
+          <div className="rounded-3xl border border-neutral-200 bg-white p-7 shadow-xs flex flex-col justify-between hover:border-neutral-900 transition-all group">
             <div>
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-800 mb-6 group-hover:bg-neutral-900 group-hover:text-white transition-colors">
                 <Shield className="h-6 w-6 stroke-[2]" />
@@ -142,7 +157,7 @@ export default function HomePage() {
               <Link
                 href="/admin"
                 onClick={() => handleLaunchRole('admin')}
-                className="w-full py-3 px-4 rounded-xl bg-white text-neutral-900 border border-neutral-300 text-xs font-bold flex items-center justify-between shadow-xs tap-target"
+                className="w-full py-3 px-4 rounded-xl bg-white hover:bg-neutral-100 text-neutral-900 border border-neutral-300 text-xs font-bold flex items-center justify-between shadow-xs tap-target"
               >
                 <span>Enter as Faridah Hashim</span>
                 <ArrowRight className="h-4 w-4" />

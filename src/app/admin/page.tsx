@@ -165,15 +165,15 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-neutral-900 pb-24">
       {/* Top Banner Navigation */}
-      <div className="bg-gradient-to-r from-teal-900 via-teal-800 to-cyan-900 text-white shadow-md">
+      <div className="bg-gradient-to-r from-neutral-950 via-stone-900 to-orange-950 text-white shadow-md">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-cyan-300">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-[#F37021]">
                   Supervisor Control Tower
                 </span>
-                <span className="inline-flex items-center rounded-full bg-cyan-400 text-teal-950 font-black px-2.5 py-0.5 text-xs shadow-xs">
+                <span className="inline-flex items-center rounded-full bg-[#F37021] text-white font-black px-2.5 py-0.5 text-xs shadow-xs">
                   Admin Dispatch Active
                 </span>
               </div>
@@ -183,14 +183,14 @@ export default function AdminPage() {
             </div>
 
             {/* Top-Level Navigation Bar */}
-            <div className="flex rounded-full bg-teal-950/60 p-1 border border-teal-700/60 self-start sm:self-auto">
+            <div className="flex rounded-full bg-white/10 p-1 border border-white/10 self-start sm:self-auto">
               <button
                 type="button"
                 onClick={() => setActiveTab('dispatch')}
                 className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
                   activeTab === 'dispatch'
-                    ? 'bg-cyan-400 text-teal-950 font-black shadow-sm'
-                    : 'text-teal-100 hover:text-white'
+                    ? 'bg-[#F37021] text-white font-black shadow-sm'
+                    : 'text-neutral-300 hover:text-white'
                 }`}
               >
                 <Car className="h-4 w-4" />
@@ -201,8 +201,8 @@ export default function AdminPage() {
                 onClick={() => setActiveTab('artisans')}
                 className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
                   activeTab === 'artisans'
-                    ? 'bg-cyan-400 text-teal-950 font-black shadow-sm'
-                    : 'text-teal-100 hover:text-white'
+                    ? 'bg-[#F37021] text-white font-black shadow-sm'
+                    : 'text-neutral-300 hover:text-white'
                 }`}
               >
                 <Sparkles className="h-4 w-4" />
@@ -213,8 +213,8 @@ export default function AdminPage() {
                 onClick={() => setActiveTab('analytics')}
                 className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
                   activeTab === 'analytics'
-                    ? 'bg-cyan-400 text-teal-950 font-black shadow-sm'
-                    : 'text-teal-100 hover:text-white'
+                    ? 'bg-[#F37021] text-white font-black shadow-sm'
+                    : 'text-neutral-300 hover:text-white'
                 }`}
               >
                 <BarChart3 className="h-4 w-4" />
@@ -237,32 +237,32 @@ export default function AdminPage() {
             {/* NUMBER, NAME AND TIME SLOT ONLY                               */}
             {/* ============================================================== */}
             {currentActiveDispatch && (
-              <div className="rounded-3xl border-2 border-teal-700 bg-gradient-to-r from-teal-950 via-teal-900 to-cyan-950 text-white p-6 sm:p-7 shadow-lg space-y-4">
+              <div className="rounded-3xl border-2 border-[#F37021] bg-gradient-to-r from-neutral-950 via-stone-900 to-orange-950 text-white p-6 sm:p-7 shadow-lg space-y-4">
                 {/* Header: Title, Time Slot & Status */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 border-b border-teal-800/80 gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 border-b border-white/10 gap-3">
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-3 w-3 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-400" />
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F37021] opacity-75" />
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-[#F37021]" />
                     </span>
-                    <h2 className="text-sm font-black uppercase tracking-wider text-cyan-300">
+                    <h2 className="text-sm font-black uppercase tracking-wider text-orange-400">
                       Current Active Dispatch
                     </h2>
                   </div>
 
                   <div className="flex items-center gap-2.5">
                     {/* Time Slot */}
-                    <span className="font-mono text-xs font-black bg-teal-900/90 text-cyan-200 border border-teal-700 px-3 py-1 rounded-xl shadow-xs">
+                    <span className="font-mono text-xs font-black bg-white/10 text-orange-200 border border-orange-500/30 px-3 py-1 rounded-xl shadow-xs">
                       {currentActiveDispatch.appointment_time}
                     </span>
 
                     {/* Status */}
                     <span className={`text-xs font-black uppercase tracking-wide px-3 py-1 rounded-xl shadow-xs ${
                       currentActiveDispatch.status === 'en_route_pickup' || currentActiveDispatch.status === 'picked_up' || currentActiveDispatch.status === 'en_route_hospital'
-                        ? 'bg-cyan-400 text-teal-950'
+                        ? 'bg-[#F37021] text-white'
                         : currentActiveDispatch.status === 'dropped_off' || currentActiveDispatch.status === 'en_route_next'
                         ? 'bg-emerald-500 text-white'
-                        : 'bg-teal-700 text-white'
+                        : 'bg-neutral-800 text-white'
                     }`}>
                       {currentActiveDispatch.status.replace(/_/g, ' ')}
                     </span>
@@ -274,7 +274,7 @@ export default function AdminPage() {
                   {/* Name & Contact Number */}
                   <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3">
                     <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-teal-300 block">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-orange-400 block">
                         Passenger Name
                       </span>
                       <h3 className="text-xl font-black text-white mt-0.5">
@@ -285,12 +285,12 @@ export default function AdminPage() {
                     <div className="flex items-center gap-2 pt-2 border-t border-white/10">
                       <Phone className="h-4 w-4 text-emerald-400 shrink-0" />
                       <div>
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-teal-300 block">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-orange-400 block">
                           Contact Number
                         </span>
                         <a
                           href={`tel:${currentActiveDispatch.phone}`}
-                          className="font-mono text-sm font-bold text-white hover:text-cyan-300 transition-colors"
+                          className="font-mono text-sm font-bold text-white hover:text-orange-300 transition-colors"
                         >
                           {currentActiveDispatch.phone}
                         </a>
@@ -311,7 +311,7 @@ export default function AdminPage() {
                     </div>
 
                     <div className="pt-2 border-t border-white/10">
-                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-300 flex items-center gap-1">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-orange-400 flex items-center gap-1">
                         <Building2 className="h-3.5 w-3.5" />
                         Destination
                       </span>
@@ -344,11 +344,11 @@ export default function AdminPage() {
                 </p>
               </div>
 
-              <div className="rounded-2xl border-2 border-teal-500 bg-teal-50/80 p-4 shadow-xs">
-                <span className="text-[10px] font-bold text-teal-800 uppercase tracking-wider">
+              <div className="rounded-2xl border-2 border-orange-400 bg-orange-50/80 p-4 shadow-xs">
+                <span className="text-[10px] font-bold text-orange-950 uppercase tracking-wider">
                   In Transit
                 </span>
-                <p className="text-2xl font-black text-teal-950 mt-1 font-mono">
+                <p className="text-2xl font-black text-orange-950 mt-1 font-mono">
                   {inTransitCount}
                 </p>
               </div>
@@ -379,7 +379,7 @@ export default function AdminPage() {
                     onClick={() => setDispatchFilter('all')}
                     className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
                       dispatchFilter === 'all'
-                        ? 'bg-teal-800 text-white shadow-xs'
+                        ? 'bg-[#F37021] text-white shadow-xs font-black'
                         : 'text-neutral-600 hover:text-black'
                     }`}
                   >
@@ -401,7 +401,7 @@ export default function AdminPage() {
                     onClick={() => setDispatchFilter('active')}
                     className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
                       dispatchFilter === 'active'
-                        ? 'bg-teal-800 text-white shadow-xs'
+                        ? 'bg-[#F37021] text-white shadow-xs font-black'
                         : 'text-neutral-600 hover:text-black'
                     }`}
                   >
@@ -412,7 +412,7 @@ export default function AdminPage() {
                     onClick={() => setDispatchFilter('completed')}
                     className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
                       dispatchFilter === 'completed'
-                        ? 'bg-emerald-600 text-white shadow-xs'
+                        ? 'bg-emerald-600 text-white shadow-xs font-black'
                         : 'text-neutral-600 hover:text-black'
                     }`}
                   >
@@ -448,15 +448,15 @@ export default function AdminPage() {
                             onClick={() => setExpandedBookingId(isExpanded ? null : b.id)}
                             className={`cursor-pointer transition-colors tap-target ${
                               isExpanded
-                                ? 'bg-teal-50/70'
+                                ? 'bg-orange-50/70'
                                 : 'hover:bg-neutral-50/80'
                             }`}
                           >
                             {/* 1. Time Slot */}
-                            <td className="py-4 px-4 font-mono font-bold text-teal-950 whitespace-nowrap">
+                            <td className="py-4 px-4 font-mono font-bold text-neutral-950 whitespace-nowrap">
                               <div className="flex items-center gap-2">
                                 {isExpanded ? (
-                                  <ChevronDown className="h-4 w-4 text-teal-700 shrink-0 stroke-[2.5]" />
+                                  <ChevronDown className="h-4 w-4 text-[#F37021] shrink-0 stroke-[2.5]" />
                                 ) : (
                                   <ChevronRight className="h-4 w-4 text-neutral-400 shrink-0 stroke-[2.5]" />
                                 )}
@@ -491,7 +491,7 @@ export default function AdminPage() {
                                   <button
                                     type="button"
                                     onClick={() => approveBooking(b.id)}
-                                    className="px-3.5 py-1.5 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-black text-xs flex items-center gap-1 shadow-sm tap-target transition-all active:scale-95"
+                                    className="px-3.5 py-1.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white font-black text-xs flex items-center gap-1 shadow-sm tap-target transition-all active:scale-95"
                                   >
                                     <Check className="h-3.5 w-3.5" />
                                     Approve
@@ -508,9 +508,9 @@ export default function AdminPage() {
                               ) : (
                                 <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
                                   b.status === 'approved'
-                                    ? 'bg-teal-100 text-teal-900 border border-teal-300'
+                                    ? 'bg-orange-100 text-orange-950 border border-orange-300'
                                     : b.status === 'en_route_pickup' || b.status === 'picked_up' || b.status === 'en_route_hospital'
-                                    ? 'bg-teal-900 text-white'
+                                    ? 'bg-[#F37021] text-white'
                                     : b.status === 'dropped_off' || b.status === 'en_route_next'
                                     ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
                                     : 'bg-red-100 text-red-900'
@@ -527,7 +527,7 @@ export default function AdminPage() {
                               <td colSpan={6} className="p-4 sm:p-5 border-t border-neutral-200">
                                 <div className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-3.5 shadow-xs">
                                   <div className="flex items-center justify-between pb-2.5 border-b border-neutral-100">
-                                    <span className="text-xs font-black uppercase tracking-wider text-teal-900">
+                                    <span className="text-xs font-black uppercase tracking-wider text-neutral-900">
                                       Booking Manifest Details · {b.id}
                                     </span>
                                     <span className="font-mono text-xs font-bold text-neutral-500">
@@ -549,8 +549,8 @@ export default function AdminPage() {
                                       </div>
 
                                       <div className="pt-2 border-t border-neutral-100">
-                                        <span className="text-[10px] font-extrabold uppercase text-cyan-900 tracking-wider flex items-center gap-1">
-                                          <Building2 className="h-3.5 w-3.5" />
+                                        <span className="text-[10px] font-extrabold uppercase text-orange-950 tracking-wider flex items-center gap-1">
+                                          <Building2 className="h-3.5 w-3.5 text-[#F37021]" />
                                           Destination
                                         </span>
                                         <p className="font-bold text-neutral-900 mt-0.5 leading-snug">
@@ -574,7 +574,7 @@ export default function AdminPage() {
                                         <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
                                           Allocated Seat(s)
                                         </span>
-                                        <p className="font-mono font-bold text-teal-900 mt-0.5 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 inline-block">
+                                        <p className="font-mono font-bold text-orange-950 mt-0.5 bg-orange-50 px-2 py-0.5 rounded border border-orange-200 inline-block">
                                           {b.assigned_space}
                                         </p>
                                       </div>
@@ -687,7 +687,7 @@ export default function AdminPage() {
                       <tr
                         key={artisan.profile.id}
                         onClick={() => setSelectedArtisanForDrawer(artisan)}
-                        className="hover:bg-teal-50/50 cursor-pointer transition-colors"
+                        className="hover:bg-orange-50/50 cursor-pointer transition-colors"
                       >
                         <td className="py-4 px-5">
                           <p className="font-extrabold text-neutral-900 text-sm">
@@ -703,7 +703,7 @@ export default function AdminPage() {
                         </td>
 
                         <td className="py-4 px-5">
-                          <span className="rounded-md bg-teal-50 border border-teal-200 px-2.5 py-1 text-[11px] font-bold text-teal-900">
+                          <span className="rounded-md bg-neutral-100 border border-neutral-200 px-2.5 py-1 text-[11px] font-bold text-neutral-800">
                             {artisan.profile.mobility_type}
                           </span>
                         </td>
@@ -723,7 +723,7 @@ export default function AdminPage() {
                         <td className="py-4 px-5 text-right">
                           <button
                             type="button"
-                            className="inline-flex items-center text-xs font-bold text-teal-800 hover:text-teal-950 gap-1 tap-target"
+                            className="inline-flex items-center text-xs font-bold text-[#F37021] hover:text-[#D9530F] gap-1 tap-target"
                           >
                             <span>Ledger & Bank</span>
                             <ChevronRight className="h-4 w-4" />
@@ -754,7 +754,7 @@ export default function AdminPage() {
               <button
                 type="button"
                 onClick={exportPayrollCSV}
-                className="px-5 py-2.5 rounded-2xl bg-teal-800 hover:bg-teal-900 text-white font-extrabold text-xs flex items-center gap-2 shadow-md tap-target"
+                className="px-5 py-2.5 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white font-extrabold text-xs flex items-center gap-2 shadow-md tap-target"
               >
                 <Download className="h-4 w-4" />
                 Export Payroll CSV

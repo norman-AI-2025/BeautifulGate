@@ -2,21 +2,29 @@
 
 :root {
   --background: #fbfbfd;
-  --foreground: #1d1d1f;
+  --foreground: #18181b;
   --card-bg: #ffffff;
   --card-border: #e5e5ea;
+  --bg-orange: #f37021;
+  --bg-orange-dark: #d9530f;
+  --bg-orange-light: #fff7ed;
+  --bg-charcoal: #18181b;
   --apple-blue: #007aff;
   --apple-green: #34c759;
-  --apple-orange: #ff9500;
+  --apple-orange: #f37021;
   --apple-red: #ff3b30;
   --apple-gray: #8e8e93;
   --apple-light-gray: #f2f2f7;
 }
 
 @theme {
+  --color-bg-orange: #f37021;
+  --color-bg-orange-dark: #d9530f;
+  --color-bg-orange-light: #fff7ed;
+  --color-bg-charcoal: #18181b;
   --color-apple-blue: #007aff;
   --color-apple-green: #34c759;
-  --color-apple-orange: #ff9500;
+  --color-apple-orange: #f37021;
   --color-apple-red: #ff3b30;
   --color-apple-gray: #8e8e93;
 }

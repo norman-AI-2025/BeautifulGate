@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { LogOut, User, Shield, Car, HeartHandshake } from 'lucide-react';
@@ -25,18 +26,25 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-neutral-200 bg-white/85 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-40 w-full border-b border-neutral-200 bg-white/90 backdrop-blur-md">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6 lg:px-8">
         {/* Brand */}
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-tr from-teal-800 to-cyan-500 text-white shadow-xs">
-              <span className="font-extrabold text-base tracking-tight">BG</span>
+            <div className="relative h-10 w-10 shrink-0">
+              <Image 
+                src="/images/beautiful-gate-logo.png" 
+                alt="Beautiful Gate Foundation" 
+                width={40} 
+                height={40} 
+                className="h-10 w-10 object-contain"
+                priority
+              />
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-base font-extrabold tracking-tight text-neutral-900">Beautiful Gate</span>
-              <span className="rounded-full bg-teal-100 text-teal-800 border border-teal-200 px-2 py-0.5 text-[10px] font-bold tracking-wide">
-                OKU Transit
+              <span className="text-base font-black tracking-tight text-neutral-900">Beautiful Gate</span>
+              <span className="rounded-full bg-orange-50 text-[#F37021] border border-orange-200 px-2 py-0.5 text-[10px] font-black tracking-wider uppercase">
+                Assisted Mobility
               </span>
             </div>
           </Link>
@@ -47,7 +55,7 @@ export const Header: React.FC = () => {
               href="/portal"
               className={`px-3 py-1.5 rounded-xl text-sm font-bold transition-all tap-target flex items-center gap-1.5 ${
                 pathname === '/portal'
-                  ? 'bg-teal-800 text-white shadow-xs'
+                  ? 'bg-[#F37021] text-white shadow-xs'
                   : 'text-neutral-600 hover:text-black hover:bg-neutral-100'
               }`}
             >
@@ -59,7 +67,7 @@ export const Header: React.FC = () => {
               href="/driver"
               className={`px-3 py-1.5 rounded-xl text-sm font-bold transition-all tap-target flex items-center gap-1.5 ${
                 pathname === '/driver'
-                  ? 'bg-teal-800 text-white shadow-xs'
+                  ? 'bg-[#F37021] text-white shadow-xs'
                   : 'text-neutral-600 hover:text-black hover:bg-neutral-100'
               }`}
             >
@@ -71,7 +79,7 @@ export const Header: React.FC = () => {
               href="/admin"
               className={`px-3 py-1.5 rounded-xl text-sm font-bold transition-all tap-target flex items-center gap-1.5 ${
                 pathname === '/admin'
-                  ? 'bg-teal-800 text-white shadow-xs'
+                  ? 'bg-[#F37021] text-white shadow-xs'
                   : 'text-neutral-600 hover:text-black hover:bg-neutral-100'
               }`}
             >

@@ -98,31 +98,31 @@ export default function MobileArtisanPortalPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-neutral-900 pb-28">
       {/* Top Mobile Bar */}
-      <div className="bg-gradient-to-r from-teal-800 via-teal-700 to-cyan-700 text-white shadow-md sticky top-0 z-30">
+      <div className="bg-gradient-to-r from-neutral-950 via-stone-900 to-orange-950 text-white shadow-md sticky top-0 z-30">
         <div className="max-w-2xl mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-teal-200">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-[#F37021]">
                 Beneficiary Portal
               </span>
               <h1 className="text-lg font-extrabold tracking-tight">
                 {currentUser?.full_name || 'Siti Nurhaliza'}
               </h1>
-              <p className="text-xs text-teal-100 flex items-center gap-1.5 mt-0.5">
-                <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+              <p className="text-xs text-orange-200 flex items-center gap-1.5 mt-0.5">
+                <span className="inline-block h-2 w-2 rounded-full bg-[#F37021]" />
                 {currentUser?.mobility_type || 'Wheelchair Transit'} · OKU Verified
               </p>
             </div>
 
             {/* Main Navigation Segmented Switcher */}
-            <div className="flex rounded-full bg-teal-950/40 p-1 border border-teal-600/60">
+            <div className="flex rounded-full bg-white/10 p-1 border border-white/10">
               <button
                 type="button"
                 onClick={() => setMainTab('transit')}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all tap-target ${
                   mainTab === 'transit'
-                    ? 'bg-white text-teal-950 shadow-sm'
-                    : 'text-teal-100 hover:text-white'
+                    ? 'bg-[#F37021] text-white shadow-sm font-black'
+                    : 'text-neutral-300 hover:text-white'
                 }`}
               >
                 <Car className="h-3.5 w-3.5" />
@@ -133,8 +133,8 @@ export default function MobileArtisanPortalPage() {
                 onClick={() => setMainTab('earnings')}
                 className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all tap-target ${
                   mainTab === 'earnings'
-                    ? 'bg-emerald-400 text-emerald-950 font-extrabold shadow-sm'
-                    : 'text-teal-100 hover:text-white'
+                    ? 'bg-[#F37021] text-white shadow-sm font-black'
+                    : 'text-neutral-300 hover:text-white'
                 }`}
               >
                 <Sparkles className="h-3.5 w-3.5" />
@@ -158,7 +158,7 @@ export default function MobileArtisanPortalPage() {
                 onClick={() => setTransitTab('book')}
                 className={`py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 tap-target ${
                   transitTab === 'book'
-                    ? 'bg-teal-800 text-white shadow-md'
+                    ? 'bg-[#F37021] text-white shadow-md'
                     : 'text-neutral-600 hover:text-black'
                 }`}
               >
@@ -171,14 +171,14 @@ export default function MobileArtisanPortalPage() {
                 onClick={() => setTransitTab('status')}
                 className={`relative py-2.5 rounded-xl text-xs font-extrabold transition-all flex items-center justify-center gap-2 tap-target ${
                   transitTab === 'status'
-                    ? 'bg-teal-800 text-white shadow-md'
+                    ? 'bg-[#F37021] text-white shadow-md'
                     : 'text-neutral-600 hover:text-black'
                 }`}
               >
                 <Clock className="h-4 w-4" />
                 Booking Status
                 {activeAlertCount > 0 && (
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cyan-400 text-teal-950 font-black text-[10px] shadow-xs">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[#F37021] font-black text-[10px] shadow-xs">
                     {activeAlertCount}
                   </span>
                 )}
@@ -227,7 +227,7 @@ export default function MobileArtisanPortalPage() {
                 {activeBookings.length > 0 && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-teal-800">
+                      <span className="text-xs font-bold uppercase tracking-wider text-neutral-800">
                         Approved Transit Mission ({activeBookings.length})
                       </span>
                       <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-2.5 py-0.5 rounded-full">
@@ -238,23 +238,23 @@ export default function MobileArtisanPortalPage() {
                     {activeBookings.map((b) => (
                       <div
                         key={b.id}
-                        className="rounded-3xl border-2 border-teal-700 bg-white p-5 sm:p-6 shadow-md space-y-4"
+                        className="rounded-3xl border-2 border-orange-500 bg-white p-5 sm:p-6 shadow-md space-y-4"
                       >
                         {/* Header Details */}
                         <div className="flex items-start justify-between border-b border-neutral-100 pb-3">
                           <div>
-                            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-teal-600">
+                            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#F37021]">
                               {b.date || 'Today'} · Slot: {b.appointment_time}
                             </span>
                             <h3 className="text-xl font-extrabold text-neutral-900 mt-0.5">
                               {b.hospital_name}
                             </h3>
-                            <p className="text-xs font-semibold text-teal-800">
+                            <p className="text-xs font-semibold text-neutral-700">
                               {b.clinic_department}
                             </p>
                           </div>
 
-                          <span className="font-mono text-xs font-extrabold text-white bg-teal-900 px-3 py-1 rounded-xl shadow-xs">
+                          <span className="font-mono text-xs font-extrabold text-white bg-neutral-900 px-3 py-1 rounded-xl shadow-xs">
                             {b.assigned_space}
                           </span>
                         </div>
@@ -276,7 +276,7 @@ export default function MobileArtisanPortalPage() {
                             <p className="font-bold text-neutral-900 text-sm mt-0.5">
                               {b.assigned_driver}
                             </p>
-                            <p className="text-[10px] text-teal-700 font-semibold mt-0.5">
+                            <p className="text-[10px] text-[#F37021] font-semibold mt-0.5">
                               Toyota HiAce Commuter
                             </p>
                           </div>
@@ -298,7 +298,7 @@ export default function MobileArtisanPortalPage() {
                         <button
                           type="button"
                           onClick={() => setViewingPassBooking(b)}
-                          className="w-full py-2.5 rounded-xl border border-teal-700 text-teal-900 hover:bg-teal-50 text-xs font-bold flex items-center justify-center gap-2 tap-target"
+                          className="w-full py-2.5 rounded-xl border border-[#F37021] text-[#F37021] hover:bg-orange-50 text-xs font-bold flex items-center justify-center gap-2 tap-target"
                         >
                           <Ticket className="h-4 w-4" />
                           View Transit Boarding Pass
@@ -427,7 +427,7 @@ export default function MobileArtisanPortalPage() {
                     <button
                       type="button"
                       onClick={() => setTransitTab('book')}
-                      className="px-5 py-2.5 rounded-xl bg-teal-800 text-white text-xs font-bold"
+                      className="px-5 py-2.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-bold tap-target"
                     >
                       Browse Timetable
                     </button>
@@ -459,27 +459,27 @@ export default function MobileArtisanPortalPage() {
               </div>
 
               {/* This Week */}
-              <div className="rounded-2xl border border-teal-200 bg-teal-50/60 p-4 shadow-xs">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-teal-700">
+              <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-4 shadow-xs">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-orange-700">
                   This Week
                 </span>
-                <p className="text-2xl font-black text-teal-950 font-mono mt-1">
+                <p className="text-2xl font-black text-orange-950 font-mono mt-1">
                   RM {artisanStats?.weekEarned.toFixed(2) || '0.00'}
                 </p>
-                <p className="text-[11px] font-semibold text-teal-800 mt-0.5">
+                <p className="text-[11px] font-semibold text-orange-800 mt-0.5">
                   {artisanStats?.weekUnits || 0} cards made
                 </p>
               </div>
 
-              {/* This Month (Highlighted in bold teal) */}
-              <div className="rounded-2xl border-2 border-teal-800 bg-teal-900 text-white p-4 shadow-md">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-300">
+              {/* This Month (Highlighted in bold brand orange / charcoal) */}
+              <div className="rounded-2xl border-2 border-[#F37021] bg-[#18181B] text-white p-4 shadow-md">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">
                   Month-to-Date (MTD)
                 </span>
                 <p className="text-2xl font-black text-white font-mono mt-1">
                   RM {artisanStats?.monthEarned.toFixed(2) || '0.00'}
                 </p>
-                <p className="text-[11px] font-medium text-teal-200 mt-0.5">
+                <p className="text-[11px] font-medium text-orange-200 mt-0.5">
                   {artisanStats?.monthUnits || 0} cards produced
                 </p>
               </div>
@@ -547,7 +547,7 @@ export default function MobileArtisanPortalPage() {
                       value={cardsCountInput || ''}
                       onChange={(e) => setCardsCountInput(parseInt(e.target.value) || 0)}
                       placeholder="e.g. 24"
-                      className="apple-input w-full text-2xl font-black font-mono tracking-tight text-teal-950"
+                      className="apple-input w-full text-2xl font-black font-mono tracking-tight text-neutral-900"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold uppercase text-neutral-400">
                       Units
@@ -556,18 +556,18 @@ export default function MobileArtisanPortalPage() {
                 </div>
 
                 {/* Live Calculated Payout Preview */}
-                <div className="rounded-2xl border-2 border-emerald-300 bg-gradient-to-r from-emerald-50 to-teal-50 p-4">
-                  <div className="flex items-center justify-between text-xs text-emerald-800">
+                <div className="rounded-2xl border-2 border-orange-300 bg-gradient-to-r from-orange-50 to-amber-50 p-4">
+                  <div className="flex items-center justify-between text-xs text-orange-800">
                     <span>Piece Rate Formula</span>
                     <span className="font-mono font-bold">
                       {cardsCountInput || 0} cards × RM {selectedProduct?.piece_rate.toFixed(2)}
                     </span>
                   </div>
-                  <div className="mt-1 flex items-baseline justify-between border-t border-emerald-200 pt-2">
-                    <span className="text-xs font-bold text-emerald-950">
+                  <div className="mt-1 flex items-baseline justify-between border-t border-orange-200 pt-2">
+                    <span className="text-xs font-bold text-orange-950">
                       Calculated Payout:
                     </span>
-                    <span className="text-2xl font-black text-emerald-950 font-mono">
+                    <span className="text-2xl font-black text-orange-950 font-mono">
                       RM {livePreviewEarned}
                     </span>
                   </div>
@@ -575,7 +575,7 @@ export default function MobileArtisanPortalPage() {
 
                 <button
                   type="submit"
-                  className="w-full py-3 rounded-2xl bg-teal-800 hover:bg-teal-900 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-md tap-target"
+                  className="w-full py-3 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-md tap-target"
                 >
                   <Plus className="h-4 w-4" />
                   Record Work
@@ -597,7 +597,7 @@ export default function MobileArtisanPortalPage() {
                         {log.logged_date} · {log.units_completed} units
                       </p>
                     </div>
-                    <span className="font-mono font-extrabold text-sm text-teal-900">
+                    <span className="font-mono font-extrabold text-sm text-[#F37021]">
                       RM {log.total_earned.toFixed(2)}
                     </span>
                   </div>
