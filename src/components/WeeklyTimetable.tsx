@@ -66,11 +66,6 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
 
-  const handleSelectDay = (day: DaySchedule) => {
-    setSelectedDayObj(day);
-    setSelectedIsoDate(day.isoDate);
-  };
-
   const handleSelectCalendarDate = (year: number, month: number, day: number) => {
     const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     const d = new Date(year, month, day);
@@ -280,42 +275,6 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
             </p>
           </div>
         )}
-
-        {/* Quick Date Selector Cards */}
-        <div className="grid grid-cols-7 gap-2">
-          {DEFAULT_DAYS.map((day) => {
-            const isSelected = selectedIsoDate === day.isoDate;
-
-            return (
-              <button
-                key={day.key}
-                type="button"
-                onClick={() => handleSelectDay(day)}
-                className={`py-3 px-1 rounded-2xl text-center transition-all tap-target flex flex-col items-center justify-center border-2 ${
-                  isSelected
-                    ? 'bg-teal-800 text-white border-teal-800 shadow-md scale-[1.03]'
-                    : day.isHoliday
-                    ? 'bg-red-50 text-red-900 border-red-200 hover:border-red-400'
-                    : day.isToday
-                    ? 'bg-cyan-50 text-cyan-900 border-cyan-400 hover:bg-cyan-100'
-                    : 'bg-white text-neutral-700 border-neutral-200 hover:border-neutral-400'
-                }`}
-              >
-                <span className={`text-[10px] font-bold uppercase tracking-wider ${isSelected ? 'text-teal-200' : 'text-neutral-400'}`}>
-                  {day.name.slice(0, 3)}
-                </span>
-                <span className="text-base font-black tracking-tight mt-0.5">
-                  {day.dateStr.split(' ')[0]}
-                </span>
-                {day.isHoliday && (
-                  <span className={`text-[8px] font-bold uppercase mt-0.5 ${isSelected ? 'text-red-200' : 'text-red-600'}`}>
-                    Holiday
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* 2. EXPANDED TIMETABLE FOR THAT PARTICULAR DATE ONLY */}
