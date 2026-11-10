@@ -16,12 +16,16 @@ import {
   Clock, 
   User, 
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Filter,
   Navigation,
   Star,
   MessageSquare,
   ShieldCheck,
   MapPin,
+  Building2,
+  Phone,
   AlertCircle
 } from 'lucide-react';
 import { TransitBooking, ArtisanSummary, TransitStatus } from '@/types';
@@ -46,6 +50,9 @@ export default function AdminPage() {
   // Artisan search query and selected artisan drawer
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedArtisanForDrawer, setSelectedArtisanForDrawer] = useState<ArtisanSummary | null>(null);
+
+  // USER SPEC: Each record can be clicked to expand to see more details
+  const [expandedBookingId, setExpandedBookingId] = useState<string | null>(null);
 
   // Compute metrics for Dispatch
   const totalBookingsCount = bookings.length;
@@ -105,6 +112,28 @@ export default function AdminPage() {
     .reduce((sum, l) => sum + l.total_earned, 0);
 
   const activeArtisansCount = registeredArtisans.filter(a => a.monthUnits > 0).length;
+
+  // Format timestamp to hh:mm am/pm or dash
+  const formatTimestampTime = (isoString?: string): string => {
+    if (!isoString) return '—';
+    try {
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '—';
+    }
+  };
+
+  // Format booking date to clean display (e.g. 10 Nov 2026)
+  const formatBookingDate = (dateStr?: string): string => {
+    if (!dateStr) return '10 Nov 2026';
+    const parts = dateStr.split(',');
+    if (parts.length >= 2) {
+      return parts.slice(1).join(' ').trim();
+    }
+    return dateStr;
+  };
 
   // Helper to format last action time
   const formatLastAction = (b: TransitBooking): string => {
@@ -204,90 +233,92 @@ export default function AdminPage() {
           <div className="space-y-6">
             {/* ============================================================== */}
             {/* 1. USER SPEC: PRIORITIZE THE CURRENT DISPATCH (HERO CARD)     */}
+            {/* PRIORITIZE: PICK UP ADDRESS, DESTINATION, STATUS, CONTACT     */}
+            {/* NUMBER, NAME AND TIME SLOT ONLY                               */}
             {/* ============================================================== */}
             {currentActiveDispatch && (
-              <div className="rounded-3xl border-2 border-teal-700 bg-gradient-to-r from-teal-900 via-teal-800 to-cyan-900 text-white p-6 sm:p-7 shadow-lg relative overflow-hidden">
-                <div className="relative z-10 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-teal-700 gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <span className="flex h-3 w-3 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-400" />
-                      </span>
-                      <span className="text-xs font-extrabold uppercase tracking-widest text-cyan-300">
-                        Priority Current Active Dispatch
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-black bg-cyan-400 text-teal-950 px-3 py-1 rounded-lg">
-                        Plate: {currentActiveDispatch.assigned_vehicle.plate}
-                      </span>
-                      <span className="font-mono text-xs font-bold text-white bg-teal-950 px-3 py-1 rounded-lg border border-teal-700">
-                        Slot: {currentActiveDispatch.appointment_time}
-                      </span>
-                    </div>
+              <div className="rounded-3xl border-2 border-teal-700 bg-gradient-to-r from-teal-950 via-teal-900 to-cyan-950 text-white p-6 sm:p-7 shadow-lg space-y-4">
+                {/* Header: Title, Time Slot & Status */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 border-b border-teal-800/80 gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <span className="flex h-3 w-3 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-3 w-3 bg-cyan-400" />
+                    </span>
+                    <h2 className="text-sm font-black uppercase tracking-wider text-cyan-300">
+                      Current Active Dispatch
+                    </h2>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                    {/* Passenger & Space */}
+                  <div className="flex items-center gap-2.5">
+                    {/* Time Slot */}
+                    <span className="font-mono text-xs font-black bg-teal-900/90 text-cyan-200 border border-teal-700 px-3 py-1 rounded-xl shadow-xs">
+                      {currentActiveDispatch.appointment_time}
+                    </span>
+
+                    {/* Status */}
+                    <span className={`text-xs font-black uppercase tracking-wide px-3 py-1 rounded-xl shadow-xs ${
+                      currentActiveDispatch.status === 'en_route_pickup' || currentActiveDispatch.status === 'picked_up' || currentActiveDispatch.status === 'en_route_hospital'
+                        ? 'bg-cyan-400 text-teal-950'
+                        : currentActiveDispatch.status === 'dropped_off' || currentActiveDispatch.status === 'en_route_next'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-teal-700 text-white'
+                    }`}>
+                      {currentActiveDispatch.status.replace(/_/g, ' ')}
+                    </span>
+                  </div>
+                </div>
+
+                {/* 6 Prioritized Fields Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {/* Name & Contact Number */}
+                  <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3">
                     <div>
-                      <p className="text-[11px] text-teal-300 font-bold uppercase tracking-wider">
-                        Active Passenger
-                      </p>
-                      <h3 className="text-2xl font-black text-white mt-0.5">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-teal-300 block">
+                        Passenger Name
+                      </span>
+                      <h3 className="text-xl font-black text-white mt-0.5">
                         {currentActiveDispatch.passenger_name}
                       </h3>
-                      <p className="text-xs text-teal-100 font-semibold mt-1">
-                        Allocated Space: <span className="font-bold text-cyan-300">{currentActiveDispatch.assigned_space}</span>
-                      </p>
-                      <p className="text-xs text-teal-200 mt-0.5 font-mono">
-                        OKU: {currentActiveDispatch.oku_id} · {currentActiveDispatch.phone}
-                      </p>
                     </div>
 
-                    {/* Destination Hospital */}
-                    <div>
-                      <p className="text-[11px] text-teal-300 font-bold uppercase tracking-wider">
-                        Destination Clinic
-                      </p>
-                      <h4 className="text-lg font-extrabold text-white mt-0.5">
-                        {currentActiveDispatch.hospital_name}
-                      </h4>
-                      <p className="text-xs text-teal-100 font-medium">
-                        {currentActiveDispatch.clinic_department}
-                      </p>
-                      <p className="text-[11px] text-teal-200 mt-1 truncate">
-                        Pickup: {currentActiveDispatch.pickup_address}
-                      </p>
-                    </div>
-
-                    {/* Driver & Operator Status */}
-                    <div className="rounded-2xl bg-teal-950/60 p-4 border border-teal-700 space-y-1.5">
-                      <p className="text-[10px] text-teal-400 font-bold uppercase tracking-wider">
-                        Operator on Duty
-                      </p>
-                      <p className="text-base font-extrabold text-white">
-                        {currentActiveDispatch.assigned_driver}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-cyan-300 font-bold pt-1">
-                        <span>Current Stage:</span>
-                        <span className="uppercase font-mono bg-teal-800 px-2 py-0.5 rounded text-white border border-teal-600">
-                          {currentActiveDispatch.status.replace(/_/g, ' ')}
+                    <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+                      <Phone className="h-4 w-4 text-emerald-400 shrink-0" />
+                      <div>
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider text-teal-300 block">
+                          Contact Number
                         </span>
+                        <a
+                          href={`tel:${currentActiveDispatch.phone}`}
+                          className="font-mono text-sm font-bold text-white hover:text-cyan-300 transition-colors"
+                        >
+                          {currentActiveDispatch.phone}
+                        </a>
                       </div>
                     </div>
                   </div>
 
-                  {/* Real-time progression bar directly inside admin hero */}
-                  <div className="rounded-2xl bg-white text-neutral-900 p-4 shadow-inner">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-1 text-center">
-                      Live Highway & Clinic Checkpoint Progression
-                    </p>
-                    <LinearStageIndicator
-                      status={currentActiveDispatch.status}
-                      timestamps={currentActiveDispatch.timestamps}
-                    />
+                  {/* Pickup Address & Destination */}
+                  <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3">
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-300 flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5" />
+                        Pickup Address
+                      </span>
+                      <p className="text-xs font-bold text-white mt-0.5 leading-snug">
+                        {currentActiveDispatch.pickup_address}
+                      </p>
+                    </div>
+
+                    <div className="pt-2 border-t border-white/10">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-300 flex items-center gap-1">
+                        <Building2 className="h-3.5 w-3.5" />
+                        Destination
+                      </span>
+                      <p className="text-xs font-bold text-white mt-0.5 leading-snug">
+                        {currentActiveDispatch.hospital_name}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -396,123 +427,212 @@ export default function AdminPage() {
                   <thead className="bg-neutral-50/80 border-b border-neutral-200 text-neutral-600 uppercase tracking-wider font-bold">
                     <tr>
                       <th className="py-3.5 px-4">Time Slot</th>
-                      <th className="py-3.5 px-4">Passenger</th>
-                      <th className="py-3.5 px-4">Destination</th>
-                      <th className="py-3.5 px-4">Allocated Space</th>
-                      <th className="py-3.5 px-4">Status & Checkpoint</th>
-                      <th className="py-3.5 px-4">Beneficiary Rating</th>
-                      <th className="py-3.5 px-4 text-right">Approval Actions</th>
+                      <th className="py-3.5 px-4">Date</th>
+                      <th className="py-3.5 px-4">Name</th>
+                      <th className="py-3.5 px-4">Time Pickup</th>
+                      <th className="py-3.5 px-4">Time Drop Off</th>
+                      <th className="py-3.5 px-4 text-right">Approval Action</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200 bg-white">
                     {filteredBookings.map((b) => {
                       const isPending = b.status === 'pending';
-                      const lastAction = formatLastAction(b);
+                      const isExpanded = expandedBookingId === b.id;
+                      const timePickup = formatTimestampTime(b.timestamps.picked_up);
+                      const timeDropOff = formatTimestampTime(b.timestamps.dropped_off);
+                      const formattedDate = formatBookingDate(b.date);
 
                       return (
-                        <tr key={b.id} className="hover:bg-neutral-50/80 transition-colors">
-                          <td className="py-4 px-4 font-mono font-bold text-teal-950 whitespace-nowrap">
-                            {b.appointment_time}
-                          </td>
-
-                          <td className="py-4 px-4 whitespace-nowrap">
-                            <p className="font-extrabold text-neutral-900">{b.passenger_name}</p>
-                            <p className="text-[11px] font-mono text-neutral-500">OKU: {b.oku_id}</p>
-                          </td>
-
-                          <td className="py-4 px-4 max-w-xs">
-                            <p className="font-bold text-neutral-900 truncate">{b.hospital_name}</p>
-                            <p className="text-[11px] text-neutral-500 truncate">{b.clinic_department}</p>
-                          </td>
-
-                          <td className="py-4 px-4 whitespace-nowrap">
-                            <span className="font-mono text-[11px] font-bold bg-teal-50 text-teal-900 px-2.5 py-1 rounded-md border border-teal-200">
-                              {b.assigned_space}
-                            </span>
-                          </td>
-
-                          <td className="py-4 px-4 whitespace-nowrap">
-                            <div className="flex flex-col">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wide w-fit ${
-                                b.status === 'pending'
-                                  ? 'bg-yellow-400 text-yellow-950'
-                                  : b.status === 'approved'
-                                  ? 'bg-teal-100 text-teal-900 border border-teal-300'
-                                  : b.status === 'en_route_pickup' || b.status === 'picked_up' || b.status === 'en_route_hospital'
-                                  ? 'bg-teal-800 text-white'
-                                  : b.status === 'dropped_off' || b.status === 'en_route_next'
-                                  ? 'bg-emerald-100 text-emerald-900'
-                                  : 'bg-red-100 text-red-800'
-                              }`}>
-                                {b.status.replace(/_/g, ' ')}
-                              </span>
-                              <span className="text-[10px] text-neutral-500 font-mono mt-1">
-                                {lastAction}
-                              </span>
-                            </div>
-                          </td>
-
-                          {/* USER SPEC: USER CAN RATE AFTER SERVICE COMPLETED & IT WILL SHOW AT ADMINISTRATOR PAGE */}
-                          <td className="py-4 px-4 max-w-xs">
-                            {b.rating ? (
-                              <div className="space-y-0.5">
-                                <div className="flex items-center gap-1 text-amber-500">
-                                  {[1, 2, 3, 4, 5].map((s) => (
-                                    <Star
-                                      key={s}
-                                      className={`h-3.5 w-3.5 ${
-                                        s <= b.rating! ? 'fill-amber-400 text-amber-500' : 'text-neutral-300'
-                                      }`}
-                                    />
-                                  ))}
-                                  <span className="text-xs font-black text-neutral-900 ml-1">
-                                    {b.rating}/5
-                                  </span>
-                                </div>
-                                {b.feedback && (
-                                  <p className="text-[11px] text-neutral-600 italic line-clamp-1">
-                                    &quot;{b.feedback}&quot;
-                                  </p>
+                        <React.Fragment key={b.id}>
+                          <tr
+                            onClick={() => setExpandedBookingId(isExpanded ? null : b.id)}
+                            className={`cursor-pointer transition-colors tap-target ${
+                              isExpanded
+                                ? 'bg-teal-50/70'
+                                : 'hover:bg-neutral-50/80'
+                            }`}
+                          >
+                            {/* 1. Time Slot */}
+                            <td className="py-4 px-4 font-mono font-bold text-teal-950 whitespace-nowrap">
+                              <div className="flex items-center gap-2">
+                                {isExpanded ? (
+                                  <ChevronDown className="h-4 w-4 text-teal-700 shrink-0 stroke-[2.5]" />
+                                ) : (
+                                  <ChevronRight className="h-4 w-4 text-neutral-400 shrink-0 stroke-[2.5]" />
                                 )}
+                                <span>{b.appointment_time}</span>
                               </div>
-                            ) : b.status === 'dropped_off' || b.status === 'en_route_next' ? (
-                              <span className="text-[11px] text-neutral-400 italic">
-                                Awaiting passenger review
-                              </span>
-                            ) : (
-                              <span className="text-[11px] text-neutral-300">
-                                In Progress
-                              </span>
-                            )}
-                          </td>
+                            </td>
 
-                          {/* Approval Actions */}
-                          <td className="py-4 px-4 text-right whitespace-nowrap">
-                            {isPending ? (
-                              <div className="flex items-center justify-end gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => approveBooking(b.id)}
-                                  className="px-3 py-1.5 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-extrabold text-xs flex items-center gap-1 shadow-sm tap-target"
-                                >
-                                  <Check className="h-3.5 w-3.5" />
-                                  Approve
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => declineBooking(b.id)}
-                                  className="px-2.5 py-1.5 rounded-xl border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-100 font-bold text-xs tap-target"
-                                >
-                                  <X className="h-3.5 w-3.5" />
-                                </button>
-                              </div>
-                            ) : (
-                              <span className="text-xs font-bold text-neutral-400">
-                                Assigned WVV 4108
-                              </span>
-                            )}
-                          </td>
-                        </tr>
+                            {/* 2. Date */}
+                            <td className="py-4 px-4 font-semibold text-neutral-700 whitespace-nowrap">
+                              {formattedDate}
+                            </td>
+
+                            {/* 3. Name */}
+                            <td className="py-4 px-4 whitespace-nowrap">
+                              <span className="font-extrabold text-neutral-900">{b.passenger_name}</span>
+                            </td>
+
+                            {/* 4. Time Pickup */}
+                            <td className="py-4 px-4 font-mono font-semibold text-neutral-700 whitespace-nowrap">
+                              {timePickup}
+                            </td>
+
+                            {/* 5. Time Drop Off */}
+                            <td className="py-4 px-4 font-mono font-semibold text-neutral-700 whitespace-nowrap">
+                              {timeDropOff}
+                            </td>
+
+                            {/* 6. Approval Action */}
+                            <td className="py-4 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                              {isPending ? (
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => approveBooking(b.id)}
+                                    className="px-3.5 py-1.5 rounded-xl bg-teal-800 hover:bg-teal-900 text-white font-black text-xs flex items-center gap-1 shadow-sm tap-target transition-all active:scale-95"
+                                  >
+                                    <Check className="h-3.5 w-3.5" />
+                                    Approve
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => declineBooking(b.id)}
+                                    className="px-2.5 py-1.5 rounded-xl border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-100 font-bold text-xs tap-target transition-all active:scale-95"
+                                    title="Decline"
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                  b.status === 'approved'
+                                    ? 'bg-teal-100 text-teal-900 border border-teal-300'
+                                    : b.status === 'en_route_pickup' || b.status === 'picked_up' || b.status === 'en_route_hospital'
+                                    ? 'bg-teal-900 text-white'
+                                    : b.status === 'dropped_off' || b.status === 'en_route_next'
+                                    ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                    : 'bg-red-100 text-red-900'
+                                }`}>
+                                  {b.status.replace(/_/g, ' ')}
+                                </span>
+                              )}
+                            </td>
+                          </tr>
+
+                          {/* EXPANDED RECORD DETAILS */}
+                          {isExpanded && (
+                            <tr className="bg-neutral-50/80">
+                              <td colSpan={6} className="p-4 sm:p-5 border-t border-neutral-200">
+                                <div className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-3.5 shadow-xs">
+                                  <div className="flex items-center justify-between pb-2.5 border-b border-neutral-100">
+                                    <span className="text-xs font-black uppercase tracking-wider text-teal-900">
+                                      Booking Manifest Details · {b.id}
+                                    </span>
+                                    <span className="font-mono text-xs font-bold text-neutral-500">
+                                      OKU ID: {b.oku_id}
+                                    </span>
+                                  </div>
+
+                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                                    {/* Pickup & Destination */}
+                                    <div className="space-y-2.5">
+                                      <div>
+                                        <span className="text-[10px] font-extrabold uppercase text-emerald-800 tracking-wider flex items-center gap-1">
+                                          <MapPin className="h-3.5 w-3.5" />
+                                          Pickup Address
+                                        </span>
+                                        <p className="font-bold text-neutral-900 mt-0.5 leading-snug">
+                                          {b.pickup_address}
+                                        </p>
+                                      </div>
+
+                                      <div className="pt-2 border-t border-neutral-100">
+                                        <span className="text-[10px] font-extrabold uppercase text-cyan-900 tracking-wider flex items-center gap-1">
+                                          <Building2 className="h-3.5 w-3.5" />
+                                          Destination
+                                        </span>
+                                        <p className="font-bold text-neutral-900 mt-0.5 leading-snug">
+                                          {b.hospital_name}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Contact & Seats */}
+                                    <div className="space-y-2.5">
+                                      <div>
+                                        <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
+                                          Contact Phone
+                                        </span>
+                                        <p className="font-mono font-bold text-neutral-900 mt-0.5">
+                                          {b.phone}
+                                        </p>
+                                      </div>
+
+                                      <div className="pt-2 border-t border-neutral-100">
+                                        <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
+                                          Allocated Seat(s)
+                                        </span>
+                                        <p className="font-mono font-bold text-teal-900 mt-0.5 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 inline-block">
+                                          {b.assigned_space}
+                                        </p>
+                                      </div>
+
+                                      <div className="pt-2 border-t border-neutral-100">
+                                        <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
+                                          Mobility Profile
+                                        </span>
+                                        <p className="font-bold text-neutral-800 mt-0.5">
+                                          {b.mobility_type}
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    {/* Timestamps, Operator & Rating */}
+                                    <div className="space-y-2.5">
+                                      <div>
+                                        <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
+                                          Assigned Operator & Van
+                                        </span>
+                                        <p className="font-bold text-neutral-900 mt-0.5">
+                                          {b.assigned_driver} · <span className="font-mono font-bold">{b.assigned_vehicle.plate}</span>
+                                        </p>
+                                      </div>
+
+                                      {/* Passenger Rating if available */}
+                                      {b.rating && (
+                                        <div className="pt-2 border-t border-neutral-100 space-y-1">
+                                          <span className="text-[10px] font-extrabold uppercase text-amber-700 tracking-wider block">
+                                            Beneficiary Review
+                                          </span>
+                                          <div className="flex items-center gap-1 text-amber-500">
+                                            {[1, 2, 3, 4, 5].map((s) => (
+                                              <Star
+                                                key={s}
+                                                className={`h-3 w-3 ${
+                                                  s <= b.rating! ? 'fill-amber-400 text-amber-500' : 'text-neutral-300'
+                                                }`}
+                                              />
+                                            ))}
+                                            <span className="text-xs font-black text-neutral-900 ml-1">
+                                              {b.rating}/5
+                                            </span>
+                                          </div>
+                                          {b.feedback && (
+                                            <p className="text-[11px] text-neutral-600 italic leading-snug">
+                                              &quot;{b.feedback}&quot;
+                                            </p>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       );
                     })}
                   </tbody>

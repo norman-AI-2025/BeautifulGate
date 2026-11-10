@@ -42,7 +42,7 @@ interface AppContextType {
   // Booking actions
   createBooking: (data: {
     appointment_time: string;
-    assigned_space: AssignedSpace;
+    assigned_space: AssignedSpace | string;
     pickup_address: string;
     hospital_name: string;
     clinic_department: string;
@@ -252,7 +252,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Create Transit Booking
   const createBooking = useCallback((data: {
     appointment_time: string;
-    assigned_space: AssignedSpace;
+    assigned_space: AssignedSpace | string;
     pickup_address: string;
     hospital_name: string;
     clinic_department: string;

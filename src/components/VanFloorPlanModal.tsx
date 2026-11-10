@@ -50,7 +50,8 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
 }) => {
   const { currentUser, createBooking } = useApp();
 
-  const [selectedSeat, setSelectedSeat] = useState<AssignedSpace | null>(null);
+  // USER SPEC: "each booking can book up to 2 seats"
+  const [selectedSeats, setSelectedSeats] = useState<AssignedSpace[]>([]);
 
   // USER SPEC: Pickup address automatically filled with account information
   const defaultAccountPickup = currentUser?.address || 'No. 18, Jalan SS 2/19, 47300 Petaling Jaya, Selangor';
@@ -116,17 +117,26 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Occupied spaces
+  // Occupied spaces (split commas in case previous booking booked 2 seats)
   const occupiedSpaces = new Set(
     existingBookingsForSlot
       .filter(b => b.status !== 'declined')
-      .map(b => b.assigned_space)
+      .flatMap(b => b.assigned_space ? b.assigned_space.split(',').map(s => s.trim()) : [])
   );
 
+  // USER SPEC: "each booking can book up to 2 seats"
   const handleSeatClick = (seat: AssignedSpace) => {
     if (occupiedSpaces.has(seat)) return;
-    setSelectedSeat(seat);
     setErrorMsg('');
+    if (selectedSeats.includes(seat)) {
+      setSelectedSeats(prev => prev.filter(s => s !== seat));
+    } else {
+      if (selectedSeats.length >= 2) {
+        setSelectedSeats([selectedSeats[1], seat]);
+      } else {
+        setSelectedSeats(prev => [...prev, seat]);
+      }
+    }
   };
 
   const handleSelectDestination = (item: GeocodeItem) => {
@@ -143,8 +153,8 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSeat) {
-      setErrorMsg('Please select a seat icon on the van plan.');
+    if (selectedSeats.length === 0) {
+      setErrorMsg('Please select at least 1 seat on the van plan (up to 2 seats).');
       return;
     }
     if (!pickupAddress.trim()) {
@@ -159,7 +169,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
     const newBooking = createBooking({
       appointment_time: selectedTimeSlot,
       date: selectedDay,
-      assigned_space: selectedSeat,
+      assigned_space: selectedSeats.join(', ') as AssignedSpace,
       pickup_address: pickupAddress,
       hospital_name: destQuery.trim(),
       clinic_department: 'Hospital Accessible Transit',
@@ -260,7 +270,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                 {(() => {
                   const spaceName: AssignedSpace = 'Row 1: Front Passenger Seat';
                   const isOccupied = occupiedSpaces.has(spaceName);
-                  const isSelected = selectedSeat === spaceName;
+                  const isSelected = selectedSeats.includes(spaceName);
 
                   return (
                     <button
@@ -286,7 +296,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
               <div className="mb-2 grid grid-cols-4 gap-1.5 px-0.5">
                 {(['Row 2: Passenger Seat 1', 'Row 2: Passenger Seat 2', 'Row 2: Passenger Seat 3', 'Row 2: Passenger Seat 4'] as AssignedSpace[]).map((spaceName) => {
                   const isOccupied = occupiedSpaces.has(spaceName);
-                  const isSelected = selectedSeat === spaceName;
+                  const isSelected = selectedSeats.includes(spaceName);
 
                   return (
                     <button
@@ -313,7 +323,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
               <div className="grid grid-cols-2 gap-2.5 px-1 pt-1 border-t border-dashed border-neutral-300">
                 {(['Row 3: Wheelchair Bay 1', 'Row 3: Wheelchair Bay 2'] as AssignedSpace[]).map((spaceName) => {
                   const isOccupied = occupiedSpaces.has(spaceName);
-                  const isSelected = selectedSeat === spaceName;
+                  const isSelected = selectedSeats.includes(spaceName);
 
                   return (
                     <button
@@ -344,13 +354,23 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
               </div>
             </div>
 
-            {selectedSeat ? (
-              <span className="mt-2 text-xs font-bold text-teal-900 bg-teal-50 border border-teal-300 px-3 py-0.5 rounded-full">
-                Selected: {selectedSeat}
-              </span>
+            {selectedSeats.length > 0 ? (
+              <div className="mt-2.5 flex flex-wrap items-center justify-center gap-1.5">
+                <span className="text-[11px] font-bold text-neutral-600">
+                  Seats ({selectedSeats.length}/2):
+                </span>
+                {selectedSeats.map((seat) => (
+                  <span
+                    key={seat}
+                    className="text-[11px] font-mono font-black text-white bg-teal-900 border border-teal-950 px-2.5 py-0.5 rounded-lg shadow-xs"
+                  >
+                    {seat}
+                  </span>
+                ))}
+              </div>
             ) : (
-              <span className="mt-2 text-[11px] text-neutral-400">
-                Select an armchair or wheelchair bay icon
+              <span className="mt-2 text-[11px] font-medium text-neutral-500">
+                Tap on up to 2 available seats or wheelchair bays
               </span>
             )}
           </div>
@@ -486,14 +506,14 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
           <div className="pt-2">
             <button
               type="submit"
-              disabled={!selectedSeat || !destQuery.trim()}
+              disabled={selectedSeats.length === 0 || !destQuery.trim()}
               className={`w-full py-3 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 shadow-md tap-target transition-all ${
-                !selectedSeat || !destQuery.trim()
+                selectedSeats.length === 0 || !destQuery.trim()
                   ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed shadow-none'
                   : 'bg-teal-800 hover:bg-teal-900 text-white'
               }`}
             >
-              Confirm Van Booking · {selectedTimeSlot}
+              Confirm Van Booking ({selectedSeats.length} {selectedSeats.length === 1 ? 'Seat' : 'Seats'}) · {selectedTimeSlot}
             </button>
           </div>
         </form>

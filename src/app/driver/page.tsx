@@ -52,10 +52,12 @@ interface TimeSlotGroup {
 export default function DriverPage() {
   const { bookings, updateBookingStatus } = useApp();
 
-  // Active bookings assigned to Driver Johan that are not declined
+  // USER SPEC: "for the driver , it will only receive the task list after the bookings are approved by supervisor"
   const johanBookings = useMemo(() => {
     return bookings.filter(b => 
-      b.status !== 'declined' && (b.assigned_driver === 'Johan bin Ariffin' || !b.assigned_driver)
+      b.status !== 'pending' && 
+      b.status !== 'declined' && 
+      (b.assigned_driver === 'Johan bin Ariffin' || !b.assigned_driver)
     );
   }, [bookings]);
 

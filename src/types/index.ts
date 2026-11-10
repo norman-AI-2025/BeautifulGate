@@ -58,7 +58,7 @@ export interface TransitBooking {
   clinic_department: string;
   appointment_time: string; // e.g. "09:30 AM" or ISO timestamp
   mobility_type: MobilityType;
-  assigned_space: AssignedSpace;
+  assigned_space: AssignedSpace | string;
   assigned_driver: string;
   assigned_vehicle: VehicleSpec;
   status: TransitStatus;
