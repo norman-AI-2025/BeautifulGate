@@ -314,6 +314,12 @@ export const INITIAL_TRANSIT_BOOKINGS: TransitBooking[] = [
     assigned_vehicle: DEFAULT_VEHICLE,
     status: 'approved',
     date: 'Tuesday, 10 Nov 2026',
+    donation: {
+      amount: 10,
+      method: 'qr',
+      status: 'paid',
+      timestamp: '2026-11-10T07:48:00+08:00',
+    },
     timestamps: {
       requested: '2026-11-10T07:15:00+08:00',
       approved: '2026-11-10T07:45:00+08:00',
@@ -336,6 +342,12 @@ export const INITIAL_TRANSIT_BOOKINGS: TransitBooking[] = [
     assigned_vehicle: DEFAULT_VEHICLE,
     status: 'approved',
     date: 'Tuesday, 10 Nov 2026',
+    donation: {
+      amount: 20,
+      method: 'cash',
+      status: 'pledged',
+      timestamp: '2026-11-10T08:05:00+08:00',
+    },
     timestamps: {
       requested: '2026-11-10T07:30:00+08:00',
       approved: '2026-11-10T08:00:00+08:00',
@@ -380,6 +392,12 @@ export const INITIAL_TRANSIT_BOOKINGS: TransitBooking[] = [
     assigned_vehicle: DEFAULT_VEHICLE,
     status: 'approved',
     date: 'Tuesday, 10 Nov 2026',
+    donation: {
+      amount: 50,
+      method: 'qr',
+      status: 'paid',
+      timestamp: '2026-11-10T09:05:00+08:00',
+    },
     timestamps: {
       requested: '2026-11-10T08:45:00+08:00',
       approved: '2026-11-10T09:00:00+08:00',
@@ -423,6 +441,12 @@ export const INITIAL_TRANSIT_BOOKINGS: TransitBooking[] = [
     assigned_vehicle: DEFAULT_VEHICLE,
     status: 'dropped_off',
     date: 'Tuesday, 10 Nov 2026',
+    donation: {
+      amount: 15,
+      method: 'cash',
+      status: 'paid',
+      timestamp: '2026-11-10T08:10:00+08:00',
+    },
     rating: 5,
     feedback: 'Driver Johan arrived punctually and was very gentle securing my wheelchair clamps and rear hydraulic lift. Very grateful to Beautiful Gate!',
     rated_at: '2026-11-10T08:20:00+08:00',

@@ -59,6 +59,8 @@ interface AppContextType {
   declineBooking: (bookingId: string) => void;
   rateBooking: (bookingId: string, rating: number, feedback?: string) => void;
   recordDonation: (bookingId: string, amount: number, method: 'cash' | 'qr') => void;
+  verifyDonation: (bookingId: string) => void;
+  exportDonationsCSV: () => void;
   // Work log actions
   addWorkLog: (units: number, cardId: string, workerId?: string) => CardWorkLog;
   overrideWorkLog: (logId: string, units: number) => void;
@@ -96,7 +98,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const storedBookings = localStorage.getItem(STORAGE_KEYS.BOOKINGS);
       if (storedBookings) {
-        setBookings(JSON.parse(storedBookings));
+        const parsed: TransitBooking[] = JSON.parse(storedBookings);
+        // Ensure mock donations are merged if stored items don't have them
+        const merged = parsed.map(b => {
+          if (!b.donation) {
+            const initialMatch = INITIAL_TRANSIT_BOOKINGS.find(ib => ib.id === b.id);
+            if (initialMatch?.donation) {
+              return { ...b, donation: initialMatch.donation };
+            }
+          }
+          return b;
+        });
+        setBookings(merged);
       } else {
         localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(INITIAL_TRANSIT_BOOKINGS));
       }
@@ -375,7 +388,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           donation: {
             amount,
             method,
-            status: 'paid' as const,
+            status: method === 'qr' ? ('paid' as const) : ('pledged' as const),
             timestamp: nowIso,
           },
         };
@@ -384,6 +397,74 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
     saveBookings(updated);
   }, [bookings, saveBookings]);
+
+  // Supervisor verifies cash donation handed over by driver
+  const verifyDonation = useCallback((bookingId: string) => {
+    const updated = bookings.map(b => {
+      if (b.id === bookingId && b.donation) {
+        return {
+          ...b,
+          donation: {
+            ...b.donation,
+            status: 'paid' as const,
+          },
+        };
+      }
+      return b;
+    });
+    saveBookings(updated);
+  }, [bookings, saveBookings]);
+
+  // Export Donation CSV for financial audit and tax reporting
+  const exportDonationsCSV = useCallback(() => {
+    const donatedBookings = bookings.filter(b => Boolean(b.donation));
+    const rows = [
+      [
+        'Reference ID',
+        'Date',
+        'Time Slot',
+        'Beneficiary Name',
+        'OKU Number',
+        'Contact Phone',
+        'Destination Hospital',
+        'Assigned Driver',
+        'Vehicle Plate',
+        'Amount (MYR)',
+        'Payment Method',
+        'Reconciliation Status',
+        'Donation Timestamp'
+      ],
+    ];
+
+    donatedBookings.forEach(b => {
+      const d = b.donation!;
+      rows.push([
+        `"BG-TR-${b.id.toUpperCase()}"`,
+        `"${b.date}"`,
+        `"${b.appointment_time}"`,
+        `"${b.passenger_name}"`,
+        `"${b.oku_id}"`,
+        `"${b.phone}"`,
+        `"${b.hospital_name}"`,
+        `"${b.assigned_driver}"`,
+        `"${b.assigned_vehicle.plate}"`,
+        `"${d.amount.toFixed(2)}"`,
+        `"${d.method === 'cash' ? 'Cash to Driver' : 'DuitNow QR'}"`,
+        `"${d.status === 'paid' ? 'Paid / Reconciled' : 'Pledged to Driver'}"`,
+        `"${d.timestamp}"`
+      ]);
+    });
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    const today = getTodayDateString();
+    link.setAttribute('download', `BeautifulGate_Transit_Donations_${today}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [bookings]);
 
   // Add work log
   const addWorkLog = useCallback((units: number, cardId: string, workerId?: string): CardWorkLog => {
@@ -537,6 +618,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     declineBooking,
     rateBooking,
     recordDonation,
+    verifyDonation,
+    exportDonationsCSV,
     addWorkLog,
     overrideWorkLog,
     getArtisanStats,
@@ -558,6 +641,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     declineBooking,
     rateBooking,
     recordDonation,
+    verifyDonation,
+    exportDonationsCSV,
     addWorkLog,
     overrideWorkLog,
     getArtisanStats,

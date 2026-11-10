@@ -33,7 +33,11 @@ import {
   ArrowRight,
   RotateCcw,
   CheckCircle2,
-  Play
+  Play,
+  HeartHandshake,
+  Banknote,
+  QrCode,
+  Receipt
 } from 'lucide-react';
 import { TransitBooking, ArtisanSummary, TransitStatus } from '@/types';
 
@@ -47,11 +51,14 @@ export default function AdminPage() {
     declineBooking, 
     updateBookingStatus,
     getArtisanStats, 
-    exportPayrollCSV 
+    exportPayrollCSV,
+    verifyDonation,
+    exportDonationsCSV
   } = useApp();
   const { t } = useLanguage();
 
-  const [activeTab, setActiveTab] = useState<'dispatch' | 'artisans' | 'analytics'>('dispatch');
+  const [activeTab, setActiveTab] = useState<'dispatch' | 'artisans' | 'analytics' | 'donations'>('dispatch');
+  const [donationFilter, setDonationFilter] = useState<'all' | 'cash' | 'qr' | 'pending_cash' | 'reconciled'>('all');
 
   // Dispatch table filter tab
   const [dispatchFilter, setDispatchFilter] = useState<'all' | 'pending' | 'active' | 'completed'>('all');
@@ -78,6 +85,29 @@ export default function AdminPage() {
   const completedCount = bookings.filter(b => 
     ['dropped_off', 'en_route_next'].includes(b.status)
   ).length;
+
+  // Voluntary Transit Donations metrics for Supervisor Audit
+  const donatedBookings = useMemo(() => bookings.filter(b => Boolean(b.donation)), [bookings]);
+  const totalDonationsAmount = useMemo(() => donatedBookings.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [donatedBookings]);
+  const donationsCount = donatedBookings.length;
+  const cashDonations = useMemo(() => donatedBookings.filter(b => b.donation?.method === 'cash'), [donatedBookings]);
+  const cashTotal = useMemo(() => cashDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [cashDonations]);
+  const qrDonations = useMemo(() => donatedBookings.filter(b => b.donation?.method === 'qr'), [donatedBookings]);
+  const qrTotal = useMemo(() => qrDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [qrDonations]);
+  const pendingCashDonations = useMemo(() => cashDonations.filter(b => b.donation?.status === 'pledged'), [cashDonations]);
+  const pendingCashTotal = useMemo(() => pendingCashDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [pendingCashDonations]);
+  const reconciledDonations = useMemo(() => donatedBookings.filter(b => b.donation?.status === 'paid'), [donatedBookings]);
+
+  // Filtered donations for dedicated Donation Tracker tab
+  const filteredDonations = useMemo(() => {
+    return donatedBookings.filter(b => {
+      if (donationFilter === 'cash') return b.donation?.method === 'cash';
+      if (donationFilter === 'qr') return b.donation?.method === 'qr';
+      if (donationFilter === 'pending_cash') return b.donation?.method === 'cash' && b.donation?.status === 'pledged';
+      if (donationFilter === 'reconciled') return b.donation?.status === 'paid';
+      return true;
+    });
+  }, [donatedBookings, donationFilter]);
 
   // Active trips available for dispatch focus
   const activeDispatchesList = useMemo(() => {
@@ -300,6 +330,25 @@ export default function AdminPage() {
                   <BarChart3 className="h-4 w-4" />
                   {t('admin.tabAnalytics', 'Analytics')}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('donations')}
+                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
+                    activeTab === 'donations'
+                      ? 'bg-[#F37021] text-white font-black shadow-sm'
+                      : 'text-neutral-300 hover:text-white'
+                  }`}
+                >
+                  <HeartHandshake className="h-4 w-4" />
+                  {t('admin.tabDonations', 'Donation Tracker')}
+                  {donationsCount > 0 && (
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-black ${
+                      activeTab === 'donations' ? 'bg-white text-[#F37021]' : 'bg-white/20 text-white'
+                    }`}>
+                      {donationsCount}
+                    </span>
+                  )}
+                </button>
               </div>
             </div>
           </div>
@@ -396,14 +445,30 @@ export default function AdminPage() {
                     <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
                       {currentActiveDispatch.passenger_name}
                     </h3>
-                    <div className="flex items-center gap-2 pt-1 text-xs">
-                      <Phone className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                      <a
-                        href={`tel:${currentActiveDispatch.phone}`}
-                        className="font-mono font-bold text-white hover:text-[#F37021] transition-colors"
-                      >
-                        {currentActiveDispatch.phone}
-                      </a>
+                    <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <Phone className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                        <a
+                          href={`tel:${currentActiveDispatch.phone}`}
+                          className="font-mono font-bold text-white hover:text-[#F37021] transition-colors"
+                        >
+                          {currentActiveDispatch.phone}
+                        </a>
+                      </div>
+
+                      {currentActiveDispatch.donation && (
+                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold">
+                          <HeartHandshake className="h-3.5 w-3.5 text-emerald-400" />
+                          <span>
+                            RM {currentActiveDispatch.donation.amount.toFixed(2)} ({currentActiveDispatch.donation.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')})
+                          </span>
+                          {currentActiveDispatch.donation.method === 'cash' && currentActiveDispatch.donation.status === 'pledged' && (
+                            <span className="text-[10px] text-amber-300 font-semibold bg-amber-500/30 px-1.5 py-0.2 rounded ml-0.5">
+                              {t('admin.awaitingCashHandover', 'Pending Remittance')}
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -508,7 +573,7 @@ export default function AdminPage() {
             )}
 
             {/* Metric Counters */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
               <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs">
                 <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
                   {t('admin.todayTransits', 'Total Bookings')}
@@ -542,6 +607,25 @@ export default function AdminPage() {
                 </span>
                 <p className="text-2xl font-black text-emerald-950 mt-1 font-mono">
                   {completedCount}
+                </p>
+              </div>
+
+              <div 
+                onClick={() => setActiveTab('donations')}
+                className="rounded-2xl border-2 border-[#F37021] bg-gradient-to-br from-orange-50 to-amber-50 p-4 shadow-xs cursor-pointer hover:shadow-md transition-all group col-span-2 lg:col-span-1"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-orange-950 uppercase tracking-wider flex items-center gap-1">
+                    <HeartHandshake className="h-3.5 w-3.5 text-[#F37021]" />
+                    {t('admin.tabDonations', 'Donation Tracker')}
+                  </span>
+                  <ChevronRight className="h-3.5 w-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
+                </div>
+                <p className="text-2xl font-black text-[#D9530F] mt-1 font-mono">
+                  RM {totalDonationsAmount.toFixed(2)}
+                </p>
+                <p className="text-[10px] font-semibold text-neutral-600 mt-0.5 truncate">
+                  {donationsCount} {t('admin.contributions', 'contributions')} ({cashDonations.length} {t('donation.cashToDriver', 'Cash')}, {qrDonations.length} QR)
                 </p>
               </div>
             </div>
@@ -654,7 +738,22 @@ export default function AdminPage() {
 
                             {/* 3. Name */}
                             <td className="py-4 px-4 whitespace-nowrap">
-                              <span className="font-extrabold text-neutral-900">{b.passenger_name}</span>
+                              <div className="flex items-center gap-2">
+                                <span className="font-extrabold text-neutral-900">{b.passenger_name}</span>
+                                {b.donation && (
+                                  <span
+                                    title={`Donation: RM ${b.donation.amount.toFixed(2)} via ${b.donation.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')}`}
+                                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+                                      b.donation.status === 'paid'
+                                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                        : 'bg-amber-50 text-amber-800 border border-amber-200'
+                                    }`}
+                                  >
+                                    <HeartHandshake className="h-3 w-3 text-[#F37021]" />
+                                    RM {b.donation.amount.toFixed(0)}
+                                  </span>
+                                )}
+                              </div>
                             </td>
 
                             {/* 4. Time Pickup */}
@@ -718,7 +817,7 @@ export default function AdminPage() {
                                     </span>
                                   </div>
 
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
                                     {/* Pickup & Destination */}
                                     <div className="space-y-2.5">
                                       <div>
@@ -808,6 +907,71 @@ export default function AdminPage() {
                                             </p>
                                           )}
                                         </div>
+                                      )}
+                                    </div>
+
+                                    {/* Voluntary Transit Donation Tracking & Cash Reconciliation */}
+                                    <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-3 space-y-2.5">
+                                      <div className="flex items-center justify-between pb-1.5 border-b border-neutral-200">
+                                        <span className="text-[10px] font-extrabold uppercase text-neutral-600 tracking-wider flex items-center gap-1">
+                                          <HeartHandshake className="h-3.5 w-3.5 text-[#F37021]" />
+                                          {t('admin.transitDonation', 'Transit Donation')}
+                                        </span>
+                                        {b.donation ? (
+                                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                            b.donation.status === 'paid'
+                                              ? 'bg-emerald-100 text-emerald-800'
+                                              : 'bg-amber-100 text-amber-800'
+                                          }`}>
+                                            {b.donation.status === 'paid'
+                                              ? (b.donation.method === 'cash' ? t('admin.cashReconciled', 'Cash Reconciled') : t('donation.donated', 'Paid'))
+                                              : t('admin.awaitingCashHandover', 'Pending Remittance')}
+                                          </span>
+                                        ) : (
+                                          <span className="text-[10px] text-neutral-400">
+                                            {t('admin.noDonation', 'No Donation')}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {b.donation ? (
+                                        <div className="space-y-2">
+                                          <div className="flex items-baseline justify-between">
+                                            <span className="font-mono text-base font-black text-neutral-900">
+                                              RM {b.donation.amount.toFixed(2)}
+                                            </span>
+                                            <span className="text-[11px] font-bold text-neutral-600">
+                                              {b.donation.method === 'cash' ? t('donation.cashOption', 'Pay Cash to Driver') : t('donation.qrOption', 'DuitNow QR')}
+                                            </span>
+                                          </div>
+                                          <p className="text-[10px] text-neutral-500">
+                                            Ref: <span className="font-mono font-bold">BG-TR-{b.id.toUpperCase()}</span>
+                                          </p>
+
+                                          {/* Supervisor Action to Reconcile Driver Cash Remittance */}
+                                          {b.donation.method === 'cash' && b.donation.status === 'pledged' ? (
+                                            <button
+                                              type="button"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                verifyDonation(b.id);
+                                              }}
+                                              className="w-full mt-1.5 py-1.5 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
+                                            >
+                                              <CheckCircle2 className="h-3.5 w-3.5" />
+                                              {t('admin.verifyCashHandover', 'Verify Cash Reconciled')}
+                                            </button>
+                                          ) : (
+                                            <div className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold pt-1">
+                                              <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                              <span>{b.donation.method === 'cash' ? t('admin.cashReconciled', 'Cash Reconciled') : t('donation.donated', 'Paid via DuitNow QR')}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <p className="text-[11px] text-neutral-500 italic">
+                                          {t('admin.noDonationPledged', 'Passenger did not submit a voluntary donation for this trip.')}
+                                        </p>
                                       )}
                                     </div>
                                   </div>
@@ -989,6 +1153,329 @@ export default function AdminPage() {
               products={products}
               profiles={profiles}
             />
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* ================ SECTION D: DONATION TRACKER ================ */}
+        {/* ============================================================== */}
+        {activeTab === 'donations' && (
+          <div className="space-y-6">
+            {/* Header & Export CSV */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-orange-500 to-[#D9530F] text-white flex items-center justify-center shadow-sm">
+                    <HeartHandshake className="h-4 w-4" />
+                  </div>
+                  <h2 className="text-xl font-black tracking-tight text-neutral-900">
+                    {t('admin.donationTrackerTitle', 'Voluntary Transit Donations & Fuel Subsidy Tracker')}
+                  </h2>
+                </div>
+                <p className="text-xs text-neutral-500 mt-1 max-w-2xl">
+                  {t('admin.donationTrackerSubtitle', 'Audit voluntary passenger contributions, reconcile driver cash collections, and track DuitNow QR transfers for vehicle maintenance.')}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={exportDonationsCSV}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-bold shadow-sm tap-target transition-all active:scale-95"
+              >
+                <Download className="h-4 w-4" />
+                <span>{t('admin.exportDonationReport', 'Export Donation Ledger (CSV)')}</span>
+              </button>
+            </div>
+
+            {/* 4 Financial Metric Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Card 1: Total Raised */}
+              <div className="rounded-3xl border-2 border-[#F37021] bg-gradient-to-br from-orange-50 to-amber-50 p-5 shadow-xs">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-orange-950 flex items-center gap-1.5">
+                  <HeartHandshake className="h-4 w-4 text-[#F37021]" />
+                  {t('admin.totalDonationsCollected', 'Total Donations Raised')}
+                </span>
+                <p className="text-3xl font-black text-[#D9530F] mt-2 font-mono">
+                  RM {totalDonationsAmount.toFixed(2)}
+                </p>
+                <p className="text-[11px] text-neutral-600 mt-1">
+                  {donationsCount} {t('admin.contributions', 'contributions')} ({((donationsCount / (totalBookingsCount || 1)) * 100).toFixed(0)}% trip support)
+                </p>
+              </div>
+
+              {/* Card 2: Cash via Driver */}
+              <div className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-xs">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
+                  <Banknote className="h-4 w-4 text-amber-600" />
+                  {t('admin.cashViaDriver', 'Cash via Driver Johan')}
+                </span>
+                <p className="text-3xl font-black text-neutral-900 mt-2 font-mono">
+                  RM {cashTotal.toFixed(2)}
+                </p>
+                <p className="text-[11px] text-neutral-500 mt-1">
+                  {cashDonations.length} {t('admin.contributions', 'contributions')} · Handed over in cash
+                </p>
+              </div>
+
+              {/* Card 3: DuitNow QR */}
+              <div className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-xs">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
+                  <QrCode className="h-4 w-4 text-emerald-600" />
+                  {t('admin.qrTransfers', 'DuitNow QR Transfers')}
+                </span>
+                <p className="text-3xl font-black text-neutral-900 mt-2 font-mono">
+                  RM {qrTotal.toFixed(2)}
+                </p>
+                <p className="text-[11px] text-emerald-700 font-semibold mt-1">
+                  {qrDonations.length} {t('admin.contributions', 'contributions')} · Direct to Public Bank
+                </p>
+              </div>
+
+              {/* Card 4: Pending Cash Verification */}
+              <div className="rounded-3xl border-2 border-amber-300 bg-amber-50/70 p-5 shadow-xs">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                  {t('admin.pendingCashVerification', 'Pending Driver Remittance')}
+                </span>
+                <p className="text-3xl font-black text-amber-950 mt-2 font-mono">
+                  RM {pendingCashTotal.toFixed(2)}
+                </p>
+                <p className="text-[11px] text-amber-800 font-semibold mt-1">
+                  {pendingCashDonations.length} {t('admin.contributions', 'contributions')} to be reconciled
+                </p>
+              </div>
+            </div>
+
+            {/* Filter Tabs & Donation Ledger Table */}
+            <div className="rounded-3xl border border-neutral-200 bg-white shadow-xs overflow-hidden">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 border-b border-neutral-200 gap-4">
+                <div>
+                  <h3 className="text-lg font-extrabold text-neutral-900 tracking-tight flex items-center gap-2">
+                    <Receipt className="h-5 w-5 text-[#F37021]" />
+                    <span>Donation Audit Ledger</span>
+                  </h3>
+                  <p className="text-xs text-neutral-500 mt-0.5">
+                    Official record of transit contributions, reconciliation timestamps, and payment channels.
+                  </p>
+                </div>
+
+                {/* Filter Pills */}
+                <div className="flex flex-wrap items-center rounded-xl bg-neutral-100 p-1 border border-neutral-200 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setDonationFilter('all')}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
+                      donationFilter === 'all'
+                        ? 'bg-[#F37021] text-white shadow-xs font-black'
+                        : 'text-neutral-600 hover:text-black'
+                    }`}
+                  >
+                    {t('admin.filterAllDonations', 'All Donations')} ({donatedBookings.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDonationFilter('cash')}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
+                      donationFilter === 'cash'
+                        ? 'bg-amber-600 text-white shadow-xs font-black'
+                        : 'text-neutral-600 hover:text-black'
+                    }`}
+                  >
+                    {t('admin.filterCash', 'Cash')} ({cashDonations.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDonationFilter('qr')}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
+                      donationFilter === 'qr'
+                        ? 'bg-emerald-600 text-white shadow-xs font-black'
+                        : 'text-neutral-600 hover:text-black'
+                    }`}
+                  >
+                    {t('admin.filterQR', 'DuitNow QR')} ({qrDonations.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDonationFilter('pending_cash')}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
+                      donationFilter === 'pending_cash'
+                        ? 'bg-yellow-500 text-yellow-950 shadow-xs font-black'
+                        : 'text-neutral-600 hover:text-black'
+                    }`}
+                  >
+                    {t('admin.filterPendingCash', 'Pending Remittance')} ({pendingCashDonations.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDonationFilter('reconciled')}
+                    className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
+                      donationFilter === 'reconciled'
+                        ? 'bg-neutral-900 text-white shadow-xs font-black'
+                        : 'text-neutral-600 hover:text-black'
+                    }`}
+                  >
+                    {t('admin.filterReconciled', 'Reconciled')} ({reconciledDonations.length})
+                  </button>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-neutral-50/80 border-b border-neutral-200 text-neutral-600 uppercase tracking-wider font-bold">
+                    <tr>
+                      <th className="py-3.5 px-4">{t('admin.refCol', 'Reference')}</th>
+                      <th className="py-3.5 px-4">{t('admin.beneficiaryCol', 'Beneficiary')}</th>
+                      <th className="py-3.5 px-4">{t('admin.routeCol', 'Destination')}</th>
+                      <th className="py-3.5 px-4">{t('admin.driverCol', 'Assigned Driver')}</th>
+                      <th className="py-3.5 px-4">{t('admin.methodCol', 'Method')}</th>
+                      <th className="py-3.5 px-4">{t('admin.amountCol', 'Amount (MYR)')}</th>
+                      <th className="py-3.5 px-4">{t('admin.statusCol', 'Reconciliation Status')}</th>
+                      <th className="py-3.5 px-4 text-right">{t('admin.actionCol', 'Action')}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-200 bg-white">
+                    {filteredDonations.map((b) => {
+                      const d = b.donation!;
+                      const isPendingCash = d.method === 'cash' && d.status === 'pledged';
+
+                      return (
+                        <tr key={b.id} className="hover:bg-neutral-50/80 transition-colors">
+                          {/* Reference */}
+                          <td className="py-4 px-4 whitespace-nowrap">
+                            <span className="font-mono font-bold text-neutral-900">
+                              BG-TR-{b.id.toUpperCase()}
+                            </span>
+                            <span className="block text-[10px] text-neutral-400 mt-0.5">
+                              {new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · {formatBookingDate(b.date)}
+                            </span>
+                          </td>
+
+                          {/* Beneficiary */}
+                          <td className="py-4 px-4 whitespace-nowrap">
+                            <span className="font-extrabold text-neutral-900 block">
+                              {b.passenger_name}
+                            </span>
+                            <span className="font-mono text-[10px] text-neutral-500">
+                              OKU: {b.oku_id}
+                            </span>
+                          </td>
+
+                          {/* Destination */}
+                          <td className="py-4 px-4">
+                            <span className="font-bold text-neutral-900 block truncate max-w-xs">
+                              {b.hospital_name}
+                            </span>
+                            <span className="text-[10px] text-neutral-500 block">
+                              {b.appointment_time}
+                            </span>
+                          </td>
+
+                          {/* Driver & Van */}
+                          <td className="py-4 px-4 whitespace-nowrap">
+                            <span className="font-bold text-neutral-900 block">
+                              {b.assigned_driver}
+                            </span>
+                            <span className="font-mono text-[10px] text-neutral-500">
+                              {b.assigned_vehicle.plate}
+                            </span>
+                          </td>
+
+                          {/* Method */}
+                          <td className="py-4 px-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold ${
+                              d.method === 'cash'
+                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                            }`}>
+                              {d.method === 'cash' ? (
+                                <>
+                                  <Banknote className="h-3.5 w-3.5 text-amber-700" />
+                                  <span>{t('donation.cashOption', 'Pay Cash to Driver')}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <QrCode className="h-3.5 w-3.5 text-emerald-700" />
+                                  <span>{t('donation.qrOption', 'DuitNow QR')}</span>
+                                </>
+                              )}
+                            </span>
+                          </td>
+
+                          {/* Amount */}
+                          <td className="py-4 px-4 whitespace-nowrap font-mono font-black text-sm text-[#F37021]">
+                            RM {d.amount.toFixed(2)}
+                          </td>
+
+                          {/* Status */}
+                          <td className="py-4 px-4 whitespace-nowrap">
+                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              d.status === 'paid'
+                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                                : 'bg-amber-100 text-amber-900 border border-amber-300'
+                            }`}>
+                              {d.status === 'paid' ? (
+                                <>
+                                  <Check className="h-3 w-3 text-emerald-600" />
+                                  <span>{d.method === 'cash' ? t('admin.cashReconciled', 'Cash Reconciled') : t('donation.donated', 'Paid')}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Clock className="h-3 w-3 text-amber-600" />
+                                  <span>{t('admin.awaitingCashHandover', 'Pending Remittance')}</span>
+                                </>
+                              )}
+                            </span>
+                          </td>
+
+                          {/* Action */}
+                          <td className="py-4 px-4 text-right whitespace-nowrap">
+                            {isPendingCash ? (
+                              <button
+                                type="button"
+                                onClick={() => verifyDonation(b.id)}
+                                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 ml-auto shadow-xs tap-target transition-all active:scale-95"
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5" />
+                                <span>{t('admin.actionVerify', 'Verify Cash')}</span>
+                              </button>
+                            ) : (
+                              <span className="text-[11px] text-neutral-400 font-medium">
+                                Reconciled
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                    {filteredDonations.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="py-12 text-center text-neutral-400">
+                          <HeartHandshake className="mx-auto h-8 w-8 text-neutral-300 mb-2" />
+                          <p className="text-sm font-bold text-neutral-700">
+                            {t('admin.noDonationsFound', 'No donation records match the selected filter.')}
+                          </p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Tax & Financial Compliance Info Card */}
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-100/70 p-4 text-xs flex items-start gap-3">
+              <ShieldCheck className="h-5 w-5 text-[#F37021] shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span className="font-bold text-neutral-900 block">
+                  Beautiful Gate Foundation for the Disabled · Official Transit Donation & Tax Compliance
+                </span>
+                <p className="text-neutral-600 leading-relaxed">
+                  {t('donation.taxExempt', 'Beautiful Gate Foundation donations are eligible for tax exemption under Section 44(6) ITA 1967.')} All voluntary transit donations are restricted to vehicle diesel, hydraulic lift maintenance, driver allowance, and accessible transport subsidies. Driver Johan bin Ariffin remits all cash collections to Supervisor Faridah Hashim at the end of each operational shift.
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </main>
