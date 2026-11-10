@@ -1,18 +1,21 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Lock, 
+  Unlock,
   Armchair, 
   Accessibility, 
   Search, 
   MapPin, 
   Locate, 
+  ShieldCheck, 
   Check, 
   User, 
-  Phone, 
-  CreditCard 
+  CheckCircle2,
+  Building2,
+  AlertTriangle
 } from 'lucide-react';
 import { AssignedSpace, MobilityType, TransitBooking } from '@/types';
 import { useApp } from '@/context/AppContext';
@@ -26,31 +29,16 @@ interface VanFloorPlanModalProps {
   onBookingSuccess: (bookingId: string) => void;
 }
 
-const PICKUP_SUGGESTIONS = [
-  'Current Location: SS 2/19, Petaling Jaya',
-  'No. 18, Jalan SS 2/19, 47300 Petaling Jaya',
-  'Beautiful Gate Foundation, Kepong, Kuala Lumpur',
-  'Block C-04-12, PPR Taman Medan, 46000 Petaling Jaya',
-  'No. 45, Lorong Maarof, Bangsar, 59000 Kuala Lumpur',
-  '22, Jalan Bukit Segambut, 51200 Kuala Lumpur',
-  'PPR Lembah Subang 1, 47301 Petaling Jaya',
-  'Seksyen 14, 46100 Petaling Jaya, Selangor',
-  'Taman Megah, 47301 Petaling Jaya',
-  'PPR Kampung Muhibbah, Bukit Jalil, KL',
-];
-
-const DESTINATION_SUGGESTIONS = [
-  "Hospital Tuanku Ja'afar (HTJ), Seremban",
-  'Hospital Kuala Lumpur (HKL), Jalan Pahang',
-  'University Malaya Medical Centre (PPUM), Petaling Jaya',
-  'Hospital Sultan Idris Shah, Serdang',
-  'Hospital Selayang, Lebuhraya Selayang-Kepong',
-  'Hospital Sungai Buloh, Selangor',
-  'Hospital Shah Alam, Seksyen 7',
-  'National Heart Institute (IJN), Kuala Lumpur',
-  'Hospital Ampang, Pandan Mewah',
-  'Hospital Tengku Ampuan Rahimah (HTAR), Klang',
-];
+interface GeocodeItem {
+  id: string;
+  name: string;
+  display_name: string;
+  lat: number;
+  lon: number;
+  country_code: string;
+  state: string;
+  is_verified_hospital: boolean;
+}
 
 export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
   isOpen,
@@ -64,18 +52,28 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
 
   const [selectedSeat, setSelectedSeat] = useState<AssignedSpace | null>(null);
 
-  // Address search states & suggestion dropdowns
-  const [pickupAddress, setPickupAddress] = useState(
-    'No. 18, Jalan SS 2/19, 47300 Petaling Jaya'
-  );
-  const [pickupQuery, setPickupQuery] = useState(pickupAddress);
-  const [showPickupSuggestions, setShowPickupSuggestions] = useState(false);
+  // USER SPEC: Pickup address automatically filled with account information
+  const defaultAccountPickup = currentUser?.address || 'No. 18, Jalan SS 2/19, 47300 Petaling Jaya, Selangor';
+  const [pickupAddress, setPickupAddress] = useState(defaultAccountPickup);
+  const [isEditingPickup, setIsEditingPickup] = useState(false);
 
-  const [destination, setDestination] = useState(
-    "Hospital Tuanku Ja'afar (HTJ), Seremban"
-  );
-  const [destQuery, setDestQuery] = useState(destination);
-  const [showDestSuggestions, setShowDestSuggestions] = useState(false);
+  // USER SPEC: Destination (countrycodes=my) real-time verified Malaysian locations with lock-in
+  const [destQuery, setDestQuery] = useState("Hospital Tuanku Ja'afar (HTJ)");
+  const [destSuggestions, setDestSuggestions] = useState<GeocodeItem[]>([]);
+  const [isLoadingGeo, setIsLoadingGeo] = useState(false);
+  const [showDestDropdown, setShowDestDropdown] = useState(false);
+
+  // Locked-in verified Malaysian destination details to prevent invalid or out-of-country bookings
+  const [lockedDestination, setLockedDestination] = useState<GeocodeItem | null>({
+    id: 'my-hosp-htj',
+    name: "Hospital Tuanku Ja'afar (HTJ)",
+    display_name: "Hospital Tuanku Ja'afar, Jalan Rasah, 70300 Seremban, Negeri Sembilan, Malaysia",
+    lat: 2.7167,
+    lon: 101.9422,
+    country_code: 'my',
+    state: 'Negeri Sembilan',
+    is_verified_hospital: true,
+  });
 
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -85,9 +83,43 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
   const phone = currentUser?.phone || '+60 12-491 8832';
   const mobilityType = currentUser?.mobility_type || 'Manual Wheelchair';
 
+  // Synchronize when current user changes
+  useEffect(() => {
+    if (currentUser?.address) {
+      setPickupAddress(currentUser.address);
+    }
+  }, [currentUser]);
+
+  // Debounced search for destination using countrycodes=my API
+  useEffect(() => {
+    if (!destQuery || destQuery.length < 2 || lockedDestination) {
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setIsLoadingGeo(true);
+      try {
+        const res = await fetch(`/api/geocode?q=${encodeURIComponent(destQuery)}`);
+        if (res.ok) {
+          const data: GeocodeItem[] = await res.json();
+          // Filter strictly country_code === 'my' to prevent invalid/out-of-country bookings
+          const myOnly = data.filter(d => d.country_code.toLowerCase() === 'my');
+          setDestSuggestions(myOnly);
+          setShowDestDropdown(true);
+        }
+      } catch (e) {
+        console.warn('Geocode fetch error', e);
+      } finally {
+        setIsLoadingGeo(false);
+      }
+    }, 280);
+
+    return () => clearTimeout(timer);
+  }, [destQuery, lockedDestination]);
+
   if (!isOpen) return null;
 
-  // Calculate occupied spaces for this time slot
+  // Occupied spaces
   const occupiedSpaces = new Set(
     existingBookingsForSlot
       .filter(b => b.status !== 'declined')
@@ -100,45 +132,36 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
     setErrorMsg('');
   };
 
-  const filteredPickups = PICKUP_SUGGESTIONS.filter(item =>
-    item.toLowerCase().includes(pickupQuery.toLowerCase())
-  );
-
-  const filteredDests = DESTINATION_SUGGESTIONS.filter(item =>
-    item.toLowerCase().includes(destQuery.toLowerCase())
-  );
-
-  const handleSelectPickup = (val: string) => {
-    setPickupAddress(val);
-    setPickupQuery(val);
-    setShowPickupSuggestions(false);
+  // Lock in official location name and coordinates
+  const handleSelectDestination = (item: GeocodeItem) => {
+    setLockedDestination(item);
+    setDestQuery(item.name);
+    setShowDestDropdown(false);
+    setErrorMsg('');
   };
 
-  const handleSelectDest = (val: string) => {
-    setDestination(val);
-    setDestQuery(val);
-    setShowDestSuggestions(false);
+  const handleUnlockDestination = () => {
+    setLockedDestination(null);
+    setShowDestDropdown(true);
   };
 
   const handleAutoLocate = () => {
-    const loc = 'Current GPS: No. 18, Jalan SS 2/19, Petaling Jaya';
-    setPickupAddress(loc);
-    setPickupQuery(loc);
-    setShowPickupSuggestions(false);
+    setPickupAddress('Current GPS: No. 18, Jalan SS 2/19, Petaling Jaya');
+    setIsEditingPickup(false);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedSeat) {
-      setErrorMsg('Please select a seat icon on the van floor plan.');
+      setErrorMsg('Please select a seat icon on the van plan.');
       return;
     }
-    if (!pickupQuery.trim()) {
-      setErrorMsg('Please specify a pickup address.');
+    if (!pickupAddress.trim()) {
+      setErrorMsg('Pickup address is required.');
       return;
     }
-    if (!destQuery.trim()) {
-      setErrorMsg('Please specify a destination.');
+    if (!lockedDestination) {
+      setErrorMsg('Please select a verified Malaysian destination to lock in coordinates.');
       return;
     }
 
@@ -146,9 +169,14 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
       appointment_time: selectedTimeSlot,
       date: selectedDay,
       assigned_space: selectedSeat,
-      pickup_address: pickupQuery,
-      hospital_name: destQuery,
+      pickup_address: pickupAddress,
+      hospital_name: lockedDestination.name,
       clinic_department: 'Hospital Accessible Transit',
+      destination_coordinates: {
+        lat: lockedDestination.lat,
+        lon: lockedDestination.lon,
+      },
+      destination_verified: true,
       mobility_type: mobilityType,
       passenger_name: passengerName,
       oku_id: okuId,
@@ -161,17 +189,17 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-2xl rounded-3xl bg-white border border-neutral-200 shadow-2xl my-6 overflow-hidden">
+      <div className="relative w-full max-w-xl rounded-3xl bg-white border border-neutral-200 shadow-2xl my-6 overflow-hidden">
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-3.5 bg-neutral-50/80">
           <div className="flex items-center gap-2">
             <h2 className="text-base font-extrabold text-neutral-900">
               Seat Selection
             </h2>
-            <span className="rounded-md bg-teal-800 text-white px-2 py-0.5 text-xs font-bold">
+            <span className="rounded-md bg-teal-800 text-white px-2.5 py-0.5 text-xs font-bold">
               {selectedDay.split(',')[0]}
             </span>
-            <span className="rounded-md bg-cyan-100 text-cyan-950 border border-cyan-300 px-2 py-0.5 font-mono text-xs font-black">
+            <span className="rounded-md bg-cyan-100 text-cyan-950 border border-cyan-300 px-2.5 py-0.5 font-mono text-xs font-black">
               {selectedTimeSlot}
             </span>
           </div>
@@ -185,7 +213,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-5">
+        <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {errorMsg && (
             <div className="rounded-xl bg-red-50 border border-red-200 p-3 text-xs font-bold text-red-800">
               {errorMsg}
@@ -197,7 +225,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
           {/* ============================================================== */}
           <div className="flex flex-col items-center">
             {/* Legend */}
-            <div className="flex items-center gap-4 text-[11px] font-bold text-neutral-500 mb-3">
+            <div className="flex items-center gap-4 text-[10px] font-bold text-neutral-500 mb-2.5">
               <span className="flex items-center gap-1.5">
                 <span className="h-3 w-3 rounded-md border-2 border-neutral-300 bg-white" />
                 Available
@@ -212,24 +240,24 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
               </span>
             </div>
 
-            {/* Van Outer Body Shape */}
-            <div className="relative w-64 rounded-t-[50px] rounded-b-[28px] border-2 border-neutral-800 bg-neutral-100/80 p-3.5 shadow-md">
+            {/* Van Body */}
+            <div className="relative w-60 rounded-t-[44px] rounded-b-[24px] border-2 border-neutral-800 bg-neutral-100/90 p-3 shadow-md">
               {/* Left & Right Side Mirrors */}
-              <div className="absolute -left-2 top-14 h-4 w-2 rounded-l-md bg-neutral-800" />
-              <div className="absolute -right-2 top-14 h-4 w-2 rounded-r-md bg-neutral-800" />
+              <div className="absolute -left-2 top-12 h-3.5 w-2 rounded-l-md bg-neutral-800" />
+              <div className="absolute -right-2 top-12 h-3.5 w-2 rounded-r-md bg-neutral-800" />
 
               {/* Front Hood & Curved Windshield */}
-              <div className="mb-3 text-center">
-                <div className="mx-auto h-1 w-12 rounded-full bg-neutral-400 mb-1" />
-                <div className="h-4 w-full rounded-t-[28px] border-b-2 border-neutral-400 bg-cyan-900/10" />
+              <div className="mb-2.5 text-center">
+                <div className="mx-auto h-1 w-10 rounded-full bg-neutral-400 mb-1" />
+                <div className="h-3 w-full rounded-t-[24px] border-b-2 border-neutral-400 bg-cyan-900/10" />
               </div>
 
-              {/* ROW 1: Driver (Fixed) & Front Passenger */}
-              <div className="mb-2.5 grid grid-cols-2 gap-3 px-1">
-                {/* Driver (Locked) */}
+              {/* ROW 1: Driver & Front Pax */}
+              <div className="mb-2 grid grid-cols-2 gap-2.5 px-1">
+                {/* Driver */}
                 <div
-                  className="h-11 rounded-xl bg-neutral-200 border border-neutral-300 flex items-center justify-center text-neutral-400"
-                  title="Operator Driver Seat (Fixed)"
+                  className="h-10 rounded-xl bg-neutral-200 border border-neutral-300 flex items-center justify-center text-neutral-400"
+                  title="Operator Driver (Fixed)"
                 >
                   <Lock className="h-4 w-4" />
                 </div>
@@ -245,7 +273,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                       type="button"
                       disabled={isOccupied}
                       onClick={() => handleSeatClick(spaceName)}
-                      className={`h-11 rounded-xl flex items-center justify-center transition-all tap-target border-2 ${
+                      className={`h-10 rounded-xl flex items-center justify-center transition-all tap-target border-2 ${
                         isSelected
                           ? 'bg-teal-800 text-white border-teal-800 shadow-md scale-105'
                           : isOccupied
@@ -261,7 +289,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
               </div>
 
               {/* ROW 2: 4 Regular Passenger Seats */}
-              <div className="mb-2.5 grid grid-cols-4 gap-1.5 px-1">
+              <div className="mb-2 grid grid-cols-4 gap-1.5 px-0.5">
                 {(['Row 2: Passenger Seat 1', 'Row 2: Passenger Seat 2', 'Row 2: Passenger Seat 3', 'Row 2: Passenger Seat 4'] as AssignedSpace[]).map((spaceName) => {
                   const isOccupied = occupiedSpaces.has(spaceName);
                   const isSelected = selectedSeat === spaceName;
@@ -272,7 +300,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                       type="button"
                       disabled={isOccupied}
                       onClick={() => handleSeatClick(spaceName)}
-                      className={`h-10 rounded-xl flex items-center justify-center transition-all tap-target border-2 ${
+                      className={`h-9 rounded-xl flex items-center justify-center transition-all tap-target border-2 ${
                         isSelected
                           ? 'bg-teal-800 text-white border-teal-800 shadow-md scale-105'
                           : isOccupied
@@ -288,7 +316,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
               </div>
 
               {/* ROW 3: 2 Wheelchair Bays */}
-              <div className="grid grid-cols-2 gap-3 px-1 pt-1 border-t border-dashed border-neutral-300">
+              <div className="grid grid-cols-2 gap-2.5 px-1 pt-1 border-t border-dashed border-neutral-300">
                 {(['Row 3: Wheelchair Bay 1', 'Row 3: Wheelchair Bay 2'] as AssignedSpace[]).map((spaceName) => {
                   const isOccupied = occupiedSpaces.has(spaceName);
                   const isSelected = selectedSeat === spaceName;
@@ -299,7 +327,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                       type="button"
                       disabled={isOccupied}
                       onClick={() => handleSeatClick(spaceName)}
-                      className={`h-12 rounded-xl flex items-center justify-center transition-all tap-target border-2 ${
+                      className={`h-11 rounded-xl flex items-center justify-center transition-all tap-target border-2 ${
                         isSelected
                           ? 'bg-teal-800 text-white border-teal-800 shadow-md scale-105'
                           : isOccupied
@@ -308,38 +336,35 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                       }`}
                       title={`${spaceName} (Floor Clamps Equipped)`}
                     >
-                      <Accessibility className="h-6 w-6 stroke-[2]" />
+                      <Accessibility className="h-5 w-5 stroke-[2]" />
                     </button>
                   );
                 })}
               </div>
 
-              {/* Rear Hydraulic Lift Door Indicator */}
-              <div className="mt-2.5 flex items-center justify-center gap-1.5 pt-1.5 border-t border-neutral-300">
+              {/* Rear Hydraulic Lift Indicator */}
+              <div className="mt-2 text-center border-t border-neutral-300 pt-1">
                 <span className="text-[9px] font-black uppercase tracking-widest text-neutral-600">
                   Rear Hydraulic Ramp
                 </span>
               </div>
             </div>
 
-            {/* Selected Seat Indicator */}
-            <div className="mt-2.5 text-center">
-              {selectedSeat ? (
-                <span className="inline-block text-xs font-bold text-teal-900 bg-teal-50 border border-teal-300 px-3 py-1 rounded-full">
-                  Selected: {selectedSeat}
-                </span>
-              ) : (
-                <span className="text-xs text-neutral-400 font-medium">
-                  Tap any available seat or wheelchair bay icon
-                </span>
-              )}
-            </div>
+            {selectedSeat ? (
+              <span className="mt-2 text-xs font-bold text-teal-900 bg-teal-50 border border-teal-300 px-3 py-0.5 rounded-full">
+                Selected: {selectedSeat}
+              </span>
+            ) : (
+              <span className="mt-2 text-[11px] text-neutral-400">
+                Select an armchair or wheelchair bay icon
+              </span>
+            )}
           </div>
 
           {/* ============================================================== */}
-          {/* AUTO-FILLED ACCOUNT INFO                                      */}
+          {/* USER SPEC: AUTO-FILLED ACCOUNT INFORMATION                     */}
           {/* ============================================================== */}
-          <div className="rounded-2xl bg-neutral-50 border border-neutral-200 p-3.5 flex items-center justify-between text-xs">
+          <div className="rounded-2xl bg-teal-50/60 border border-teal-200 p-3 flex items-center justify-between text-xs">
             <div className="flex items-center gap-2.5">
               <div className="h-8 w-8 rounded-full bg-teal-800 text-white flex items-center justify-center font-bold">
                 <User className="h-4 w-4" />
@@ -348,116 +373,182 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                 <p className="font-extrabold text-neutral-900 leading-tight">
                   {passengerName}
                 </p>
-                <p className="text-[11px] font-mono text-neutral-500">
-                  {okuId} · {phone}
+                <p className="text-[11px] font-mono text-neutral-600">
+                  OKU: {okuId} · {phone}
                 </p>
               </div>
             </div>
-            <span className="rounded-lg bg-teal-100 text-teal-900 border border-teal-200 px-2 py-0.5 text-[10px] font-bold">
+            <span className="rounded-md bg-teal-200/80 text-teal-950 font-bold px-2 py-0.5 text-[10px]">
               {mobilityType}
             </span>
           </div>
 
           {/* ============================================================== */}
-          {/* SEARCH BARS: PICKUP ADDRESS & DESTINATION WITH AUTO-SUGGEST   */}
+          {/* USER SPEC: PICKUP ADDRESS AUTO-FILLED FROM ACCOUNT INFO        */}
           {/* ============================================================== */}
-          <div className="space-y-3.5">
-            {/* Pickup Address Search Bar */}
-            <div className="relative">
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-bold text-neutral-700">
-                  Pickup Address
-                </label>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+              <label className="font-bold text-neutral-700 flex items-center gap-1.5">
+                <MapPin className="h-3.5 w-3.5 text-teal-700" />
+                Pickup Address
+              </label>
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleAutoLocate}
-                  className="flex items-center gap-1 text-[11px] font-bold text-teal-700 hover:text-teal-900"
+                  className="text-[10px] font-bold text-teal-700 hover:text-teal-900 flex items-center gap-0.5"
                 >
-                  <Locate className="h-3 w-3" />
+                  <Locate className="h-2.5 w-2.5" />
                   Auto-Locate GPS
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingPickup(!isEditingPickup)}
+                  className="text-[10px] font-bold text-neutral-500 hover:text-black underline"
+                >
+                  {isEditingPickup ? 'Done' : 'Edit'}
+                </button>
               </div>
-
-              <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                <input
-                  type="text"
-                  required
-                  value={pickupQuery}
-                  onChange={(e) => {
-                    setPickupQuery(e.target.value);
-                    setShowPickupSuggestions(true);
-                  }}
-                  onFocus={() => setShowPickupSuggestions(true)}
-                  placeholder="Search pickup address..."
-                  className="apple-input w-full pl-10 pr-4 text-xs font-medium"
-                />
-              </div>
-
-              {/* Autocomplete Suggestion Dropdown */}
-              {showPickupSuggestions && filteredPickups.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 z-30 rounded-2xl border border-neutral-200 bg-white shadow-xl max-h-48 overflow-y-auto divide-y divide-neutral-100">
-                  {filteredPickups.map((loc) => (
-                    <div
-                      key={loc}
-                      onClick={() => handleSelectPickup(loc)}
-                      className="p-2.5 flex items-center gap-2 hover:bg-teal-50 cursor-pointer text-xs font-semibold text-neutral-800 transition-colors"
-                    >
-                      <MapPin className="h-3.5 w-3.5 text-teal-700 shrink-0" />
-                      <span className="truncate">{loc}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
-            {/* Destination Search Bar (Department removed as requested!) */}
-            <div className="relative">
-              <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Destination Hospital / Medical Facility
-              </label>
-
-              <div className="relative">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                <input
-                  type="text"
-                  required
-                  value={destQuery}
-                  onChange={(e) => {
-                    setDestQuery(e.target.value);
-                    setShowDestSuggestions(true);
-                  }}
-                  onFocus={() => setShowDestSuggestions(true)}
-                  placeholder="Search hospital or clinic destination..."
-                  className="apple-input w-full pl-10 pr-4 text-xs font-medium"
-                />
+            {isEditingPickup ? (
+              <input
+                type="text"
+                required
+                value={pickupAddress}
+                onChange={(e) => setPickupAddress(e.target.value)}
+                placeholder="Type pickup residence address..."
+                className="apple-input w-full text-xs font-medium"
+              />
+            ) : (
+              <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-2.5 flex items-center justify-between text-xs">
+                <span className="font-semibold text-neutral-900 truncate pr-2">
+                  {pickupAddress}
+                </span>
+                <span className="shrink-0 text-[10px] font-bold bg-neutral-200 text-neutral-700 px-2 py-0.5 rounded-sm">
+                  Account Default
+                </span>
               </div>
-
-              {/* Destination Suggestion Dropdown */}
-              {showDestSuggestions && filteredDests.length > 0 && (
-                <div className="absolute left-0 right-0 top-full mt-1 z-30 rounded-2xl border border-neutral-200 bg-white shadow-xl max-h-48 overflow-y-auto divide-y divide-neutral-100">
-                  {filteredDests.map((hosp) => (
-                    <div
-                      key={hosp}
-                      onClick={() => handleSelectDest(hosp)}
-                      className="p-2.5 flex items-center gap-2 hover:bg-teal-50 cursor-pointer text-xs font-semibold text-neutral-800 transition-colors"
-                    >
-                      <MapPin className="h-3.5 w-3.5 text-cyan-700 shrink-0" />
-                      <span className="truncate">{hosp}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
           </div>
 
-          {/* Submit Action Button */}
-          <div className="pt-1">
+          {/* ============================================================== */}
+          {/* USER SPEC: DESTINATION (countrycodes=my) REAL-TIME VERIFIED     */}
+          {/* WITH LOCK-IN OF OFFICIAL NAME AND COORDINATES                   */}
+          {/* ============================================================== */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <label className="font-bold text-neutral-700 flex items-center gap-1.5">
+                <Building2 className="h-3.5 w-3.5 text-cyan-700" />
+                Destination Hospital / Medical Facility
+              </label>
+              <span className="text-[10px] font-mono font-bold text-teal-700 bg-teal-50 border border-teal-200 px-1.5 py-0.2 rounded">
+                countrycodes=my
+              </span>
+            </div>
+
+            {/* If Locked: Display Verified Malaysian Location with Coordinates */}
+            {lockedDestination ? (
+              <div className="rounded-2xl border-2 border-emerald-500 bg-gradient-to-r from-emerald-50 to-teal-50 p-3.5 space-y-2 shadow-xs">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start gap-2">
+                    <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-black text-emerald-950">
+                          {lockedDestination.name}
+                        </span>
+                        <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-600 text-white px-2 py-0.5 rounded-full">
+                          Locked & Verified MY
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-emerald-800 mt-0.5 line-clamp-1">
+                        {lockedDestination.display_name}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleUnlockDestination}
+                    className="shrink-0 text-[10px] font-extrabold text-teal-800 hover:text-black border border-teal-300 bg-white px-2.5 py-1 rounded-lg tap-target"
+                  >
+                    Change
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] font-mono text-emerald-900 border-t border-emerald-200 pt-1.5">
+                  <span>GPS: {lockedDestination.lat.toFixed(4)}° N, {lockedDestination.lon.toFixed(4)}° E</span>
+                  <span className="font-bold">State: {lockedDestination.state}</span>
+                </div>
+              </div>
+            ) : (
+              /* Search input with live countrycodes=my auto-suggestions */
+              <div className="relative">
+                <div className="relative">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                  <input
+                    type="text"
+                    required
+                    value={destQuery}
+                    onChange={(e) => {
+                      setDestQuery(e.target.value);
+                      setShowDestDropdown(true);
+                    }}
+                    onFocus={() => setShowDestDropdown(true)}
+                    placeholder="Search verified Malaysian hospital or clinic..."
+                    className="apple-input w-full pl-10 pr-4 text-xs font-medium"
+                    autoFocus
+                  />
+                  {isLoadingGeo && (
+                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-teal-600 animate-pulse">
+                      Verifying...
+                    </span>
+                  )}
+                </div>
+
+                {/* Suggestions Dropdown (Malaysia only) */}
+                {showDestDropdown && destSuggestions.length > 0 && (
+                  <div className="absolute left-0 right-0 top-full mt-1 z-30 rounded-2xl border border-neutral-300 bg-white shadow-2xl max-h-52 overflow-y-auto divide-y divide-neutral-100">
+                    <div className="p-2 bg-neutral-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+                      Verified Malaysian Healthcare Facilities
+                    </div>
+                    {destSuggestions.map((item) => (
+                      <div
+                        key={item.id}
+                        onClick={() => handleSelectDestination(item)}
+                        className="p-3 hover:bg-teal-50 cursor-pointer text-xs transition-colors flex items-start justify-between gap-2"
+                      >
+                        <div className="flex items-start gap-2">
+                          <MapPin className="h-4 w-4 text-teal-700 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="font-bold text-neutral-900">
+                              {item.name}
+                            </p>
+                            <p className="text-[10px] text-neutral-500 line-clamp-1">
+                              {item.display_name}
+                            </p>
+                          </div>
+                        </div>
+
+                        <span className="shrink-0 text-[10px] font-mono font-bold bg-teal-100 text-teal-800 px-2 py-0.5 rounded">
+                          Lock
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Submit Action */}
+          <div className="pt-2">
             <button
               type="submit"
-              disabled={!selectedSeat}
+              disabled={!selectedSeat || !lockedDestination}
               className={`w-full py-3 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 shadow-md tap-target transition-all ${
-                !selectedSeat
+                !selectedSeat || !lockedDestination
                   ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed shadow-none'
                   : 'bg-teal-800 hover:bg-teal-900 text-white'
               }`}

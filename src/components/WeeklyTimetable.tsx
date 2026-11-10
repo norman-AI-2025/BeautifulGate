@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Calendar, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, CalendarDays, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { TransitBooking } from '@/types';
 
 interface WeeklyTimetableProps {
@@ -53,36 +53,47 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
   bookings,
   onSelectSlot,
 }) => {
-  const [weekOffset, setWeekOffset] = useState<number>(0);
   const [selectedIsoDate, setSelectedIsoDate] = useState<string>('2026-11-10');
   const [selectedDayObj, setSelectedDayObj] = useState<DaySchedule>(DEFAULT_DAYS[1]);
+
+  // USER SPEC: "the select date button should click and expand the calendar , to select any upcoming date"
+  const [isCalendarExpanded, setIsCalendarExpanded] = useState<boolean>(false);
+  const [calendarMonth, setCalendarMonth] = useState<number>(10); // 0-indexed: 10 is November
+  const [calendarYear, setCalendarYear] = useState<number>(2026);
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
 
   const handleSelectDay = (day: DaySchedule) => {
     setSelectedDayObj(day);
     setSelectedIsoDate(day.isoDate);
   };
 
-  const handleDateInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newDate = e.target.value;
-    if (!newDate) return;
-    setSelectedIsoDate(newDate);
-
-    // Format new date
-    const d = new Date(`${newDate}T12:00:00Z`);
+  const handleSelectCalendarDate = (year: number, month: number, day: number) => {
+    const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    const d = new Date(year, month, day);
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const dayName = dayNames[d.getUTCDay()];
-    const dateFormatted = `${d.getUTCDate()} ${monthNames[d.getUTCMonth()]}, ${d.getUTCFullYear()}`;
+    const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    const dayName = dayNames[d.getDay()];
+    const dateFormatted = `${day} ${shortMonths[month]}, ${year}`;
+    const isHoliday = isoDate === '2026-11-09';
 
     const customDay: DaySchedule = {
-      key: `custom-${newDate}`,
+      key: `cal-${isoDate}`,
       name: dayName,
       dateStr: dateFormatted,
-      isoDate: newDate,
-      isToday: newDate === '2026-11-10',
+      isoDate,
+      isHoliday,
+      holidayReason: isHoliday ? 'HARI DEEPAVALI' : undefined,
+      isToday: isoDate === '2026-11-10',
     };
 
     setSelectedDayObj(customDay);
+    setSelectedIsoDate(isoDate);
+    setIsCalendarExpanded(false); // Close calendar after selection
   };
 
   const getSlotStatus = (day: DaySchedule, slot: string) => {
@@ -95,15 +106,15 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
     const matchedBookings = bookings.filter(b => {
       const bTime = b.appointment_time.trim().toLowerCase();
       const bDate = b.date?.toLowerCase() || '';
-      const dayMatches = bDate.includes(day.name.toLowerCase()) || day.isToday;
+      const dayMatches = bDate.includes(day.name.toLowerCase()) || (day.isToday && !b.date);
       return dayMatches && (bTime.startsWith(slotStart) || slot.toLowerCase().includes(bTime));
     });
 
     if (matchedBookings.length === 0) {
-      if (day.key === 'thu') {
+      if (day.key === 'thu' || day.name === 'Thursday') {
         return { status: 'booked', label: 'Booked' };
       }
-      if (day.key === 'wed' && (slot.startsWith('02:00') || slot.startsWith('02:30') || slot.startsWith('03:00') || slot.startsWith('03:30') || slot.startsWith('04:00'))) {
+      if ((day.key === 'wed' || day.name === 'Wednesday') && (slot.startsWith('02:00') || slot.startsWith('02:30') || slot.startsWith('03:00') || slot.startsWith('03:30') || slot.startsWith('04:00'))) {
         return { status: 'booked', label: 'Booked' };
       }
       // Available slot: leave it completely blank!
@@ -131,55 +142,144 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
     onSelectSlot(`${day.name}, ${day.dateStr}`, cleanTime);
   };
 
+  // Generate days for the expanded calendar month
+  const firstDayOfMonth = new Date(calendarYear, calendarMonth, 1).getDay();
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+  const calendarDays = [];
+  for (let i = 0; i < firstDayOfMonth; i++) {
+    calendarDays.push(null);
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    calendarDays.push(d);
+  }
+
+  const handlePrevMonth = () => {
+    if (calendarMonth === 0) {
+      setCalendarMonth(11);
+      setCalendarYear(y => y - 1);
+    } else {
+      setCalendarMonth(m => m - 1);
+    }
+  };
+
+  const handleNextMonth = () => {
+    if (calendarMonth === 11) {
+      setCalendarMonth(0);
+      setCalendarYear(y => y + 1);
+    } else {
+      setCalendarMonth(m => m + 1);
+    }
+  };
+
   return (
     <div className="w-full bg-white rounded-3xl border border-neutral-200 shadow-sm overflow-hidden">
-      {/* 1. CHOOSE DATE OF SERVICE (WITH SELECT DATE BUTTON) */}
+      {/* 1. CHOOSE DATE OF SERVICE (WITH EXPANDABLE CALENDAR BUTTON) */}
       <div className="p-5 border-b border-neutral-200 bg-neutral-50/70 space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h3 className="text-sm font-extrabold text-neutral-900 tracking-tight">
             1. Choose Date of Service
           </h3>
 
-          <div className="flex items-center gap-2">
-            {/* USER SPEC: SELECT DATE BUTTON TO CHOOSE EXACT DATE */}
-            <div className="relative inline-flex items-center">
-              <label
-                htmlFor="exact-date-picker"
-                className="cursor-pointer flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-teal-800 text-white font-extrabold text-xs shadow-xs hover:bg-teal-900 transition-all tap-target"
-              >
-                <CalendarDays className="h-4 w-4" />
-                <span>Select Date: {selectedDayObj.dateStr}</span>
-              </label>
-              <input
-                id="exact-date-picker"
-                type="date"
-                value={selectedIsoDate}
-                onChange={handleDateInputChange}
-                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-              />
+          {/* USER SPEC: Click and expand the calendar to select any upcoming date */}
+          <button
+            type="button"
+            onClick={() => setIsCalendarExpanded(!isCalendarExpanded)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-teal-800 text-white font-extrabold text-xs shadow-xs hover:bg-teal-900 transition-all tap-target self-start sm:self-auto"
+          >
+            <CalendarDays className="h-4 w-4 text-cyan-300" />
+            <span>Select Date: {selectedDayObj.name}, {selectedDayObj.dateStr}</span>
+            {isCalendarExpanded ? (
+              <ChevronUp className="h-4 w-4 ml-1" />
+            ) : (
+              <ChevronDown className="h-4 w-4 ml-1" />
+            )}
+          </button>
+        </div>
+
+        {/* EXPANDED INTERACTIVE CALENDAR FOR ANY UPCOMING DATE */}
+        {isCalendarExpanded && (
+          <div className="rounded-2xl border-2 border-teal-800 bg-white p-4 shadow-xl space-y-3 animate-in fade-in-50 duration-200">
+            {/* Calendar Month Navigation Header */}
+            <div className="flex items-center justify-between pb-2 border-b border-neutral-200">
+              <span className="font-extrabold text-sm text-teal-950">
+                {monthNames[calendarMonth]} {calendarYear}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-700 tap-target"
+                  title="Previous Month"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-700 tap-target"
+                  title="Next Month"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
-            {/* Week Offset Navigation */}
-            <div className="flex items-center gap-1 text-xs font-bold text-teal-800">
-              <button
-                type="button"
-                onClick={() => setWeekOffset(w => w - 1)}
-                className="p-1 rounded-lg hover:bg-neutral-200 tap-target"
-                title="Previous Week"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setWeekOffset(w => w + 1)}
-                className="p-1 rounded-lg hover:bg-neutral-200 tap-target"
-                title="Next Week"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
+            {/* Weekday Labels */}
+            <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase text-neutral-400">
+              <span>Su</span>
+              <span>Mo</span>
+              <span>Tu</span>
+              <span>We</span>
+              <span>Th</span>
+              <span>Fr</span>
+              <span>Sa</span>
             </div>
+
+            {/* Month Days Grid */}
+            <div className="grid grid-cols-7 gap-1">
+              {calendarDays.map((dayNum, idx) => {
+                if (dayNum === null) {
+                  return <div key={`empty-${idx}`} className="h-9" />;
+                }
+
+                const dayIso = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                const isSelected = selectedIsoDate === dayIso;
+                const isToday = dayIso === '2026-11-10';
+                const isHoliday = dayIso === '2026-11-09';
+                
+                // Check if date is upcoming or today
+                const isUpcoming = dayIso >= '2026-11-09';
+
+                return (
+                  <button
+                    key={dayIso}
+                    type="button"
+                    disabled={!isUpcoming}
+                    onClick={() => handleSelectCalendarDate(calendarYear, calendarMonth, dayNum)}
+                    className={`h-9 rounded-xl font-bold text-xs flex flex-col items-center justify-center transition-all tap-target ${
+                      isSelected
+                        ? 'bg-teal-800 text-white font-black shadow-md scale-105'
+                        : isToday
+                        ? 'bg-cyan-100 text-cyan-950 border border-cyan-400 font-extrabold hover:bg-cyan-200'
+                        : isHoliday
+                        ? 'bg-red-50 text-red-900 border border-red-300'
+                        : isUpcoming
+                        ? 'hover:bg-teal-50 text-neutral-800 hover:border-teal-400 border border-transparent'
+                        : 'text-neutral-300 cursor-not-allowed'
+                    }`}
+                  >
+                    <span>{dayNum}</span>
+                    {isToday && <span className="h-1 w-1 rounded-full bg-cyan-700 -mt-0.5" />}
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="text-[10px] text-teal-800 text-center font-medium pt-1">
+              Click any upcoming date to expand its accessible transit timetable
+            </p>
           </div>
-        </div>
+        )}
 
         {/* Quick Date Selector Cards */}
         <div className="grid grid-cols-7 gap-2">

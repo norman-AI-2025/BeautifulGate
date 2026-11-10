@@ -48,6 +48,8 @@ interface AppContextType {
     clinic_department: string;
     mobility_type: MobilityType;
     date?: string;
+    destination_coordinates?: { lat: number; lon: number };
+    destination_verified?: boolean;
     passenger_name?: string;
     oku_id?: string;
     phone?: string;
@@ -256,6 +258,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     clinic_department: string;
     mobility_type: MobilityType;
     date?: string;
+    destination_coordinates?: { lat: number; lon: number };
+    destination_verified?: boolean;
     passenger_name?: string;
     oku_id?: string;
     phone?: string;
@@ -277,6 +281,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       assigned_vehicle: DEFAULT_VEHICLE,
       status: 'pending',
       date: data.date || 'Tuesday, 10 Nov 2026',
+      destination_coordinates: data.destination_coordinates || { lat: 2.7167, lon: 101.9422 },
+      destination_verified: data.destination_verified ?? true,
       timestamps: {
         requested: new Date().toISOString(),
       },

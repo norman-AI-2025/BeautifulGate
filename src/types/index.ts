@@ -42,6 +42,7 @@ export interface Profile {
   email: string;
   role: UserRole;
   mobility_type: MobilityType;
+  address?: string;
   bank_name?: string;
   bank_account_number?: string;
 }
@@ -62,6 +63,8 @@ export interface TransitBooking {
   assigned_vehicle: VehicleSpec;
   status: TransitStatus;
   date?: string; // e.g. "2026-11-10" or "Tuesday, 10 Nov 2026"
+  destination_coordinates?: { lat: number; lon: number };
+  destination_verified?: boolean;
   rating?: number; // 1 to 5 stars
   feedback?: string;
   rated_at?: string;
