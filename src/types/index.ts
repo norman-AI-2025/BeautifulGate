@@ -68,6 +68,12 @@ export interface TransitBooking {
   rating?: number; // 1 to 5 stars
   feedback?: string;
   rated_at?: string;
+  donation?: {
+    amount: number;
+    method: 'cash' | 'qr';
+    status: 'paid' | 'pledged';
+    timestamp: string;
+  };
   timestamps: {
     requested: string;
     approved?: string;

@@ -58,6 +58,7 @@ interface AppContextType {
   approveBooking: (bookingId: string) => void;
   declineBooking: (bookingId: string) => void;
   rateBooking: (bookingId: string, rating: number, feedback?: string) => void;
+  recordDonation: (bookingId: string, amount: number, method: 'cash' | 'qr') => void;
   // Work log actions
   addWorkLog: (units: number, cardId: string, workerId?: string) => CardWorkLog;
   overrideWorkLog: (logId: string, units: number) => void;
@@ -365,6 +366,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     saveBookings(updated);
   }, [bookings, saveBookings]);
 
+  const recordDonation = useCallback((bookingId: string, amount: number, method: 'cash' | 'qr') => {
+    const nowIso = new Date().toISOString();
+    const updated = bookings.map(b => {
+      if (b.id === bookingId) {
+        return {
+          ...b,
+          donation: {
+            amount,
+            method,
+            status: 'paid' as const,
+            timestamp: nowIso,
+          },
+        };
+      }
+      return b;
+    });
+    saveBookings(updated);
+  }, [bookings, saveBookings]);
+
   // Add work log
   const addWorkLog = useCallback((units: number, cardId: string, workerId?: string): CardWorkLog => {
     const targetWorkerId = workerId || currentUser?.id || profiles[0].id;
@@ -516,6 +536,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     approveBooking,
     declineBooking,
     rateBooking,
+    recordDonation,
     addWorkLog,
     overrideWorkLog,
     getArtisanStats,
@@ -536,6 +557,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     approveBooking,
     declineBooking,
     rateBooking,
+    recordDonation,
     addWorkLog,
     overrideWorkLog,
     getArtisanStats,

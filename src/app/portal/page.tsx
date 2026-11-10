@@ -8,7 +8,7 @@ import { WeeklyTimetable } from '@/components/WeeklyTimetable';
 import { VanFloorPlanModal } from '@/components/VanFloorPlanModal';
 import { LinearStageIndicator } from '@/components/LinearStageIndicator';
 import { ServiceRatingCard } from '@/components/ServiceRatingCard';
-import { TransitPassModal } from '@/components/TransitPassModal';
+import { TransitDonationModal } from '@/components/TransitDonationModal';
 import { 
   Car, 
   Sparkles, 
@@ -19,7 +19,7 @@ import {
   CheckCircle2, 
   AlertCircle, 
   XCircle, 
-  Ticket, 
+  HeartHandshake, 
   Plus, 
   ChevronRight, 
   Star,
@@ -47,7 +47,7 @@ export default function MobileArtisanPortalPage() {
   // Timetable booking modal state
   const [modalSlot, setModalSlot] = useState<{ day: string; slot: string } | null>(null);
   const [justBookedId, setJustBookedId] = useState<string | null>(null);
-  const [viewingPassBooking, setViewingPassBooking] = useState<TransitBooking | null>(null);
+  const [selectedDonationBooking, setSelectedDonationBooking] = useState<TransitBooking | null>(null);
 
   // Workshop logging state
   const [selectedProductId, setSelectedProductId] = useState<string>(products[0]?.id || '');
@@ -300,14 +300,24 @@ export default function MobileArtisanPortalPage() {
                           </div>
                         </div>
 
-                        {/* Digital Pass Button */}
+                        {/* Voluntary Transit Donation Button (Replaces Boarding Pass) */}
                         <button
                           type="button"
-                          onClick={() => setViewingPassBooking(b)}
-                          className="w-full py-2.5 rounded-xl border border-[#F37021] text-[#F37021] hover:bg-orange-50 text-xs font-bold flex items-center justify-center gap-2 tap-target"
+                          onClick={() => setSelectedDonationBooking(b)}
+                          className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 tap-target transition-all shadow-xs ${
+                            b.donation
+                              ? 'border border-emerald-400 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                              : 'border-2 border-[#F37021] bg-gradient-to-r from-orange-500 to-[#D9530F] text-white hover:opacity-95 shadow-md shadow-orange-500/20'
+                          }`}
                         >
-                          <Ticket className="h-4 w-4" />
-                          {t('portal.viewBoardingPass', 'View Transit Boarding Pass')}
+                          <HeartHandshake className={`h-4 w-4 ${b.donation ? 'text-emerald-600' : 'text-white'}`} />
+                          {b.donation ? (
+                            <span>
+                              {t('donation.donated', 'Donation Completed')}: <span className="font-mono font-extrabold text-emerald-950">RM {b.donation.amount.toFixed(2)}</span> ({b.donation.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')})
+                            </span>
+                          ) : (
+                            <span>{t('donation.button', 'Make a Transit Donation (Cash / QR)')}</span>
+                          )}
                         </button>
                       </div>
                     ))}
@@ -387,6 +397,26 @@ export default function MobileArtisanPortalPage() {
 
                         {/* Rating Component */}
                         <ServiceRatingCard booking={b} />
+
+                        {/* Voluntary Transit Donation Button */}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedDonationBooking(b)}
+                          className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 tap-target transition-all ${
+                            b.donation
+                              ? 'border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                              : 'border border-neutral-200 bg-neutral-50 hover:bg-orange-50 hover:border-orange-200 text-neutral-700 hover:text-[#F37021]'
+                          }`}
+                        >
+                          <HeartHandshake className="h-4 w-4 text-[#F37021]" />
+                          {b.donation ? (
+                            <span>
+                              {t('donation.donated', 'Donation Completed')}: <span className="font-mono font-extrabold text-emerald-950">RM {b.donation.amount.toFixed(2)}</span> ({b.donation.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')})
+                            </span>
+                          ) : (
+                            <span>{t('donation.button', 'Make a Transit Donation (Cash / QR)')}</span>
+                          )}
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -625,11 +655,11 @@ export default function MobileArtisanPortalPage() {
         />
       )}
 
-      {/* Transit Boarding Pass Modal */}
-      {viewingPassBooking && (
-        <TransitPassModal
-          booking={viewingPassBooking}
-          onClose={() => setViewingPassBooking(null)}
+      {/* Voluntary Transit Donation Modal (Replaces Boarding Pass) */}
+      {selectedDonationBooking && (
+        <TransitDonationModal
+          booking={selectedDonationBooking}
+          onClose={() => setSelectedDonationBooking(null)}
         />
       )}
     </div>
