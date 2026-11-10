@@ -3,6 +3,7 @@
 import React from 'react';
 import { Check, Clock } from 'lucide-react';
 import { TransitStatus } from '@/types';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface LinearStageIndicatorProps {
   status: TransitStatus;

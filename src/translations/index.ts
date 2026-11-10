@@ -83,6 +83,11 @@ export const translations = {
       ratePlaceholder: 'Share any notes on driving comfort, punctuality, or assistance...',
       submitFeedback: 'Submit Review',
       thankYouFeedback: 'Thank you for your valuable feedback!',
+      // Stages
+      stage1: 'On the way to pick up',
+      stage2: 'Picked up',
+      stage3: 'On the way to destination',
+      stage4: 'Arrived',
       // Earnings
       todayIncome: "Today's Income",
       thisWeek: 'This Week',
@@ -309,6 +314,11 @@ export const translations = {
       ratePlaceholder: '分享您对驾驶平稳度、准时性或扶助细节的评价...',
       submitFeedback: '提交评价反馈',
       thankYouFeedback: '感谢您宝贵的评价反馈！',
+      // Stages
+      stage1: '前往接送途中',
+      stage2: '乘客已上车',
+      stage3: '前往目的地途中',
+      stage4: '已安全抵达',
       // Earnings
       todayIncome: '今日收入',
       thisWeek: '本周收入',
@@ -535,6 +545,11 @@ export const translations = {
       ratePlaceholder: 'Kongsikan ulasan tentang keselesaan pemanduan, ketepatan masa atau bantuan...',
       submitFeedback: 'Hantar Ulasan',
       thankYouFeedback: 'Terima kasih atas maklum balas bernilai anda!',
+      // Stages
+      stage1: 'Dalam perjalanan mengambil',
+      stage2: 'Penumpang diambil',
+      stage3: 'Dalam perjalanan ke hospital',
+      stage4: 'Tiba di hospital',
       // Earnings
       todayIncome: 'Pendapatan Hari Ini',
       thisWeek: 'Minggu Ini',
