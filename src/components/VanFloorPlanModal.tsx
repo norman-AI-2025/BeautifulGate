@@ -57,14 +57,12 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
   const [pickupAddress, setPickupAddress] = useState(defaultAccountPickup);
   const [isEditingPickup, setIsEditingPickup] = useState(false);
 
-  // USER SPEC: Destination (countrycodes=my) real-time verified Malaysian locations with lock-in
+  // Destination search & suggestions
   const [destQuery, setDestQuery] = useState("Hospital Tuanku Ja'afar (HTJ)");
   const [destSuggestions, setDestSuggestions] = useState<GeocodeItem[]>([]);
   const [isLoadingGeo, setIsLoadingGeo] = useState(false);
   const [showDestDropdown, setShowDestDropdown] = useState(false);
-
-  // Locked-in verified Malaysian destination details to prevent invalid or out-of-country bookings
-  const [lockedDestination, setLockedDestination] = useState<GeocodeItem | null>({
+  const [selectedDestinationItem, setSelectedDestinationItem] = useState<GeocodeItem | null>({
     id: 'my-hosp-htj',
     name: "Hospital Tuanku Ja'afar (HTJ)",
     display_name: "Hospital Tuanku Ja'afar, Jalan Rasah, 70300 Seremban, Negeri Sembilan, Malaysia",
@@ -90,9 +88,10 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
     }
   }, [currentUser]);
 
-  // Debounced search for destination using countrycodes=my API
+  // Debounced search for destination suggestions
   useEffect(() => {
-    if (!destQuery || destQuery.length < 2 || lockedDestination) {
+    if (!destQuery || destQuery.trim().length < 2) {
+      setDestSuggestions([]);
       return;
     }
 
@@ -102,20 +101,18 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
         const res = await fetch(`/api/geocode?q=${encodeURIComponent(destQuery)}`);
         if (res.ok) {
           const data: GeocodeItem[] = await res.json();
-          // Filter strictly country_code === 'my' to prevent invalid/out-of-country bookings
           const myOnly = data.filter(d => d.country_code.toLowerCase() === 'my');
           setDestSuggestions(myOnly);
-          setShowDestDropdown(true);
         }
       } catch (e) {
         console.warn('Geocode fetch error', e);
       } finally {
         setIsLoadingGeo(false);
       }
-    }, 280);
+    }, 250);
 
     return () => clearTimeout(timer);
-  }, [destQuery, lockedDestination]);
+  }, [destQuery]);
 
   if (!isOpen) return null;
 
@@ -132,17 +129,11 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
     setErrorMsg('');
   };
 
-  // Lock in official location name and coordinates
   const handleSelectDestination = (item: GeocodeItem) => {
-    setLockedDestination(item);
+    setSelectedDestinationItem(item);
     setDestQuery(item.name);
     setShowDestDropdown(false);
     setErrorMsg('');
-  };
-
-  const handleUnlockDestination = () => {
-    setLockedDestination(null);
-    setShowDestDropdown(true);
   };
 
   const handleAutoLocate = () => {
@@ -160,8 +151,8 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
       setErrorMsg('Pickup address is required.');
       return;
     }
-    if (!lockedDestination) {
-      setErrorMsg('Please select a verified Malaysian destination to lock in coordinates.');
+    if (!destQuery.trim()) {
+      setErrorMsg('Destination hospital or facility is required.');
       return;
     }
 
@@ -170,11 +161,14 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
       date: selectedDay,
       assigned_space: selectedSeat,
       pickup_address: pickupAddress,
-      hospital_name: lockedDestination.name,
+      hospital_name: destQuery.trim(),
       clinic_department: 'Hospital Accessible Transit',
-      destination_coordinates: {
-        lat: lockedDestination.lat,
-        lon: lockedDestination.lon,
+      destination_coordinates: selectedDestinationItem ? {
+        lat: selectedDestinationItem.lat,
+        lon: selectedDestinationItem.lon,
+      } : {
+        lat: 2.7167,
+        lon: 101.9422,
       },
       destination_verified: true,
       mobility_type: mobilityType,
@@ -432,123 +426,69 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
             )}
           </div>
 
-          {/* ============================================================== */}
-          {/* USER SPEC: DESTINATION (countrycodes=my) REAL-TIME VERIFIED     */}
-          {/* WITH LOCK-IN OF OFFICIAL NAME AND COORDINATES                   */}
-          {/* ============================================================== */}
+          {/* DESTINATION INPUT (DIRECT, REWRITABLE & RESELECTABLE) */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <label className="font-bold text-neutral-700 flex items-center gap-1.5">
-                <Building2 className="h-3.5 w-3.5 text-cyan-700" />
-                Destination Hospital / Medical Facility
-              </label>
-              <span className="text-[10px] font-mono font-bold text-teal-700 bg-teal-50 border border-teal-200 px-1.5 py-0.2 rounded">
-                countrycodes=my
-              </span>
-            </div>
+            <label className="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
+              <Building2 className="h-3.5 w-3.5 text-cyan-700" />
+              Destination Hospital / Medical Facility
+            </label>
 
-            {/* If Locked: Display Verified Malaysian Location with Coordinates */}
-            {lockedDestination ? (
-              <div className="rounded-2xl border-2 border-emerald-500 bg-gradient-to-r from-emerald-50 to-teal-50 p-3.5 space-y-2 shadow-xs">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-start gap-2">
-                    <ShieldCheck className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-black text-emerald-950">
-                          {lockedDestination.name}
-                        </span>
-                        <span className="text-[9px] font-black uppercase tracking-wider bg-emerald-600 text-white px-2 py-0.5 rounded-full">
-                          Locked & Verified MY
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-emerald-800 mt-0.5 line-clamp-1">
-                        {lockedDestination.display_name}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleUnlockDestination}
-                    className="shrink-0 text-[10px] font-extrabold text-teal-800 hover:text-black border border-teal-300 bg-white px-2.5 py-1 rounded-lg tap-target"
-                  >
-                    Change
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between text-[10px] font-mono text-emerald-900 border-t border-emerald-200 pt-1.5">
-                  <span>GPS: {lockedDestination.lat.toFixed(4)}° N, {lockedDestination.lon.toFixed(4)}° E</span>
-                  <span className="font-bold">State: {lockedDestination.state}</span>
-                </div>
-              </div>
-            ) : (
-              /* Search input with live countrycodes=my auto-suggestions */
+            <div className="relative">
               <div className="relative">
-                <div className="relative">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-                  <input
-                    type="text"
-                    required
-                    value={destQuery}
-                    onChange={(e) => {
-                      setDestQuery(e.target.value);
-                      setShowDestDropdown(true);
-                    }}
-                    onFocus={() => setShowDestDropdown(true)}
-                    placeholder="Search verified Malaysian hospital or clinic..."
-                    className="apple-input w-full pl-10 pr-4 text-xs font-medium"
-                    autoFocus
-                  />
-                  {isLoadingGeo && (
-                    <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-teal-600 animate-pulse">
-                      Verifying...
-                    </span>
-                  )}
-                </div>
-
-                {/* Suggestions Dropdown (Malaysia only) */}
-                {showDestDropdown && destSuggestions.length > 0 && (
-                  <div className="absolute left-0 right-0 top-full mt-1 z-30 rounded-2xl border border-neutral-300 bg-white shadow-2xl max-h-52 overflow-y-auto divide-y divide-neutral-100">
-                    <div className="p-2 bg-neutral-50 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-                      Verified Malaysian Healthcare Facilities
-                    </div>
-                    {destSuggestions.map((item) => (
-                      <div
-                        key={item.id}
-                        onClick={() => handleSelectDestination(item)}
-                        className="p-3 hover:bg-teal-50 cursor-pointer text-xs transition-colors flex items-start justify-between gap-2"
-                      >
-                        <div className="flex items-start gap-2">
-                          <MapPin className="h-4 w-4 text-teal-700 shrink-0 mt-0.5" />
-                          <div>
-                            <p className="font-bold text-neutral-900">
-                              {item.name}
-                            </p>
-                            <p className="text-[10px] text-neutral-500 line-clamp-1">
-                              {item.display_name}
-                            </p>
-                          </div>
-                        </div>
-
-                        <span className="shrink-0 text-[10px] font-mono font-bold bg-teal-100 text-teal-800 px-2 py-0.5 rounded">
-                          Lock
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                <input
+                  type="text"
+                  required
+                  value={destQuery}
+                  onChange={(e) => {
+                    setDestQuery(e.target.value);
+                    setShowDestDropdown(true);
+                  }}
+                  onFocus={() => {
+                    if (destSuggestions.length > 0) setShowDestDropdown(true);
+                  }}
+                  placeholder="Type or search hospital or clinic destination..."
+                  className="apple-input w-full pl-10 pr-4 text-xs font-medium"
+                />
+                {isLoadingGeo && (
+                  <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-teal-600 animate-pulse">
+                    Searching...
+                  </span>
                 )}
               </div>
-            )}
+
+              {/* Suggestions Dropdown */}
+              {showDestDropdown && destSuggestions.length > 0 && (
+                <div className="absolute left-0 right-0 top-full mt-1 z-30 rounded-2xl border border-neutral-200 bg-white shadow-xl max-h-52 overflow-y-auto divide-y divide-neutral-100">
+                  {destSuggestions.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => handleSelectDestination(item)}
+                      className="p-3 hover:bg-neutral-50 cursor-pointer text-xs transition-colors flex items-start gap-2.5"
+                    >
+                      <MapPin className="h-4 w-4 text-neutral-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-bold text-neutral-900 truncate">
+                          {item.name}
+                        </p>
+                        <p className="text-[10px] text-neutral-500 truncate">
+                          {item.display_name}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Submit Action */}
           <div className="pt-2">
             <button
               type="submit"
-              disabled={!selectedSeat || !lockedDestination}
+              disabled={!selectedSeat || !destQuery.trim()}
               className={`w-full py-3 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 shadow-md tap-target transition-all ${
-                !selectedSeat || !lockedDestination
+                !selectedSeat || !destQuery.trim()
                   ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed shadow-none'
                   : 'bg-teal-800 hover:bg-teal-900 text-white'
               }`}
