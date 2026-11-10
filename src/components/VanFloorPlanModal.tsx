@@ -4,20 +4,15 @@ import React, { useState, useEffect } from 'react';
 import { 
   X, 
   Lock, 
-  Unlock,
   Armchair, 
   Accessibility, 
   Search, 
   MapPin, 
   Locate, 
-  ShieldCheck, 
-  Check, 
   User, 
-  CheckCircle2,
   Building2,
-  AlertTriangle
 } from 'lucide-react';
-import { AssignedSpace, MobilityType, TransitBooking } from '@/types';
+import { AssignedSpace, TransitBooking } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -101,14 +96,14 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
     const timer = setTimeout(async () => {
       setIsLoadingGeo(true);
       try {
-        const res = await fetch(`/api/geocode?q=${encodeURIComponent(destQuery)}`);
+        const url = `/api/geocode?q=${encodeURIComponent(destQuery)}&countrycodes=my`;
+        const res = await fetch(url);
         if (res.ok) {
-          const data: GeocodeItem[] = await res.json();
-          const myOnly = data.filter(d => d.country_code.toLowerCase() === 'my');
-          setDestSuggestions(myOnly);
+          const data = await res.json();
+          setDestSuggestions(data.results || []);
         }
-      } catch (e) {
-        console.warn('Geocode fetch error', e);
+      } catch (err) {
+        console.error('Failed to query geocoding:', err);
       } finally {
         setIsLoadingGeo(false);
       }
@@ -119,25 +114,28 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Occupied spaces (split commas in case previous booking booked 2 seats)
-  const occupiedSpaces = new Set(
-    existingBookingsForSlot
-      .filter(b => b.status !== 'declined')
-      .flatMap(b => b.assigned_space ? b.assigned_space.split(',').map(s => s.trim()) : [])
-  );
+  // Occupied spaces calculation
+  const occupiedSpaces = new Set<string>();
+  existingBookingsForSlot.forEach(b => {
+    if (b.status !== 'declined') {
+      const parts = b.assigned_space.split(' + ');
+      parts.forEach(p => occupiedSpaces.add(p.trim()));
+    }
+  });
 
-  // USER SPEC: "each booking can book up to 2 seats"
-  const handleSeatClick = (seat: AssignedSpace) => {
-    if (occupiedSpaces.has(seat)) return;
-    setErrorMsg('');
-    if (selectedSeats.includes(seat)) {
-      setSelectedSeats(prev => prev.filter(s => s !== seat));
+  const handleSeatClick = (space: AssignedSpace) => {
+    if (occupiedSpaces.has(space)) return;
+
+    if (selectedSeats.includes(space)) {
+      setSelectedSeats(prev => prev.filter(s => s !== space));
+      setErrorMsg('');
     } else {
       if (selectedSeats.length >= 2) {
-        setSelectedSeats([selectedSeats[1], seat]);
-      } else {
-        setSelectedSeats(prev => [...prev, seat]);
+        setErrorMsg(t('vanModal.maxSeatsAllowed', 'You can book a maximum of 2 seats per booking.'));
+        return;
       }
+      setSelectedSeats(prev => [...prev, space]);
+      setErrorMsg('');
     }
   };
 
@@ -149,44 +147,50 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
   };
 
   const handleAutoLocate = () => {
-    setPickupAddress('Current GPS: No. 18, Jalan SS 2/19, Petaling Jaya');
-    setIsEditingPickup(false);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setPickupAddress(`Current GPS Position (${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)})`);
+          setIsEditingPickup(false);
+        },
+        () => {
+          setPickupAddress(defaultAccountPickup);
+        }
+      );
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (selectedSeats.length === 0) {
-      setErrorMsg('Please select at least 1 seat on the van plan (up to 2 seats).');
-      return;
-    }
-    if (!pickupAddress.trim()) {
-      setErrorMsg('Pickup address is required.');
-      return;
-    }
-    if (!destQuery.trim()) {
-      setErrorMsg('Destination hospital or facility is required.');
+      setErrorMsg(t('vanModal.pleaseSelectSeat', 'Please select at least 1 van space.'));
       return;
     }
 
+    if (!pickupAddress.trim()) {
+      setErrorMsg(t('vanModal.pleaseEnterPickup', 'Please enter a pickup address.'));
+      return;
+    }
+
+    if (!destQuery.trim()) {
+      setErrorMsg(t('vanModal.pleaseEnterDest', 'Please search and select a destination hospital.'));
+      return;
+    }
+
+    const assignedSpaceString = selectedSeats.join(' + ') as AssignedSpace;
+
     const newBooking = createBooking({
-      appointment_time: selectedTimeSlot,
-      date: selectedDay,
-      assigned_space: selectedSeats.join(', ') as AssignedSpace,
-      pickup_address: pickupAddress,
-      hospital_name: destQuery.trim(),
-      clinic_department: 'Hospital Accessible Transit',
-      destination_coordinates: selectedDestinationItem ? {
-        lat: selectedDestinationItem.lat,
-        lon: selectedDestinationItem.lon,
-      } : {
-        lat: 2.7167,
-        lon: 101.9422,
-      },
-      destination_verified: true,
-      mobility_type: mobilityType,
       passenger_name: passengerName,
       oku_id: okuId,
       phone: phone,
+      hospital_name: selectedDestinationItem ? selectedDestinationItem.name : destQuery,
+      clinic_department: 'Main Specialist Clinic & Rehabilitation',
+      appointment_time: selectedTimeSlot,
+      date: selectedDay,
+      assigned_space: assignedSpaceString,
+      pickup_address: pickupAddress,
+      mobility_type: (mobilityType as any) || 'Manual Wheelchair',
     });
 
     onBookingSuccess(newBooking.id);
@@ -195,8 +199,8 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-xl rounded-3xl bg-white border border-neutral-200 shadow-2xl my-6 overflow-hidden">
-        {/* Modal Header */}
+      <div className="relative w-full max-w-lg rounded-3xl bg-white border border-neutral-200 shadow-2xl overflow-hidden my-6">
+        {/* Header */}
         <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-3.5 bg-neutral-50/80">
           <div className="flex items-center gap-2">
             <h2 className="text-base font-extrabold text-neutral-900">
@@ -263,7 +267,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                 {/* Driver */}
                 <div
                   className="h-10 rounded-xl bg-neutral-200 border border-neutral-300 flex items-center justify-center text-neutral-400"
-                  title="Operator Driver (Fixed)"
+                  title={t('vanModal.driverFixed', 'Operator Driver (Fixed)')}
                 >
                   <Lock className="h-4 w-4" />
                 </div>
@@ -351,7 +355,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
               {/* Rear Hydraulic Lift Indicator */}
               <div className="mt-2 text-center border-t border-neutral-300 pt-1">
                 <span className="text-[9px] font-black uppercase tracking-widest text-neutral-600">
-                  Rear Hydraulic Ramp
+                  {t('vanModal.rearHydraulicRamp', 'Rear Hydraulic Ramp')}
                 </span>
               </div>
             </div>
@@ -359,7 +363,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
             {selectedSeats.length > 0 ? (
               <div className="mt-2.5 flex flex-wrap items-center justify-center gap-1.5">
                 <span className="text-[11px] font-bold text-neutral-600">
-                  Seats ({selectedSeats.length}/2):
+                  {t('vanModal.seatsCount', 'Seats')} ({selectedSeats.length}/2):
                 </span>
                 {selectedSeats.map((seat) => (
                   <span
@@ -372,7 +376,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
               </div>
             ) : (
               <span className="mt-2 text-[11px] font-medium text-neutral-500">
-                Tap on up to 2 available seats or wheelchair bays
+                {t('vanModal.tapSeatsInstruction', 'Tap on up to 2 available seats or wheelchair bays')}
               </span>
             )}
           </div>
@@ -406,7 +410,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
             <div className="flex items-center justify-between text-xs">
               <label className="font-bold text-neutral-700 flex items-center gap-1.5">
                 <MapPin className="h-3.5 w-3.5 text-[#F37021]" />
-                Pickup Address
+                {t('vanModal.pickupAddress', 'Pickup Address')}
               </label>
               <div className="flex items-center gap-2">
                 <button
@@ -415,14 +419,14 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                   className="text-[10px] font-bold text-[#F37021] hover:text-[#D9530F] flex items-center gap-0.5"
                 >
                   <Locate className="h-2.5 w-2.5" />
-                  Auto-Locate GPS
+                  {t('vanModal.autoLocateGPS', 'Auto-Locate GPS')}
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsEditingPickup(!isEditingPickup)}
                   className="text-[10px] font-bold text-neutral-500 hover:text-black underline"
                 >
-                  {isEditingPickup ? 'Done' : 'Edit'}
+                  {isEditingPickup ? t('vanModal.done', 'Done') : t('vanModal.edit', 'Edit')}
                 </button>
               </div>
             </div>
@@ -442,7 +446,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                   {pickupAddress}
                 </span>
                 <span className="shrink-0 text-[10px] font-bold bg-neutral-200 text-neutral-700 px-2 py-0.5 rounded-sm">
-                  Account Default
+                  {t('vanModal.accountDefault', 'Account Default')}
                 </span>
               </div>
             )}
@@ -452,7 +456,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-neutral-700 flex items-center gap-1.5">
               <Building2 className="h-3.5 w-3.5 text-[#F37021]" />
-              Destination Hospital / Medical Facility
+              {t('vanModal.destinationFacilityLabel', 'Destination Hospital / Medical Facility')}
             </label>
 
             <div className="relative">
@@ -469,12 +473,12 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                   onFocus={() => {
                     if (destSuggestions.length > 0) setShowDestDropdown(true);
                   }}
-                  placeholder="Type or search hospital or clinic destination..."
+                  placeholder={t('vanModal.typeOrSearchHospital', 'Type or search hospital or clinic destination...')}
                   className="apple-input w-full pl-10 pr-4 text-xs font-medium"
                 />
                 {isLoadingGeo && (
                   <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#F37021] animate-pulse">
-                    Searching...
+                    {t('vanModal.searching', 'Searching...')}
                   </span>
                 )}
               </div>
@@ -515,7 +519,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                   : 'bg-[#F37021] hover:bg-[#D9530F] text-white'
               }`}
             >
-              {t('vanModal.confirmBooking', 'Confirm & Submit Booking')} ({selectedSeats.length} {selectedSeats.length === 1 ? 'Seat' : 'Seats'}) · {selectedTimeSlot}
+              {t('vanModal.confirmBooking', 'Confirm & Submit Booking')} ({selectedSeats.length} {selectedSeats.length === 1 ? t('vanModal.seat', 'Seat') : t('vanModal.seats', 'Seats')}) · {selectedTimeSlot}
             </button>
           </div>
         </form>

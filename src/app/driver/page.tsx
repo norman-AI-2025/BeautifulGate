@@ -166,28 +166,28 @@ export default function DriverPage() {
       case 'approved':
         return {
           nextStatus: 'en_route_pickup' as TransitStatus,
-          label: 'Start Route to Pickup',
+          label: t('driverManifest.startRouteToPickup', 'Start Route to Pickup'),
           icon: Navigation,
           bgClass: 'bg-[#F37021] hover:bg-[#D9530F] text-white',
         };
       case 'en_route_pickup':
         return {
           nextStatus: 'picked_up' as TransitStatus,
-          label: 'Done Pick Up',
+          label: t('driverManifest.donePickUp', 'Done Pick Up'),
           icon: CheckCheck,
           bgClass: 'bg-emerald-600 hover:bg-emerald-700 text-white',
         };
       case 'picked_up':
         return {
           nextStatus: 'en_route_hospital' as TransitStatus,
-          label: 'Depart to Hospital',
+          label: t('driverManifest.departToHospital', 'Depart to Hospital'),
           icon: Navigation,
           bgClass: 'bg-[#F37021] hover:bg-[#D9530F] text-white',
         };
       case 'en_route_hospital':
         return {
           nextStatus: 'dropped_off' as TransitStatus,
-          label: 'Done Drop Off',
+          label: t('driverManifest.doneDropOff', 'Done Drop Off'),
           icon: MapPin,
           bgClass: 'bg-emerald-700 hover:bg-emerald-800 text-white',
         };
@@ -196,7 +196,7 @@ export default function DriverPage() {
       default:
         return {
           nextStatus: null,
-          label: 'Drop Off Completed',
+          label: t('driverManifest.dropOffCompleted', 'Drop Off Completed'),
           icon: CheckCircle2,
           bgClass: 'bg-neutral-100 text-neutral-500 cursor-default border border-neutral-200',
         };
@@ -347,16 +347,18 @@ export default function DriverPage() {
                           {isGreenAlert && (
                             <span className="text-[10px] font-extrabold uppercase tracking-wide bg-emerald-600 text-white px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-xs">
                               <span className="inline-block h-1.5 w-1.5 rounded-full bg-white animate-ping" />
-                              {slotGroup.isActive ? 'In Progress' : 'Ready · Within 15 Mins'}
+                              {slotGroup.isActive 
+                                ? t('driverManifest.inProgress', 'In Progress') 
+                                : t('driverManifest.ready15Mins', 'Ready · Within 15 Mins')}
                             </span>
                           )}
                         </div>
 
                         {/* Customer count per car seats (Max 6 customers) */}
                         <p className="text-xs font-extrabold text-neutral-800 flex items-center gap-1.5">
-                          <span>{paxCount} {paxCount === 1 ? 'Customer' : 'Customers'}</span>
+                          <span>{paxCount} {paxCount === 1 ? t('driverManifest.customer', 'Customer') : t('driverManifest.customers', 'Customers')}</span>
                           <span className="text-neutral-400 font-normal">·</span>
-                          <span className="text-neutral-500 font-medium">{paxCount} / 6 Seats Reserved</span>
+                          <span className="text-neutral-500 font-medium">{paxCount} / 6 {t('driverManifest.seatsReserved', 'Seats Reserved')}</span>
                         </p>
                       </div>
 
@@ -366,11 +368,13 @@ export default function DriverPage() {
                             ? 'bg-[#F37021] text-white shadow-xs'
                             : 'bg-emerald-100 text-emerald-900 font-extrabold'
                         }`}>
-                          {slotGroup.isActive ? 'Active Mission' : 'Upcoming'}
+                          {slotGroup.isActive 
+                            ? t('driverManifest.activeMission', 'Active Mission') 
+                            : t('driverManifest.upcoming', 'Upcoming')}
                         </span>
 
                         <div className="flex items-center text-xs font-extrabold text-[#F37021] gap-1">
-                          <span>{isExpanded ? 'Collapse' : 'Expand'}</span>
+                          <span>{isExpanded ? t('driverManifest.collapse', 'Collapse') : t('driverManifest.expand', 'Expand')}</span>
                           {isExpanded ? (
                             <ChevronDown className="h-4 w-4 stroke-[2.5]" />
                           ) : (
@@ -397,14 +401,14 @@ export default function DriverPage() {
                           <div className="flex items-center justify-between pb-2 border-b border-neutral-200">
                             <span className="text-xs font-extrabold uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
                               <Navigation className="h-4 w-4 text-[#F37021]" />
-                              Active Manifest ({paxCount} Riders)
+                              {t('driverManifest.activeManifest', 'Active Manifest')} ({paxCount} {t('driverManifest.riders', 'Riders')})
                             </span>
                             <button
                               type="button"
                               onClick={() => handleAdvanceEntireSlot(slotGroup)}
                               className="text-[11px] font-bold text-neutral-900 bg-white hover:bg-orange-50 border border-orange-300 px-3 py-1 rounded-xl shadow-xs transition-all active:scale-95"
                             >
-                              Advance All in Slot
+                              {t('driverManifest.advanceAll', 'Advance All in Slot')}
                             </button>
                           </div>
                         )}
@@ -458,7 +462,7 @@ export default function DriverPage() {
                                     <MapPin className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
                                     <div className="flex-1">
                                       <span className="text-[10px] font-extrabold uppercase text-emerald-800 tracking-wider block">
-                                        Pickup Address
+                                        {t('driver.pickupAddress', 'Pickup Address')}
                                       </span>
                                       <a
                                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.pickup_address)}`}
@@ -476,7 +480,7 @@ export default function DriverPage() {
                                     <Building2 className="h-4 w-4 text-[#F37021] shrink-0 mt-0.5" />
                                     <div className="flex-1">
                                       <span className="text-[10px] font-extrabold uppercase text-[#F37021] tracking-wider block">
-                                        Destination
+                                        {t('driver.destination', 'Destination')}
                                       </span>
                                       <a
                                         href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(booking.hospital_name)}`}
@@ -499,7 +503,7 @@ export default function DriverPage() {
                                       className="h-11 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 font-extrabold text-xs flex items-center justify-center gap-1.5 tap-target shadow-xs transition-all active:scale-[0.98]"
                                     >
                                       <Phone className="h-4 w-4 text-emerald-600" />
-                                      <span>Call</span>
+                                      <span>{t('driver.call', 'Call')}</span>
                                     </a>
 
                                     {/* WhatsApp Button */}
@@ -510,7 +514,7 @@ export default function DriverPage() {
                                       className="h-11 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 font-extrabold text-xs flex items-center justify-center gap-1.5 tap-target shadow-xs transition-all active:scale-[0.98]"
                                     >
                                       <MessageSquare className="h-4 w-4 text-emerald-600" />
-                                      <span>WhatsApp</span>
+                                      <span>{t('driver.whatsapp', 'WhatsApp')}</span>
                                     </a>
                                   </div>
 
@@ -527,7 +531,7 @@ export default function DriverPage() {
                                   ) : (
                                     <div className="w-full h-11 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-900 flex items-center justify-center gap-2 font-black text-xs">
                                       <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                                      <span>Drop Off Completed</span>
+                                      <span>{t('driverManifest.dropOffCompleted', 'Drop Off Completed')}</span>
                                     </div>
                                   )}
                                 </div>

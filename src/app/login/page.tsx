@@ -154,8 +154,10 @@ export default function LoginPage() {
                   <UserCheck className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-neutral-900 group-hover:text-[#F37021] transition-colors">Beneficiary / Caregiver</p>
-                  <p className="text-[11px] text-neutral-500 font-medium">Siti Nurhaliza (Wheelchair Transit & Workshop)</p>
+                  <p className="text-xs font-bold text-neutral-900 group-hover:text-[#F37021] transition-colors">
+                    {t('auth.signInAsBeneficiary', 'Beneficiary / Caregiver')}
+                  </p>
+                  <p className="text-[11px] text-neutral-500 font-medium">Siti Nurhaliza</p>
                 </div>
               </div>
               <ArrowRight className="h-4 w-4 text-neutral-400 group-hover:text-[#F37021] transition-colors" />
@@ -171,8 +173,10 @@ export default function LoginPage() {
                   <Car className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-neutral-900">Driver (Johan)</p>
-                  <p className="text-[11px] text-neutral-500 font-medium">Accessible HiAce Commuter WVV 4108</p>
+                  <p className="text-xs font-bold text-neutral-900">
+                    {t('auth.signInAsDriver', 'Driver (Johan)')}
+                  </p>
+                  <p className="text-[11px] text-neutral-500 font-medium">Toyota HiAce (WVV 4108)</p>
                 </div>
               </div>
               <ArrowRight className="h-4 w-4 text-neutral-400" />
@@ -188,8 +192,10 @@ export default function LoginPage() {
                   <Shield className="h-4 w-4" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-neutral-900">Administrator (Supervisor)</p>
-                  <p className="text-[11px] text-neutral-500 font-medium">Faridah (Transit Dispatch & Workshop Payroll)</p>
+                  <p className="text-xs font-bold text-neutral-900">
+                    {t('auth.signInAsSupervisor', 'Administrator (Supervisor)')}
+                  </p>
+                  <p className="text-[11px] text-neutral-500 font-medium">Faridah Hashim</p>
                 </div>
               </div>
               <ArrowRight className="h-4 w-4 text-neutral-400" />

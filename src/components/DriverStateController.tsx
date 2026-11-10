@@ -4,6 +4,7 @@ import React from 'react';
 import { ArrowRight, CheckCheck, Navigation, MapPin } from 'lucide-react';
 import { TransitBooking } from '@/types';
 import { useApp } from '@/context/AppContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface DriverStateControllerProps {
   currentBooking: TransitBooking;
@@ -17,38 +18,41 @@ export const DriverStateController: React.FC<DriverStateControllerProps> = ({
   hasNextBooking,
 }) => {
   const { updateBookingStatus } = useApp();
+  const { t } = useLanguage();
 
   const status = currentBooking.status;
 
   // Determine current step index (1-5) and button configuration
   let stepNumber = 1;
-  let actionLabel = 'Start Route to Pickup';
+  let actionLabel = t('driverManifest.startRouteToPickup', 'Start Route to Pickup');
   let nextStatus: string | null = 'en_route_pickup';
   let buttonIcon = Navigation;
 
   if (status === 'approved' || status === 'pending') {
     stepNumber = 1;
-    actionLabel = 'Start Route to Pickup';
+    actionLabel = t('driverManifest.startRouteToPickup', 'Start Route to Pickup');
     nextStatus = 'en_route_pickup';
     buttonIcon = Navigation;
   } else if (status === 'en_route_pickup') {
     stepNumber = 2;
-    actionLabel = 'Done Pick Up';
+    actionLabel = t('driverManifest.donePickUp', 'Done Pick Up');
     nextStatus = 'picked_up';
     buttonIcon = CheckCheck;
   } else if (status === 'picked_up') {
     stepNumber = 3;
-    actionLabel = 'Depart to Hospital';
+    actionLabel = t('driverManifest.departToHospital', 'Depart to Hospital');
     nextStatus = 'en_route_hospital';
     buttonIcon = Navigation;
   } else if (status === 'en_route_hospital') {
     stepNumber = 4;
-    actionLabel = 'Done Drop Off';
+    actionLabel = t('driverManifest.doneDropOff', 'Done Drop Off');
     nextStatus = 'dropped_off';
     buttonIcon = MapPin;
   } else if (status === 'dropped_off' || status === 'en_route_next') {
     stepNumber = 5;
-    actionLabel = hasNextBooking ? 'On the Way to Next Customer' : 'Shift Completed (All Pickups Done)';
+    actionLabel = hasNextBooking 
+      ? t('driverManifest.onWayToNextCustomer', 'On the Way to Next Customer')
+      : t('driverManifest.shiftCompleted', 'Shift Completed (All Pickups Done)');
     nextStatus = hasNextBooking ? 'en_route_next' : null;
     buttonIcon = ArrowRight;
   }
@@ -73,9 +77,11 @@ export const DriverStateController: React.FC<DriverStateControllerProps> = ({
     <div className="w-full space-y-3">
       {/* Current Step Progress Line */}
       <div className="flex items-center justify-between text-xs font-semibold text-neutral-600 px-1">
-        <span>Step {Math.min(stepNumber, 5)} of 5</span>
+        <span>
+          {t('driverManifest.stepOf', 'Step')} {Math.min(stepNumber, 5)} {t('driverManifest.ofTotal', 'of 5')}
+        </span>
         <span className="uppercase tracking-wider font-mono text-[11px] text-neutral-500">
-          State: {status.replace(/_/g, ' ')}
+          {t('driverManifest.stateLabel', 'State')}: {status.replace(/_/g, ' ')}
         </span>
       </div>
 
@@ -103,4 +109,3 @@ export const DriverStateController: React.FC<DriverStateControllerProps> = ({
     </div>
   );
 };
-

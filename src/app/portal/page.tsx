@@ -198,10 +198,10 @@ export default function MobileArtisanPortalPage() {
                   <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
                   <div>
                     <h4 className="text-xs font-bold text-emerald-950">
-                      Booking Submitted Successfully!
+                      {t('portalStatus.bookingSubmittedSuccess', 'Booking Submitted Successfully!')}
                     </h4>
                     <p className="text-[11px] text-emerald-800 mt-0.5">
-                      Your transit request is now <span className="font-extrabold">Pending Administrator Approval</span>. You can monitor its progression below.
+                      {t('portalStatus.pendingApprovalDesc', 'Your transit request is now Pending Administrator Approval. You can monitor its progression below.')}
                     </p>
                   </div>
                 </div>
@@ -210,7 +210,7 @@ export default function MobileArtisanPortalPage() {
                   onClick={() => setJustBookedId(null)}
                   className="text-emerald-700 text-xs font-bold hover:underline"
                 >
-                  Dismiss
+                  {t('portalStatus.dismiss', 'Dismiss')}
                 </button>
               </div>
             )}
@@ -234,10 +234,10 @@ export default function MobileArtisanPortalPage() {
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-neutral-800">
-                        Approved Transit Mission ({activeBookings.length})
+                        {t('portalStatus.approvedMission', 'Approved Transit Mission')} ({activeBookings.length})
                       </span>
                       <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-2.5 py-0.5 rounded-full">
-                        Vehicle Assigned
+                        {t('portalStatus.vehicleAssigned', 'Vehicle Assigned')}
                       </span>
                     </div>
 
@@ -250,7 +250,7 @@ export default function MobileArtisanPortalPage() {
                         <div className="flex items-start justify-between border-b border-neutral-100 pb-3">
                           <div>
                             <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#F37021]">
-                              {b.date || 'Today'} · Slot: {b.appointment_time}
+                              {b.date || t('common.today', 'Today')} · {t('admin.timeSlot', 'Slot')}: {b.appointment_time}
                             </span>
                             <h3 className="text-xl font-extrabold text-neutral-900 mt-0.5">
                               {b.hospital_name}
@@ -277,7 +277,7 @@ export default function MobileArtisanPortalPage() {
                         <div className="grid grid-cols-2 gap-3 text-xs">
                           <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-                              Operator
+                              {t('portalStatus.operator', 'Operator')}
                             </span>
                             <p className="font-bold text-neutral-900 text-sm mt-0.5">
                               {b.assigned_driver}
@@ -289,13 +289,13 @@ export default function MobileArtisanPortalPage() {
 
                           <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-                              Vehicle Plate
+                              {t('portalStatus.vehiclePlate', 'Vehicle Plate')}
                             </span>
                             <p className="font-mono font-extrabold text-neutral-900 text-sm mt-0.5">
                               {b.assigned_vehicle.plate}
                             </p>
                             <p className="text-[10px] text-neutral-500 mt-0.5">
-                              Hydraulic Ramp Equipped
+                              {t('portalStatus.hydraulicRamp', 'Hydraulic Ramp Equipped')}
                             </p>
                           </div>
                         </div>
@@ -307,7 +307,7 @@ export default function MobileArtisanPortalPage() {
                           className="w-full py-2.5 rounded-xl border border-[#F37021] text-[#F37021] hover:bg-orange-50 text-xs font-bold flex items-center justify-center gap-2 tap-target"
                         >
                           <Ticket className="h-4 w-4" />
-                          View Transit Boarding Pass
+                          {t('portal.viewBoardingPass', 'View Transit Boarding Pass')}
                         </button>
                       </div>
                     ))}
@@ -318,7 +318,7 @@ export default function MobileArtisanPortalPage() {
                 {pendingBookings.length > 0 && (
                   <div className="space-y-3">
                     <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
-                      Pending Administrator Approval ({pendingBookings.length})
+                      {t('portalStatus.pendingApproval', 'Pending Administrator Approval')} ({pendingBookings.length})
                     </span>
 
                     {pendingBookings.map((b) => (
@@ -336,22 +336,22 @@ export default function MobileArtisanPortalPage() {
                                 {b.hospital_name}
                               </h4>
                               <p className="text-[11px] text-neutral-600">
-                                {b.clinic_department} · Slot: {b.appointment_time}
+                                {b.clinic_department} · {t('admin.timeSlot', 'Slot')}: {b.appointment_time}
                               </p>
                             </div>
                           </div>
 
                           <span className="text-[10px] font-bold uppercase tracking-wider bg-yellow-400 text-yellow-950 px-2.5 py-1 rounded-full shadow-xs">
-                            Pending Approval
+                            {t('adminTable.pending', 'Pending')}
                           </span>
                         </div>
 
                         <div className="rounded-xl bg-white/80 p-3 text-xs border border-yellow-200">
                           <p className="text-neutral-700 font-medium">
-                            Allocated Seat: <span className="font-bold text-neutral-900">{b.assigned_space}</span>
+                            {t('portalStatus.allocatedSeat', 'Allocated Seat:')} <span className="font-bold text-neutral-900">{b.assigned_space}</span>
                           </p>
                           <p className="text-[11px] text-neutral-500 mt-0.5">
-                            Supervisor Faridah Hashim will verify capacity and assign dispatch.
+                            {t('portalStatus.pendingVerification', 'Supervisor Faridah Hashim will verify capacity and assign dispatch.')}
                           </p>
                         </div>
                       </div>
@@ -363,7 +363,7 @@ export default function MobileArtisanPortalPage() {
                 {completedBookings.length > 0 && (
                   <div className="space-y-4">
                     <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                      Completed Trips ({completedBookings.length})
+                      {t('portalStatus.completedTrips', 'Completed Trips')} ({completedBookings.length})
                     </span>
 
                     {completedBookings.map((b) => (
@@ -374,19 +374,18 @@ export default function MobileArtisanPortalPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="text-[10px] font-mono text-neutral-400">
-                              Completed Ride · {b.appointment_time}
+                              {t('portalStatus.completedRide', 'Completed Ride')} · {b.appointment_time}
                             </span>
                             <h4 className="text-base font-bold text-neutral-900">
                               {b.hospital_name}
                             </h4>
                           </div>
                           <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
-                            Arrived & Safe
+                            {t('portalStatus.arrivedSafe', 'Arrived & Safe')}
                           </span>
                         </div>
 
-                        {/* Rating Component as requested:
-                            "user can rate after the service completed , and it will show at the administrator page" */}
+                        {/* Rating Component */}
                         <ServiceRatingCard booking={b} />
                       </div>
                     ))}
@@ -397,23 +396,23 @@ export default function MobileArtisanPortalPage() {
                 {declinedBookings.length > 0 && (
                   <div className="space-y-3">
                     <span className="text-xs font-bold uppercase tracking-wider text-red-600">
-                      Declined Requests ({declinedBookings.length})
+                      {t('portalStatus.declinedRequests', 'Declined Requests')} ({declinedBookings.length})
                     </span>
                     {declinedBookings.map((b) => (
                       <div key={b.id} className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs">
                         <div className="flex items-center gap-2 text-red-800 font-bold mb-1">
                           <XCircle className="h-4 w-4" />
-                          <span>Request Declined for {b.appointment_time}</span>
+                          <span>{t('portalStatus.requestDeclinedFor', 'Request Declined for')} {b.appointment_time}</span>
                         </div>
                         <p className="text-red-700">
-                          Destination: {b.hospital_name}. Slot exceeded maximum accessible van capacity. Please choose another timetable window.
+                          {t('portalStatus.declinedReason', 'Destination: {hospital}. Slot exceeded maximum accessible van capacity. Please choose another timetable window.').replace('{hospital}', b.hospital_name)}
                         </p>
                         <button
                           type="button"
                           onClick={() => setTransitTab('book')}
                           className="mt-2 text-xs font-bold text-red-900 underline"
                         >
-                          Book another slot &rarr;
+                          {t('portalStatus.bookAnotherSlot', 'Book another slot')} &rarr;
                         </button>
                       </div>
                     ))}
@@ -425,17 +424,17 @@ export default function MobileArtisanPortalPage() {
                   <div className="rounded-3xl border border-neutral-200 bg-white p-8 text-center space-y-3">
                     <Calendar className="mx-auto h-10 w-10 text-neutral-400" />
                     <h4 className="text-base font-bold text-neutral-900">
-                      No Transit Bookings Yet
+                      {t('portalStatus.noBookingsYet', 'No Transit Bookings Yet')}
                     </h4>
                     <p className="text-xs text-neutral-500 max-w-sm mx-auto">
-                      You haven&apos;t scheduled any hospital van trips. Switch to the &quot;Book a Service&quot; tab to reserve your seat.
+                      {t('portal.noBookingsDesc', "You haven't scheduled any hospital van trips. Switch to the 'Book a Service' tab to reserve your seat.")}
                     </p>
                     <button
                       type="button"
                       onClick={() => setTransitTab('book')}
                       className="px-5 py-2.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-bold tap-target"
                     >
-                      Browse Timetable
+                      {t('portal.browseTimetable', 'Browse Timetable')}
                     </button>
                   </div>
                 )}
@@ -454,52 +453,52 @@ export default function MobileArtisanPortalPage() {
               {/* Today */}
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 shadow-xs">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
-                  Today&apos;s Income
+                  {t('portal.todayIncome', "Today's Income")}
                 </span>
                 <p className="text-2xl font-black text-emerald-950 font-mono mt-1">
                   RM {artisanStats?.todayEarned.toFixed(2) || '0.00'}
                 </p>
                 <p className="text-[11px] font-semibold text-emerald-800 mt-0.5">
-                  {artisanStats?.todayUnits || 0} cards made
+                  {artisanStats?.todayUnits || 0} {t('portal.cardsMade', 'cards made')}
                 </p>
               </div>
 
               {/* This Week */}
               <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-4 shadow-xs">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-orange-700">
-                  This Week
+                  {t('portal.thisWeek', 'This Week')}
                 </span>
                 <p className="text-2xl font-black text-orange-950 font-mono mt-1">
                   RM {artisanStats?.weekEarned.toFixed(2) || '0.00'}
                 </p>
                 <p className="text-[11px] font-semibold text-orange-800 mt-0.5">
-                  {artisanStats?.weekUnits || 0} cards made
+                  {artisanStats?.weekUnits || 0} {t('portal.cardsMade', 'cards made')}
                 </p>
               </div>
 
               {/* This Month (Highlighted in bold brand orange / charcoal) */}
               <div className="rounded-2xl border-2 border-[#F37021] bg-[#18181B] text-white p-4 shadow-md">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">
-                  Month-to-Date (MTD)
+                  {t('portal.thisMonth', 'Month-to-Date (MTD)')}
                 </span>
                 <p className="text-2xl font-black text-white font-mono mt-1">
                   RM {artisanStats?.monthEarned.toFixed(2) || '0.00'}
                 </p>
                 <p className="text-[11px] font-medium text-orange-200 mt-0.5">
-                  {artisanStats?.monthUnits || 0} cards produced
+                  {artisanStats?.monthUnits || 0} {t('portal.cardsProduced', 'cards produced')}
                 </p>
               </div>
 
               {/* This Year */}
               <div className="rounded-2xl border border-purple-200 bg-purple-50/60 p-4 shadow-xs">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700">
-                  Year-to-Date (YTD)
+                  {t('portal.thisYear', 'Year-to-Date (YTD)')}
                 </span>
                 <p className="text-2xl font-black text-purple-950 font-mono mt-1">
                   RM {artisanStats?.yearEarned.toFixed(2) || '0.00'}
                 </p>
                 <p className="text-[11px] font-semibold text-purple-800 mt-0.5">
-                  {artisanStats?.yearUnits || 0} cards produced
+                  {artisanStats?.yearUnits || 0} {t('portal.cardsProduced', 'cards produced')}
                 </p>
               </div>
             </div>
@@ -508,24 +507,24 @@ export default function MobileArtisanPortalPage() {
             <div className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm space-y-4">
               <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
                 <h3 className="text-base font-extrabold text-neutral-900">
-                  Daily Production Entry
+                  {t('portal.dailyProduction', 'Daily Production Entry')}
                 </h3>
                 <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full border border-emerald-300">
-                  RM / Card
+                  {t('portal.perCard', 'RM / Card')}
                 </span>
               </div>
 
               {recordSuccessMsg && (
                 <div className="rounded-xl bg-emerald-600 text-white p-3 text-xs font-bold flex items-center gap-2">
                   <Check className="h-4 w-4" />
-                  Production entry saved successfully!
+                  {t('portal.productionSaved', 'Production entry saved successfully!')}
                 </div>
               )}
 
               <form onSubmit={handleRecordWork} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-neutral-700 mb-1">
-                    Select Card Product & Resort Client
+                    {t('portal.selectCardProduct', 'Select Card Product & Resort Client')}
                   </label>
                   <select
                     value={selectedProductId}
@@ -534,7 +533,7 @@ export default function MobileArtisanPortalPage() {
                   >
                     {products.map(p => (
                       <option key={p.id} value={p.id}>
-                        {p.name} · {p.resort_client} (RM {p.piece_rate.toFixed(2)}/card)
+                        {p.name} · {p.resort_client} (RM {p.piece_rate.toFixed(2)}/{t('portal.perCard', 'card')})
                       </option>
                     ))}
                   </select>
@@ -542,7 +541,7 @@ export default function MobileArtisanPortalPage() {
 
                 <div>
                   <label className="block text-xs font-bold text-neutral-700 mb-1">
-                    Amount of Cards Completed Today
+                    {t('portal.amountCompleted', 'Amount of Cards Completed Today')}
                   </label>
                   <div className="relative">
                     <input
@@ -556,7 +555,7 @@ export default function MobileArtisanPortalPage() {
                       className="apple-input w-full text-2xl font-black font-mono tracking-tight text-neutral-900"
                     />
                     <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold uppercase text-neutral-400">
-                      Units
+                      {t('portal.units', 'Units')}
                     </span>
                   </div>
                 </div>
@@ -564,14 +563,14 @@ export default function MobileArtisanPortalPage() {
                 {/* Live Calculated Payout Preview */}
                 <div className="rounded-2xl border-2 border-orange-300 bg-gradient-to-r from-orange-50 to-amber-50 p-4">
                   <div className="flex items-center justify-between text-xs text-orange-800">
-                    <span>Piece Rate Formula</span>
+                    <span>{t('portal.pieceRateFormula', 'Piece Rate Formula')}</span>
                     <span className="font-mono font-bold">
-                      {cardsCountInput || 0} cards × RM {selectedProduct?.piece_rate.toFixed(2)}
+                      {cardsCountInput || 0} {t('drawer.cards', 'cards')} × RM {selectedProduct?.piece_rate.toFixed(2)}
                     </span>
                   </div>
                   <div className="mt-1 flex items-baseline justify-between border-t border-orange-200 pt-2">
                     <span className="text-xs font-bold text-orange-950">
-                      Calculated Payout:
+                      {t('portal.calculatedPayout', 'Calculated Payout:')}
                     </span>
                     <span className="text-2xl font-black text-orange-950 font-mono">
                       RM {livePreviewEarned}
@@ -584,7 +583,7 @@ export default function MobileArtisanPortalPage() {
                   className="w-full py-3 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-md tap-target"
                 >
                   <Plus className="h-4 w-4" />
-                  Record Work
+                  {t('portal.recordWork', 'Record Work')}
                 </button>
               </form>
             </div>
@@ -592,7 +591,7 @@ export default function MobileArtisanPortalPage() {
             {/* Recent Activity List */}
             <div className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-xs">
               <h3 className="text-sm font-bold text-neutral-900 pb-3 border-b border-neutral-100">
-                Recent Production History
+                {t('portal.recentHistory', 'Recent Production History')}
               </h3>
               <div className="divide-y divide-neutral-100 mt-2">
                 {userRecentLogs.map((log) => (
@@ -600,7 +599,7 @@ export default function MobileArtisanPortalPage() {
                     <div>
                       <p className="font-bold text-neutral-900">{log.card_name}</p>
                       <p className="text-[11px] text-neutral-500">
-                        {log.logged_date} · {log.units_completed} units
+                        {log.logged_date} · {log.units_completed} {t('drawer.units', 'units')}
                       </p>
                     </div>
                     <span className="font-mono font-extrabold text-sm text-[#F37021]">

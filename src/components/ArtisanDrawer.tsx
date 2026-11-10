@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Plus, Edit2, Check, CreditCard, Phone, User, Calendar, Award } from 'lucide-react';
+import { X, Plus, Edit2, Check, CreditCard, Phone } from 'lucide-react';
 import { ArtisanSummary } from '@/types';
 import { useApp } from '@/context/AppContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ArtisanDrawerProps {
   artisan: ArtisanSummary;
@@ -12,6 +13,7 @@ interface ArtisanDrawerProps {
 
 export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }) => {
   const { products, addWorkLog, overrideWorkLog } = useApp();
+  const { t } = useLanguage();
 
   // Manual entry / override state
   const [isAddingNew, setIsAddingNew] = useState(false);
@@ -57,7 +59,7 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
               </span>
             </div>
             <p className="text-xs font-mono text-neutral-500 mt-0.5">
-              OKU Card: {profile.ic_or_oku_number}
+              OKU: {profile.ic_or_oku_number}
             </p>
           </div>
           <button
@@ -73,13 +75,15 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
           {/* Section 1: Personal & Bank Details */}
           <div className="rounded-2xl border border-neutral-200 bg-neutral-50/50 p-5 space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-              Personal & Bank Disbursement Account
+              {t('drawer.personalBank', 'Personal & Bank Disbursement Account')}
             </h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex items-center gap-2.5 text-neutral-700">
                 <CreditCard className="h-4 w-4 text-neutral-500" />
                 <div>
-                  <p className="text-xs text-neutral-400 font-medium">Bank & Account</p>
+                  <p className="text-xs text-neutral-400 font-medium">
+                    {t('drawer.bankAndAccount', 'Bank & Account')}
+                  </p>
                   <p className="font-semibold text-neutral-900">
                     {profile.bank_name || 'Maybank'}
                   </p>
@@ -92,7 +96,9 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
               <div className="flex items-center gap-2.5 text-neutral-700">
                 <Phone className="h-4 w-4 text-neutral-500" />
                 <div>
-                  <p className="text-xs text-neutral-400 font-medium">Contact Phone</p>
+                  <p className="text-xs text-neutral-400 font-medium">
+                    {t('drawer.contactPhone', 'Contact Phone')}
+                  </p>
                   <p className="font-semibold text-neutral-900">{profile.phone}</p>
                   <p className="text-xs text-neutral-500">{profile.email}</p>
                 </div>
@@ -103,39 +109,55 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
           {/* Section 2: Complete Income Breakdown */}
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500 mb-3">
-              Income Breakdown & Production
+              {t('drawer.incomeBreakdown', 'Income Breakdown & Production')}
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="rounded-xl border border-neutral-200 p-3.5 bg-white">
-                <p className="text-xs text-neutral-500 font-medium">Today</p>
+                <p className="text-xs text-neutral-500 font-medium">
+                  {t('drawer.today', 'Today')}
+                </p>
                 <p className="text-lg font-bold text-neutral-900 mt-1">
                   RM {artisan.todayEarned.toFixed(2)}
                 </p>
-                <p className="text-xs text-neutral-500 mt-0.5">{artisan.todayUnits} cards</p>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  {artisan.todayUnits} {t('drawer.cards', 'cards')}
+                </p>
               </div>
 
               <div className="rounded-xl border border-neutral-200 p-3.5 bg-white">
-                <p className="text-xs text-neutral-500 font-medium">This Week</p>
+                <p className="text-xs text-neutral-500 font-medium">
+                  {t('drawer.week', 'This Week')}
+                </p>
                 <p className="text-lg font-bold text-neutral-900 mt-1">
                   RM {artisan.weekEarned.toFixed(2)}
                 </p>
-                <p className="text-xs text-neutral-500 mt-0.5">{artisan.weekUnits} cards</p>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  {artisan.weekUnits} {t('drawer.cards', 'cards')}
+                </p>
               </div>
 
               <div className="rounded-xl border-2 border-[#F37021] p-3.5 bg-[#18181B] text-white">
-                <p className="text-xs text-orange-300 font-medium">This Month</p>
+                <p className="text-xs text-orange-300 font-medium">
+                  {t('drawer.month', 'This Month')}
+                </p>
                 <p className="text-lg font-bold text-white mt-1">
                   RM {artisan.monthEarned.toFixed(2)}
                 </p>
-                <p className="text-xs text-orange-200 mt-0.5">{artisan.monthUnits} cards</p>
+                <p className="text-xs text-orange-200 mt-0.5">
+                  {artisan.monthUnits} {t('drawer.cards', 'cards')}
+                </p>
               </div>
 
               <div className="rounded-xl border border-neutral-200 p-3.5 bg-white">
-                <p className="text-xs text-neutral-500 font-medium">This Year</p>
+                <p className="text-xs text-neutral-500 font-medium">
+                  {t('drawer.year', 'This Year')}
+                </p>
                 <p className="text-lg font-bold text-neutral-900 mt-1">
                   RM {artisan.yearEarned.toFixed(2)}
                 </p>
-                <p className="text-xs text-neutral-500 mt-0.5">{artisan.yearUnits} cards</p>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  {artisan.yearUnits} {t('drawer.cards', 'cards')}
+                </p>
               </div>
             </div>
           </div>
@@ -144,7 +166,7 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
           <div className="rounded-2xl border border-neutral-200 p-5 bg-white">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                Supervisor Override & Entry
+                {t('drawer.supervisorOverride', 'Supervisor Override & Entry')}
               </h3>
               <button
                 type="button"
@@ -152,7 +174,7 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                 className="apple-btn-secondary text-xs py-1.5 px-3 min-h-[36px]"
               >
                 <Plus className="h-3.5 w-3.5 mr-1" />
-                {isAddingNew ? 'Cancel' : 'Log Cards on Behalf'}
+                {isAddingNew ? t('drawer.cancel', 'Cancel') : t('drawer.logOnBehalf', 'Log Cards on Behalf')}
               </button>
             </div>
 
@@ -161,7 +183,7 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-neutral-700 mb-1">
-                      Card Product
+                      {t('drawer.cardProduct', 'Card Product')}
                     </label>
                     <select
                       value={selectedProductId}
@@ -178,7 +200,7 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
 
                   <div>
                     <label className="block text-xs font-medium text-neutral-700 mb-1">
-                      Units Completed Today
+                      {t('drawer.unitsCompleted', 'Units Completed Today')}
                     </label>
                     <input
                       type="number"
@@ -195,7 +217,7 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                   type="submit"
                   className="apple-btn-primary w-full text-xs py-2 min-h-[40px]"
                 >
-                  Record Work Log
+                  {t('drawer.recordWorkLog', 'Record Work Log')}
                 </button>
               </form>
             )}
@@ -205,14 +227,14 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                Historical Work Logs ({artisan.logs.length})
+                {t('drawer.historicalLogs', 'Historical Work Logs')} ({artisan.logs.length})
               </h3>
             </div>
 
             <div className="border border-neutral-200 rounded-xl divide-y divide-neutral-200 overflow-hidden bg-white">
               {artisan.logs.length === 0 ? (
                 <div className="p-6 text-center text-xs text-neutral-500">
-                  No logged card production history found.
+                  {t('drawer.noLogs', 'No logged card production history found.')}
                 </div>
               ) : (
                 artisan.logs.map((log) => {
@@ -226,11 +248,11 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                             {log.card_name || 'DIY Eco Card'}
                           </p>
                           <span className="text-[10px] font-mono text-neutral-400">
-                            RM {log.piece_rate_snapshot.toFixed(2)}/card
+                            RM {log.piece_rate_snapshot.toFixed(2)}/{t('portal.perCard', 'card')}
                           </span>
                         </div>
                         <p className="text-[11px] font-medium text-neutral-500 mt-0.5">
-                          Date: {log.logged_date}
+                          {t('common.date', 'Date')}: {log.logged_date}
                         </p>
                       </div>
 
@@ -260,7 +282,7 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                               RM {log.total_earned.toFixed(2)}
                             </p>
                             <p className="text-xs text-neutral-600 font-medium">
-                              {log.units_completed} units
+                              {log.units_completed} {t('drawer.units', 'units')}
                             </p>
                           </div>
                         )}
@@ -287,4 +309,3 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
     </div>
   );
 };
-

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Star, CheckCircle, Send, Heart } from 'lucide-react';
 import { TransitBooking } from '@/types';
 import { useApp } from '@/context/AppContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface ServiceRatingCardProps {
   booking: TransitBooking;
@@ -11,6 +12,7 @@ interface ServiceRatingCardProps {
 
 export const ServiceRatingCard: React.FC<ServiceRatingCardProps> = ({ booking }) => {
   const { rateBooking } = useApp();
+  const { t } = useLanguage();
 
   const [rating, setRating] = useState<number>(booking.rating || 5);
   const [hoverRating, setHoverRating] = useState<number>(0);
@@ -18,16 +20,16 @@ export const ServiceRatingCard: React.FC<ServiceRatingCardProps> = ({ booking })
   const [submitted, setSubmitted] = useState<boolean>(Boolean(booking.rating));
 
   const quickTags = [
-    'Punctual Arrival',
-    'Gentle Clamp Securing',
-    'Hydraulic Lift Care',
-    'Patient & Friendly',
-    'Smooth Transit',
+    { key: 'rating.tagPunctual', defaultLabel: 'Punctual Arrival' },
+    { key: 'rating.tagClamp', defaultLabel: 'Gentle Clamp Securing' },
+    { key: 'rating.tagLift', defaultLabel: 'Hydraulic Lift Care' },
+    { key: 'rating.tagPatient', defaultLabel: 'Patient & Friendly' },
+    { key: 'rating.tagSmooth', defaultLabel: 'Smooth Transit' },
   ];
 
-  const handleTagClick = (tag: string) => {
-    if (comment.includes(tag)) return;
-    setComment(prev => (prev ? `${prev}, ${tag}` : tag));
+  const handleTagClick = (tagLabel: string) => {
+    if (comment.includes(tagLabel)) return;
+    setComment(prev => (prev ? `${prev}, ${tagLabel}` : tagLabel));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -43,7 +45,7 @@ export const ServiceRatingCard: React.FC<ServiceRatingCardProps> = ({ booking })
           <CheckCircle className="h-5 w-5" />
         </div>
         <h4 className="text-sm font-bold text-emerald-950 mt-2">
-          Thank you for your feedback!
+          {t('rating.thankYou', 'Thank you for your feedback!')}
         </h4>
         <div className="flex items-center justify-center gap-1 my-1.5">
           {[1, 2, 3, 4, 5].map((star) => (
@@ -58,7 +60,7 @@ export const ServiceRatingCard: React.FC<ServiceRatingCardProps> = ({ booking })
           ))}
         </div>
         <p className="text-xs text-emerald-800 font-medium">
-          Your rating of Driver Johan has been recorded and submitted to Beautiful Gate administration.
+          {t('rating.thankYouDetail', 'Your rating of Driver Johan has been recorded and submitted to Beautiful Gate administration.')}
         </p>
       </div>
     );
@@ -73,15 +75,15 @@ export const ServiceRatingCard: React.FC<ServiceRatingCardProps> = ({ booking })
           </div>
           <div>
             <h4 className="text-sm font-bold text-neutral-900 leading-tight">
-              Rate Your Completed Transit Service
+              {t('rating.serviceTitle', 'Rate Your Completed Transit Service')}
             </h4>
             <p className="text-[11px] text-neutral-600 font-medium">
-              Driver: Johan bin Ariffin · {booking.assigned_vehicle.plate}
+              {t('rating.driverLabel', 'Driver')}: Johan bin Ariffin · {booking.assigned_vehicle.plate}
             </p>
           </div>
         </div>
         <span className="text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-300">
-          Beneficiary Review
+          {t('rating.beneficiaryReview', 'Beneficiary Review')}
         </span>
       </div>
 
@@ -112,26 +114,29 @@ export const ServiceRatingCard: React.FC<ServiceRatingCardProps> = ({ booking })
             })}
           </div>
           <span className="text-xs font-bold text-amber-900 mt-1">
-            {rating === 5 && 'Excellent & Very Caring'}
-            {rating === 4 && 'Good & Punctual'}
-            {rating === 3 && 'Satisfactory Service'}
-            {rating === 2 && 'Needs Improvement'}
-            {rating === 1 && 'Unsatisfactory'}
+            {rating === 5 && t('rating.rating5', 'Excellent & Very Caring')}
+            {rating === 4 && t('rating.rating4', 'Good & Punctual')}
+            {rating === 3 && t('rating.rating3', 'Satisfactory Service')}
+            {rating === 2 && t('rating.rating2', 'Needs Improvement')}
+            {rating === 1 && t('rating.rating1', 'Unsatisfactory')}
           </span>
         </div>
 
         {/* Quick Feedback Tags */}
         <div className="flex flex-wrap gap-1.5 justify-center">
-          {quickTags.map((tag) => (
-            <button
-              key={tag}
-              type="button"
-              onClick={() => handleTagClick(tag)}
-              className="text-[10px] font-bold px-2.5 py-1 rounded-full border border-amber-300 bg-white hover:bg-amber-100 text-amber-900 transition-colors"
-            >
-              + {tag}
-            </button>
-          ))}
+          {quickTags.map((tagObj) => {
+            const tagLabel = t(tagObj.key, tagObj.defaultLabel);
+            return (
+              <button
+                key={tagObj.key}
+                type="button"
+                onClick={() => handleTagClick(tagLabel)}
+                className="text-[10px] font-bold px-2.5 py-1 rounded-full border border-amber-300 bg-white hover:bg-amber-100 text-amber-900 transition-colors"
+              >
+                + {tagLabel}
+              </button>
+            );
+          })}
         </div>
 
         {/* Comment Textarea */}
@@ -139,7 +144,7 @@ export const ServiceRatingCard: React.FC<ServiceRatingCardProps> = ({ booking })
           rows={2}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          placeholder="Share your appreciation or feedback for Driver Johan and vehicle care..."
+          placeholder={t('rating.commentPlaceholder', 'Share your appreciation or feedback for Driver Johan and vehicle care...')}
           className="w-full text-xs rounded-xl border border-amber-300 bg-white p-3 focus:outline-none focus:ring-2 focus:ring-amber-500 text-neutral-900 placeholder:text-neutral-400"
         />
 
@@ -148,10 +153,9 @@ export const ServiceRatingCard: React.FC<ServiceRatingCardProps> = ({ booking })
           className="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all tap-target"
         >
           <Send className="h-3.5 w-3.5" />
-          Submit Service Rating
+          {t('rating.submitBtn', 'Submit Service Rating')}
         </button>
       </form>
     </div>
   );
 };
-

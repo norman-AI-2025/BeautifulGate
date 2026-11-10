@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useLanguage } from '@/context/LanguageContext';
-import { ChevronLeft, ChevronRight, Calendar, CalendarDays, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, ChevronDown, ChevronUp } from 'lucide-react';
 import { TransitBooking } from '@/types';
 
 interface WeeklyTimetableProps {
@@ -54,19 +54,47 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
   bookings,
   onSelectSlot,
 }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [selectedIsoDate, setSelectedIsoDate] = useState<string>('2026-11-10');
   const [selectedDayObj, setSelectedDayObj] = useState<DaySchedule>(DEFAULT_DAYS[1]);
 
-  // USER SPEC: "the select date button should click and expand the calendar , to select any upcoming date"
+  // Expandable calendar state
   const [isCalendarExpanded, setIsCalendarExpanded] = useState<boolean>(false);
   const [calendarMonth, setCalendarMonth] = useState<number>(10); // 0-indexed: 10 is November
   const [calendarYear, setCalendarYear] = useState<number>(2026);
 
-  const monthNames = [
+  const monthNamesEn = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
+  const monthNamesZh = [
+    '一月', '二月', '三月', '四月', '五月', '六月',
+    '七月', '八月', '九月', '十月', '十一月', '十二月'
+  ];
+  const monthNamesMs = [
+    'Januari', 'Februari', 'Mac', 'April', 'Mei', 'Jun',
+    'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'
+  ];
+
+  const currentMonthNames = language === 'zh' ? monthNamesZh : language === 'ms' ? monthNamesMs : monthNamesEn;
+
+  const weekdayHeaders = language === 'zh' 
+    ? ['日', '一', '二', '三', '四', '五', '六'] 
+    : language === 'ms' 
+    ? ['Ahd', 'Isn', 'Sel', 'Rab', 'Kha', 'Jum', 'Sab'] 
+    : ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
+  const getLocalizedDayName = (dayKeyOrName: string) => {
+    const lower = dayKeyOrName.toLowerCase();
+    if (lower.includes('mon')) return t('timetable.mon', 'Mon');
+    if (lower.includes('tue')) return t('timetable.tue', 'Tue');
+    if (lower.includes('wed')) return t('timetable.wed', 'Wed');
+    if (lower.includes('thu')) return t('timetable.thu', 'Thu');
+    if (lower.includes('fri')) return t('timetable.fri', 'Fri');
+    if (lower.includes('sat')) return t('timetable.sat', 'Sat');
+    if (lower.includes('sun')) return t('timetable.sun', 'Sun');
+    return dayKeyOrName;
+  };
 
   const handleSelectCalendarDate = (year: number, month: number, day: number) => {
     const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -90,12 +118,12 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
 
     setSelectedDayObj(customDay);
     setSelectedIsoDate(isoDate);
-    setIsCalendarExpanded(false); // Close calendar after selection
+    setIsCalendarExpanded(false);
   };
 
   const getSlotStatus = (day: DaySchedule, slot: string) => {
     if (day.isHoliday) {
-      return { status: 'close', label: day.holidayReason || 'Closed' };
+      return { status: 'close', label: day.holidayReason || t('timetable.legendClosed', 'Closed') };
     }
 
     const slotStart = slot.split(' - ')[0].trim().toLowerCase();
@@ -109,23 +137,22 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
 
     if (matchedBookings.length === 0) {
       if (day.key === 'thu' || day.name === 'Thursday') {
-        return { status: 'booked', label: 'Booked' };
+        return { status: 'booked', label: t('timetable.legendBooked', 'Booked') };
       }
       if ((day.key === 'wed' || day.name === 'Wednesday') && (slot.startsWith('02:00') || slot.startsWith('02:30') || slot.startsWith('03:00') || slot.startsWith('03:30') || slot.startsWith('04:00'))) {
-        return { status: 'booked', label: 'Booked' };
+        return { status: 'booked', label: t('timetable.legendBooked', 'Booked') };
       }
-      // Available slot: leave it completely blank!
       return { status: 'available', label: '' };
     }
 
     const hasPending = matchedBookings.some(b => b.status === 'pending');
     if (hasPending) {
-      return { status: 'pending', label: 'Pending' };
+      return { status: 'pending', label: t('timetable.legendPending', 'Pending') };
     }
 
     const approvedCount = matchedBookings.filter(b => b.status !== 'declined').length;
     if (approvedCount >= 7) {
-      return { status: 'booked', label: 'Booked' };
+      return { status: 'booked', label: t('timetable.legendBooked', 'Booked') };
     }
 
     return { status: 'available', label: '' };
@@ -177,14 +204,15 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
             1. {t('timetable.selectDate', 'Choose Date of Service')}
           </h3>
 
-          {/* USER SPEC: Click and expand the calendar to select any upcoming date */}
           <button
             type="button"
             onClick={() => setIsCalendarExpanded(!isCalendarExpanded)}
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F37021] text-white font-black text-xs shadow-xs hover:bg-[#D9530F] transition-all tap-target self-start sm:self-auto"
           >
             <CalendarDays className="h-4 w-4 text-orange-200" />
-            <span>{t('timetable.selectDate', 'Select Date')}: {selectedDayObj.name}, {selectedDayObj.dateStr}</span>
+            <span>
+              {t('timetable.selectDate', 'Select Date')}: {getLocalizedDayName(selectedDayObj.name)}, {selectedDayObj.dateStr}
+            </span>
             {isCalendarExpanded ? (
               <ChevronUp className="h-4 w-4 ml-1" />
             ) : (
@@ -199,7 +227,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
             {/* Calendar Month Navigation Header */}
             <div className="flex items-center justify-between pb-2 border-b border-neutral-200">
               <span className="font-extrabold text-sm text-neutral-950">
-                {monthNames[calendarMonth]} {calendarYear}
+                {currentMonthNames[calendarMonth]} {calendarYear}
               </span>
               <div className="flex items-center gap-1">
                 <button
@@ -223,13 +251,9 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
 
             {/* Weekday Labels */}
             <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold uppercase text-neutral-400">
-              <span>Su</span>
-              <span>Mo</span>
-              <span>Tu</span>
-              <span>We</span>
-              <span>Th</span>
-              <span>Fr</span>
-              <span>Sa</span>
+              {weekdayHeaders.map((w, idx) => (
+                <span key={idx}>{w}</span>
+              ))}
             </div>
 
             {/* Month Days Grid */}
@@ -243,8 +267,6 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
                 const isSelected = selectedIsoDate === dayIso;
                 const isToday = dayIso === '2026-11-10';
                 const isHoliday = dayIso === '2026-11-09';
-                
-                // Check if date is upcoming or today
                 const isUpcoming = dayIso >= '2026-11-09';
 
                 return (
@@ -273,7 +295,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
             </div>
 
             <p className="text-[10px] text-[#F37021] text-center font-bold pt-1">
-              Click any upcoming date to expand its accessible transit timetable
+              {t('timetable.clickUpcomingDate', 'Click any upcoming date to expand its accessible transit timetable')}
             </p>
           </div>
         )}
@@ -284,11 +306,11 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-extrabold text-neutral-900 tracking-tight">
-              2. Available Timeslots for {selectedDayObj.name}, {selectedDayObj.dateStr}
+              2. {t('timetable.availableTimeslotsFor', 'Available Timeslots for')} {getLocalizedDayName(selectedDayObj.name)}, {selectedDayObj.dateStr}
             </h3>
             {selectedDayObj.isToday && (
               <span className="text-[10px] font-black bg-orange-100 text-orange-950 px-2 py-0.5 rounded-full border border-orange-300">
-                Today
+                {t('common.today', 'Today')}
               </span>
             )}
           </div>
@@ -301,7 +323,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
           <div className="rounded-3xl bg-[#8B1E24] text-white p-8 text-center space-y-2 shadow-inner">
             <h4 className="text-lg font-black tracking-wide">{selectedDayObj.holidayReason}</h4>
             <p className="text-xs text-red-200 font-medium">
-              Van transit service is closed on this public holiday. Please choose another date above.
+              {t('timetable.closedOnHoliday', 'Van transit service is closed on this public holiday. Please choose another date above.')}
             </p>
           </div>
         ) : (
@@ -330,7 +352,6 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
                     {slot}
                   </span>
 
-                  {/* USER SPEC: FOR AVAILABLE JUST LEAVE IT BLANK, DONT PUT NOTES! */}
                   {status === 'booked' && (
                     <span className="text-[10px] uppercase font-black bg-neutral-900 text-white px-2 py-0.5 rounded">
                       {t('timetable.legendBooked', 'Booked')}

@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
-import { X, QrCode, ShieldCheck, Printer, Car, MapPin, User, Calendar } from 'lucide-react';
+import { X, Printer } from 'lucide-react';
 import { TransitBooking } from '@/types';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface TransitPassModalProps {
   booking: TransitBooking;
@@ -10,6 +11,8 @@ interface TransitPassModalProps {
 }
 
 export const TransitPassModal: React.FC<TransitPassModalProps> = ({ booking, onClose }) => {
+  const { t } = useLanguage();
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
       <div className="relative w-full max-w-md rounded-3xl bg-white border border-neutral-200 shadow-2xl overflow-hidden my-8">
@@ -26,12 +29,12 @@ export const TransitPassModal: React.FC<TransitPassModalProps> = ({ booking, onC
           <div className="flex items-center gap-2 mb-4">
             <span className="font-extrabold text-sm tracking-tight text-[#F37021]">BEAUTIFUL GATE</span>
             <span className="text-[10px] uppercase font-mono tracking-widest text-orange-200 border border-orange-500/40 bg-orange-500/10 px-2 py-0.5 rounded-full">
-              Transit Pass
+              {t('pass.passTitle', 'Transit Pass')}
             </span>
           </div>
 
           <p className="text-xs text-orange-200 uppercase tracking-wider font-semibold">
-            Destination Facility
+            {t('pass.destinationFacility', 'Destination Facility')}
           </p>
           <h3 className="text-2xl font-extrabold tracking-tight mt-0.5">
             {booking.hospital_name}
@@ -43,7 +46,7 @@ export const TransitPassModal: React.FC<TransitPassModalProps> = ({ booking, onC
           <div className="mt-6 grid grid-cols-2 gap-4 border-t border-white/10 pt-4">
             <div>
               <p className="text-[10px] text-orange-200 uppercase tracking-widest">
-                Appointment Time
+                {t('pass.appointmentTime', 'Appointment Time')}
               </p>
               <p className="text-xl font-bold font-mono text-white mt-0.5">
                 {booking.appointment_time}
@@ -51,7 +54,7 @@ export const TransitPassModal: React.FC<TransitPassModalProps> = ({ booking, onC
             </div>
             <div>
               <p className="text-[10px] text-orange-200 uppercase tracking-widest">
-                Allocated Space
+                {t('pass.allocatedSpace', 'Allocated Space')}
               </p>
               <p className="text-xs font-bold text-white mt-1 truncate">
                 {booking.assigned_space}
@@ -72,7 +75,7 @@ export const TransitPassModal: React.FC<TransitPassModalProps> = ({ booking, onC
           <div className="grid grid-cols-2 gap-4 text-xs">
             <div>
               <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-                Passenger Name
+                {t('pass.passengerName', 'Passenger Name')}
               </p>
               <p className="font-bold text-neutral-900 text-sm mt-0.5">
                 {booking.passenger_name}
@@ -84,7 +87,7 @@ export const TransitPassModal: React.FC<TransitPassModalProps> = ({ booking, onC
 
             <div>
               <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-                Assigned Vehicle
+                {t('pass.assignedVehicle', 'Assigned Vehicle')}
               </p>
               <p className="font-bold text-neutral-900 text-sm mt-0.5">
                 {booking.assigned_vehicle.plate}
@@ -97,7 +100,7 @@ export const TransitPassModal: React.FC<TransitPassModalProps> = ({ booking, onC
 
           <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-xs space-y-1">
             <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-              Pickup Residence
+              {t('pass.pickupResidence', 'Pickup Residence')}
             </p>
             <p className="font-semibold text-neutral-800 text-[11px] leading-snug">
               {booking.pickup_address}
@@ -123,7 +126,7 @@ export const TransitPassModal: React.FC<TransitPassModalProps> = ({ booking, onC
               <div className="h-full w-2 bg-black" />
             </div>
             <p className="text-[10px] font-mono uppercase tracking-widest text-neutral-400">
-              PASS-{booking.id.toUpperCase()} · VERIFIED OPERATOR DISPATCH
+              PASS-{booking.id.toUpperCase()} · {t('pass.verifiedDispatch', 'VERIFIED OPERATOR DISPATCH')}
             </p>
           </div>
 
@@ -133,11 +136,10 @@ export const TransitPassModal: React.FC<TransitPassModalProps> = ({ booking, onC
             className="apple-btn-secondary w-full text-xs font-bold gap-2 mt-2 tap-target"
           >
             <Printer className="h-3.5 w-3.5" />
-            Print or Save Digital Pass
+            {t('pass.printPass', 'Print or Save Digital Pass')}
           </button>
         </div>
       </div>
     </div>
   );
 };
-

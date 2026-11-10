@@ -78,7 +78,7 @@ export default function SignUpPage() {
           {t('auth.createAccount', 'Create Account')}
         </h2>
         <p className="text-xs text-neutral-500 mt-1 mb-6">
-          Register for door-to-door accessible hospital transit & artisan workshop craft opportunities.
+          {t('auth.doorToDoorDesc', 'Register for door-to-door accessible hospital transit & artisan workshop craft opportunities.')}
         </p>
 
         {errorMsg && (
@@ -122,20 +122,22 @@ export default function SignUpPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                Full Legal Name
+                {t('auth.fullName', 'Full Legal Name')}
               </label>
               <input
                 type="text"
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                placeholder="As in MyKad"
+                placeholder={t('auth.asInMyKad', 'As in MyKad')}
                 className="apple-input w-full"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                {role === 'customer' ? 'Malaysian IC / OKU Card No.' : 'Staff ID / Malaysian IC'}
+                {role === 'customer' 
+                  ? t('auth.customerOkuLabel', 'Malaysian IC / OKU Card No.') 
+                  : t('auth.driverStaffLabel', 'Staff ID / Malaysian IC')}
               </label>
               <input
                 type="text"
@@ -151,7 +153,7 @@ export default function SignUpPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                Mobile Phone Number
+                {t('auth.phone', 'Mobile Phone Number')}
               </label>
               <input
                 type="tel"
@@ -164,7 +166,7 @@ export default function SignUpPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                Email Address
+                {t('auth.email', 'Email Address')}
               </label>
               <input
                 type="email"
@@ -179,14 +181,14 @@ export default function SignUpPage() {
 
           <div>
             <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-              Account Password
+              {t('auth.password', 'Account Password')}
             </label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Minimum 8 characters"
+              placeholder={t('auth.min8Chars', 'Minimum 8 characters')}
               className="apple-input w-full"
             />
           </div>
@@ -195,7 +197,7 @@ export default function SignUpPage() {
           {role === 'customer' && (
             <div>
               <label className="block text-xs font-semibold text-neutral-700 mb-2">
-                Default Mobility Profile
+                {t('auth.mobilityCategory', 'Default Mobility Profile')}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {(['Manual Wheelchair', 'Motorized Wheelchair', 'Assisted Walk', 'None / Escort'] as MobilityType[]).map((type) => (
@@ -221,15 +223,15 @@ export default function SignUpPage() {
               type="submit"
               className="w-full py-3.5 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white font-extrabold text-sm shadow-md transition-all active:scale-[0.99] tap-target"
             >
-              Create Account
+              {t('auth.createAccount', 'Create Account')}
             </button>
           </div>
         </form>
 
         <div className="mt-6 text-center text-xs text-neutral-600">
-          <span>Already registered? </span>
+          <span>{t('auth.alreadyAccount', 'Already registered?')} </span>
           <Link href="/login" className="font-bold text-[#F37021] hover:underline">
-            Sign In here
+            {t('auth.signIn', 'Sign In')}
           </Link>
         </div>
       </div>

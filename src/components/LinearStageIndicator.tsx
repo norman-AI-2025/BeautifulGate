@@ -21,7 +21,8 @@ interface LinearStageIndicatorProps {
 
 interface StageStep {
   id: string;
-  label: string;
+  translationKey: string;
+  defaultLabel: string;
   activeStatusKey: TransitStatus[];
   timestampKey: string;
 }
@@ -29,25 +30,29 @@ interface StageStep {
 const STAGES: StageStep[] = [
   {
     id: 'step-1',
-    label: 'On the way to pick up',
+    translationKey: 'portal.stage1',
+    defaultLabel: 'On the way to pick up',
     activeStatusKey: ['approved', 'en_route_pickup', 'picked_up', 'en_route_hospital', 'dropped_off', 'en_route_next'],
     timestampKey: 'en_route_pickup',
   },
   {
     id: 'step-2',
-    label: 'Picked up',
+    translationKey: 'portal.stage2',
+    defaultLabel: 'Picked up',
     activeStatusKey: ['picked_up', 'en_route_hospital', 'dropped_off', 'en_route_next'],
     timestampKey: 'picked_up',
   },
   {
     id: 'step-3',
-    label: 'On the way to destination',
+    translationKey: 'portal.stage3',
+    defaultLabel: 'On the way to destination',
     activeStatusKey: ['en_route_hospital', 'dropped_off', 'en_route_next'],
     timestampKey: 'en_route_hospital',
   },
   {
     id: 'step-4',
-    label: 'Arrived',
+    translationKey: 'portal.stage4',
+    defaultLabel: 'Arrived',
     activeStatusKey: ['dropped_off', 'en_route_next'],
     timestampKey: 'dropped_off',
   },
@@ -64,6 +69,8 @@ const formatTimeString = (isoString?: string): string => {
 };
 
 export const LinearStageIndicator: React.FC<LinearStageIndicatorProps> = ({ status, timestamps }) => {
+  const { t } = useLanguage();
+
   const getStageState = (stageIndex: number) => {
     // Current status index in progression
     let currentLevel = 0;
@@ -112,6 +119,7 @@ export const LinearStageIndicator: React.FC<LinearStageIndicatorProps> = ({ stat
         {STAGES.map((stage, idx) => {
           const state = getStageState(idx);
           const time = formatTimeString(timestamps[stage.timestampKey]);
+          const localizedLabel = t(stage.translationKey, stage.defaultLabel);
 
           return (
             <div key={stage.id} className="relative z-10 flex flex-col items-center">
@@ -145,7 +153,7 @@ export const LinearStageIndicator: React.FC<LinearStageIndicatorProps> = ({ stat
                       : 'text-neutral-400'
                   }`}
                 >
-                  {stage.label}
+                  {localizedLabel}
                 </p>
                 {time ? (
                   <p className="mt-0.5 flex items-center justify-center gap-1 text-[10px] font-mono text-neutral-500">
@@ -163,4 +171,3 @@ export const LinearStageIndicator: React.FC<LinearStageIndicatorProps> = ({ stat
     </div>
   );
 };
-

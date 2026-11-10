@@ -391,7 +391,7 @@ export default function AdminPage() {
                   {/* Passenger Name & Contact */}
                   <div className="space-y-1.5">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
-                      Passenger
+                      {t('admin.passengerName', 'Passenger')}
                     </span>
                     <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
                       {currentActiveDispatch.passenger_name}
@@ -413,7 +413,7 @@ export default function AdminPage() {
                       <span className="h-2 w-2 rounded-full bg-emerald-400 mt-1 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
-                          Pickup Address
+                          {t('adminTable.pickupAddress', 'Pickup Address')}
                         </span>
                         <a
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentActiveDispatch.pickup_address)}`}
@@ -430,7 +430,7 @@ export default function AdminPage() {
                       <span className="h-2 w-2 rounded-full bg-[#F37021] mt-1 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
-                          Destination
+                          {t('adminTable.destination', 'Destination')}
                         </span>
                         <a
                           href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentActiveDispatch.hospital_name)}`}
@@ -459,11 +459,11 @@ export default function AdminPage() {
 
                     {/* 5 Minimalist Stage Checkpoints */}
                     {[
-                      { status: 'approved' as TransitStatus, label: 'Approved', stepIdx: 0 },
-                      { status: 'en_route_pickup' as TransitStatus, label: 'To Pickup', stepIdx: 1 },
-                      { status: 'picked_up' as TransitStatus, label: 'Picked Up', stepIdx: 2 },
-                      { status: 'en_route_hospital' as TransitStatus, label: 'To Hospital', stepIdx: 3 },
-                      { status: 'dropped_off' as TransitStatus, label: 'Arrived', stepIdx: 4 },
+                      { status: 'approved' as TransitStatus, label: t('admin.approved', 'Approved'), stepIdx: 0 },
+                      { status: 'en_route_pickup' as TransitStatus, label: t('portal.stage1', 'To Pickup'), stepIdx: 1 },
+                      { status: 'picked_up' as TransitStatus, label: t('portal.stage2', 'Picked Up'), stepIdx: 2 },
+                      { status: 'en_route_hospital' as TransitStatus, label: t('portal.stage3', 'To Hospital'), stepIdx: 3 },
+                      { status: 'dropped_off' as TransitStatus, label: t('portal.stage4', 'Arrived'), stepIdx: 4 },
                     ].map((step) => {
                       const stepPct = step.stepIdx * 25;
                       const currentPct = getStagePercentage(currentActiveDispatch.status);
@@ -511,7 +511,7 @@ export default function AdminPage() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs">
                 <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-                  Total Bookings
+                  {t('admin.todayTransits', 'Total Bookings')}
                 </span>
                 <p className="text-2xl font-black text-neutral-900 mt-1 font-mono">
                   {totalBookingsCount}
@@ -520,7 +520,7 @@ export default function AdminPage() {
 
               <div className="rounded-2xl border-2 border-yellow-300 bg-yellow-50/70 p-4 shadow-xs">
                 <span className="text-[10px] font-bold text-yellow-800 uppercase tracking-wider">
-                  Pending Action
+                  {t('adminTable.pendingAction', 'Pending Action')}
                 </span>
                 <p className="text-2xl font-black text-yellow-950 mt-1 font-mono">
                   {pendingCount}
@@ -529,7 +529,7 @@ export default function AdminPage() {
 
               <div className="rounded-2xl border-2 border-orange-400 bg-orange-50/80 p-4 shadow-xs">
                 <span className="text-[10px] font-bold text-orange-950 uppercase tracking-wider">
-                  In Transit
+                  {t('adminTable.inTransit', 'In Transit')}
                 </span>
                 <p className="text-2xl font-black text-orange-950 mt-1 font-mono">
                   {inTransitCount}
@@ -538,7 +538,7 @@ export default function AdminPage() {
 
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 shadow-xs">
                 <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
-                  Completed & Arrived
+                  {t('adminTable.completedAndArrived', 'Completed & Arrived')}
                 </span>
                 <p className="text-2xl font-black text-emerald-950 mt-1 font-mono">
                   {completedCount}
@@ -551,7 +551,7 @@ export default function AdminPage() {
               <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 border-b border-neutral-200 gap-4">
                 <div>
                   <h3 className="text-lg font-extrabold text-neutral-900 tracking-tight">
-                    Transit Dispatch Board
+                    {t('admin.tabDispatch', 'Transit Dispatch Board')}
                   </h3>
                 </div>
 
@@ -566,7 +566,7 @@ export default function AdminPage() {
                         : 'text-neutral-600 hover:text-black'
                     }`}
                   >
-                    All ({totalBookingsCount})
+                    {t('adminTable.all', 'All')} ({totalBookingsCount})
                   </button>
                   <button
                     type="button"
@@ -577,7 +577,7 @@ export default function AdminPage() {
                         : 'text-neutral-600 hover:text-black'
                     }`}
                   >
-                    Pending ({pendingCount})
+                    {t('adminTable.pending', 'Pending')} ({pendingCount})
                   </button>
                   <button
                     type="button"
@@ -588,7 +588,7 @@ export default function AdminPage() {
                         : 'text-neutral-600 hover:text-black'
                     }`}
                   >
-                    Active ({inTransitCount})
+                    {t('adminTable.active', 'Active')} ({inTransitCount})
                   </button>
                   <button
                     type="button"
@@ -599,7 +599,7 @@ export default function AdminPage() {
                         : 'text-neutral-600 hover:text-black'
                     }`}
                   >
-                    Completed ({completedCount})
+                    {t('adminTable.completed', 'Completed')} ({completedCount})
                   </button>
                 </div>
               </div>
@@ -609,12 +609,12 @@ export default function AdminPage() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-neutral-50/80 border-b border-neutral-200 text-neutral-600 uppercase tracking-wider font-bold">
                     <tr>
-                      <th className="py-3.5 px-4">Time Slot</th>
-                      <th className="py-3.5 px-4">Date</th>
-                      <th className="py-3.5 px-4">Name</th>
-                      <th className="py-3.5 px-4">Time Pickup</th>
-                      <th className="py-3.5 px-4">Time Drop Off</th>
-                      <th className="py-3.5 px-4 text-right">Approval Action</th>
+                      <th className="py-3.5 px-4">{t('admin.timeSlot', 'Time Slot')}</th>
+                      <th className="py-3.5 px-4">{t('admin.date', 'Date')}</th>
+                      <th className="py-3.5 px-4">{t('admin.name', 'Name')}</th>
+                      <th className="py-3.5 px-4">{t('admin.timePickup', 'Time Pickup')}</th>
+                      <th className="py-3.5 px-4">{t('admin.timeDropOff', 'Time Drop Off')}</th>
+                      <th className="py-3.5 px-4 text-right">{t('admin.action', 'Approval Action')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200 bg-white">
@@ -677,13 +677,13 @@ export default function AdminPage() {
                                     className="px-3.5 py-1.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white font-black text-xs flex items-center gap-1 shadow-sm tap-target transition-all active:scale-95"
                                   >
                                     <Check className="h-3.5 w-3.5" />
-                                    Approve
+                                    {t('admin.approve', 'Approve')}
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => declineBooking(b.id)}
                                     className="px-2.5 py-1.5 rounded-xl border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-100 font-bold text-xs tap-target transition-all active:scale-95"
-                                    title="Decline"
+                                    title={t('admin.decline', 'Decline')}
                                   >
                                     <X className="h-3.5 w-3.5" />
                                   </button>
@@ -711,10 +711,10 @@ export default function AdminPage() {
                                 <div className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-3.5 shadow-xs">
                                   <div className="flex items-center justify-between pb-2.5 border-b border-neutral-100">
                                     <span className="text-xs font-black uppercase tracking-wider text-neutral-900">
-                                      Booking Manifest Details · {b.id}
+                                      {t('adminTable.bookingManifestDetails', 'Booking Manifest Details')} · {b.id}
                                     </span>
                                     <span className="font-mono text-xs font-bold text-neutral-500">
-                                      OKU ID: {b.oku_id}
+                                      OKU: {b.oku_id}
                                     </span>
                                   </div>
 
@@ -724,7 +724,7 @@ export default function AdminPage() {
                                       <div>
                                         <span className="text-[10px] font-extrabold uppercase text-emerald-800 tracking-wider flex items-center gap-1">
                                           <MapPin className="h-3.5 w-3.5" />
-                                          Pickup Address
+                                          {t('adminTable.pickupAddress', 'Pickup Address')}
                                         </span>
                                         <p className="font-bold text-neutral-900 mt-0.5 leading-snug">
                                           {b.pickup_address}
@@ -734,7 +734,7 @@ export default function AdminPage() {
                                       <div className="pt-2 border-t border-neutral-100">
                                         <span className="text-[10px] font-extrabold uppercase text-orange-950 tracking-wider flex items-center gap-1">
                                           <Building2 className="h-3.5 w-3.5 text-[#F37021]" />
-                                          Destination
+                                          {t('adminTable.destination', 'Destination')}
                                         </span>
                                         <p className="font-bold text-neutral-900 mt-0.5 leading-snug">
                                           {b.hospital_name}
@@ -746,7 +746,7 @@ export default function AdminPage() {
                                     <div className="space-y-2.5">
                                       <div>
                                         <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
-                                          Contact Phone
+                                          {t('adminTable.contactPhone', 'Contact Phone')}
                                         </span>
                                         <p className="font-mono font-bold text-neutral-900 mt-0.5">
                                           {b.phone}
@@ -755,7 +755,7 @@ export default function AdminPage() {
 
                                       <div className="pt-2 border-t border-neutral-100">
                                         <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
-                                          Allocated Seat(s)
+                                          {t('adminTable.allocatedSpace', 'Allocated Seat(s)')}
                                         </span>
                                         <p className="font-mono font-bold text-orange-950 mt-0.5 bg-orange-50 px-2 py-0.5 rounded border border-orange-200 inline-block">
                                           {b.assigned_space}
@@ -764,7 +764,7 @@ export default function AdminPage() {
 
                                       <div className="pt-2 border-t border-neutral-100">
                                         <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
-                                          Mobility Profile
+                                          {t('adminTable.mobilityProfile', 'Mobility Profile')}
                                         </span>
                                         <p className="font-bold text-neutral-800 mt-0.5">
                                           {b.mobility_type}
@@ -776,7 +776,7 @@ export default function AdminPage() {
                                     <div className="space-y-2.5">
                                       <div>
                                         <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
-                                          Assigned Operator & Van
+                                          {t('pass.assignedVehicle', 'Assigned Operator & Van')}
                                         </span>
                                         <p className="font-bold text-neutral-900 mt-0.5">
                                           {b.assigned_driver} · <span className="font-mono font-bold">{b.assigned_vehicle.plate}</span>
@@ -787,7 +787,7 @@ export default function AdminPage() {
                                       {b.rating && (
                                         <div className="pt-2 border-t border-neutral-100 space-y-1">
                                           <span className="text-[10px] font-extrabold uppercase text-amber-700 tracking-wider block">
-                                            Beneficiary Review
+                                            {t('adminTable.beneficiaryRating', 'Beneficiary Service Rating')}
                                           </span>
                                           <div className="flex items-center gap-1 text-amber-500">
                                             {[1, 2, 3, 4, 5].map((s) => (
@@ -833,7 +833,7 @@ export default function AdminPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <h2 className="text-xl font-black tracking-tight text-neutral-900">
-                  Registered OKU Artisans
+                  {t('adminTable.registeredArtisans', 'Registered OKU Artisans')}
                 </h2>
               </div>
 
@@ -844,7 +844,7 @@ export default function AdminPage() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name, OKU ID..."
+                  placeholder={t('adminTable.searchArtisans', 'Search by name, OKU ID...')}
                   className="apple-input w-full pl-10 text-xs"
                 />
               </div>
@@ -856,13 +856,13 @@ export default function AdminPage() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-neutral-50/80 border-b border-neutral-200 text-neutral-600 uppercase tracking-wider font-bold">
                     <tr>
-                      <th className="py-3.5 px-5">Artisan Beneficiary</th>
-                      <th className="py-3.5 px-5">OKU Number</th>
-                      <th className="py-3.5 px-5">Mobility Profile</th>
-                      <th className="py-3.5 px-5">Cards (MTD)</th>
-                      <th className="py-3.5 px-5">Month-to-Date Earnings</th>
-                      <th className="py-3.5 px-5">Year-to-Date Earnings</th>
-                      <th className="py-3.5 px-5 text-right">Action</th>
+                      <th className="py-3.5 px-5">{t('adminTable.artisanBeneficiary', 'Artisan Beneficiary')}</th>
+                      <th className="py-3.5 px-5">{t('adminTable.okuNumber', 'OKU Number')}</th>
+                      <th className="py-3.5 px-5">{t('adminTable.mobilityProfile', 'Mobility Profile')}</th>
+                      <th className="py-3.5 px-5">{t('adminTable.cardsMtd', 'Cards (MTD)')}</th>
+                      <th className="py-3.5 px-5">{t('adminTable.mtdEarnings', 'Month-to-Date Earnings')}</th>
+                      <th className="py-3.5 px-5">{t('adminTable.ytdEarnings', 'Year-to-Date Earnings')}</th>
+                      <th className="py-3.5 px-5 text-right">{t('adminTable.actionCol', 'Action')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200 bg-white">
@@ -892,7 +892,7 @@ export default function AdminPage() {
                         </td>
 
                         <td className="py-4 px-5 font-bold text-neutral-900 text-sm">
-                          {artisan.monthUnits} cards
+                          {artisan.monthUnits} {t('drawer.cards', 'cards')}
                         </td>
 
                         <td className="py-4 px-5 font-mono font-black text-sm text-emerald-800">
@@ -908,7 +908,7 @@ export default function AdminPage() {
                             type="button"
                             className="inline-flex items-center text-xs font-bold text-[#F37021] hover:text-[#D9530F] gap-1 tap-target"
                           >
-                            <span>Ledger & Bank</span>
+                            <span>{t('adminTable.ledgerAndBank', 'Ledger & Bank')}</span>
                             <ChevronRight className="h-4 w-4" />
                           </button>
                         </td>
@@ -929,7 +929,7 @@ export default function AdminPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-neutral-200 gap-4">
               <div>
                 <h2 className="text-xl font-black tracking-tight text-neutral-900">
-                  Production & Disbursement Analytics
+                  {t('adminTable.productionAnalytics', 'Production & Disbursement Analytics')}
                 </h2>
               </div>
 
@@ -940,7 +940,7 @@ export default function AdminPage() {
                 className="px-5 py-2.5 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white font-extrabold text-xs flex items-center gap-2 shadow-md tap-target"
               >
                 <Download className="h-4 w-4" />
-                Export Payroll CSV
+                {t('admin.exportPayroll', 'Export Payroll CSV')}
               </button>
             </div>
 
@@ -948,7 +948,7 @@ export default function AdminPage() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
                 <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-                  Cards Produced (Month)
+                  {t('adminTable.cardsProducedMonth', 'Cards Produced (Month)')}
                 </p>
                 <p className="text-3xl font-black text-neutral-900 mt-2 font-mono">
                   {totalCardsMonth}
@@ -957,7 +957,7 @@ export default function AdminPage() {
 
               <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
                 <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-                  Cards Produced (YTD)
+                  {t('adminTable.cardsProducedYear', 'Cards Produced (YTD)')}
                 </p>
                 <p className="text-3xl font-black text-neutral-900 mt-2 font-mono">
                   {totalCardsYear}
@@ -966,7 +966,7 @@ export default function AdminPage() {
 
               <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-50 p-5 shadow-sm">
                 <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
-                  Total Wages Disbursed
+                  {t('adminTable.totalWagesDisbursed', 'Total Wages Disbursed')}
                 </p>
                 <p className="text-3xl font-black text-emerald-950 mt-2 font-mono">
                   RM {totalWagesDisbursed.toFixed(2)}
@@ -975,7 +975,7 @@ export default function AdminPage() {
 
               <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
                 <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-                  Active Artisans
+                  {t('adminTable.activeArtisans', 'Active Artisans')}
                 </p>
                 <p className="text-3xl font-black text-neutral-900 mt-2 font-mono">
                   {activeArtisansCount}
