@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { 
   Phone, 
   MessageSquare, 
@@ -51,6 +53,7 @@ interface TimeSlotGroup {
 
 export default function DriverPage() {
   const { bookings, updateBookingStatus } = useApp();
+  const { t } = useLanguage();
 
   // USER SPEC: "for the driver , it will only receive the task list after the bookings are approved by supervisor"
   const johanBookings = useMemo(() => {
@@ -263,7 +266,7 @@ export default function DriverPage() {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-base font-extrabold">Driver Console</h1>
+                  <h1 className="text-base font-extrabold">{t('driver.title', 'Driver Console')}</h1>
                   <span className="rounded-md bg-[#F37021] text-white px-2 py-0.5 text-xs font-mono font-black">
                     WVV 4108
                   </span>
@@ -271,13 +274,16 @@ export default function DriverPage() {
               </div>
             </div>
 
-            <div className="text-right">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-orange-300 block">
-                Queue Status
-              </span>
-              <span className="text-xs font-extrabold text-white">
-                {queueTimeSlots.length} Active Slots
-              </span>
+            <div className="flex items-center gap-2">
+              <LanguageSelector compact />
+              <div className="text-right hidden sm:block">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-orange-300 block">
+                  {t('common.status', 'Queue Status')}
+                </span>
+                <span className="text-xs font-extrabold text-white">
+                  {queueTimeSlots.length} Slots
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -290,7 +296,7 @@ export default function DriverPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-extrabold text-neutral-900 tracking-tight">
-              Transit Schedule Queue
+              {t('driver.todayQueue', "Today's Transit Queue")}
             </h2>
             <span className="text-xs font-bold text-orange-950 bg-orange-100 border border-orange-300 px-3 py-1 rounded-full">
               {queueTimeSlots.length} Time Slots

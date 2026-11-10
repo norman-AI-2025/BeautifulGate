@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { WeeklyTimetable } from '@/components/WeeklyTimetable';
 import { VanFloorPlanModal } from '@/components/VanFloorPlanModal';
 import { LinearStageIndicator } from '@/components/LinearStageIndicator';
@@ -34,6 +36,7 @@ export default function MobileArtisanPortalPage() {
     getArtisanStats, 
     workLogs 
   } = useApp();
+  const { t } = useLanguage();
 
   // Main Tabs: "transit" | "earnings"
   const [mainTab, setMainTab] = useState<'transit' | 'earnings'>('transit');
@@ -100,46 +103,49 @@ export default function MobileArtisanPortalPage() {
       {/* Top Mobile Bar */}
       <div className="bg-gradient-to-r from-neutral-950 via-stone-900 to-orange-950 text-white shadow-md sticky top-0 z-30">
         <div className="max-w-2xl mx-auto px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <div>
               <span className="text-[10px] uppercase font-bold tracking-widest text-[#F37021]">
-                Beneficiary Portal
+                {t('nav.portal', 'Beneficiary Portal')}
               </span>
               <h1 className="text-lg font-extrabold tracking-tight">
                 {currentUser?.full_name || 'Siti Nurhaliza'}
               </h1>
               <p className="text-xs text-orange-200 flex items-center gap-1.5 mt-0.5">
                 <span className="inline-block h-2 w-2 rounded-full bg-[#F37021]" />
-                {currentUser?.mobility_type || 'Wheelchair Transit'} · OKU Verified
+                {currentUser?.mobility_type || 'Wheelchair Transit'} · {t('common.verified', 'OKU Verified')}
               </p>
             </div>
 
-            {/* Main Navigation Segmented Switcher */}
-            <div className="flex rounded-full bg-white/10 p-1 border border-white/10">
-              <button
-                type="button"
-                onClick={() => setMainTab('transit')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all tap-target ${
-                  mainTab === 'transit'
-                    ? 'bg-[#F37021] text-white shadow-sm font-black'
-                    : 'text-neutral-300 hover:text-white'
-                }`}
-              >
-                <Car className="h-3.5 w-3.5" />
-                Transit
-              </button>
-              <button
-                type="button"
-                onClick={() => setMainTab('earnings')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold transition-all tap-target ${
-                  mainTab === 'earnings'
-                    ? 'bg-[#F37021] text-white shadow-sm font-black'
-                    : 'text-neutral-300 hover:text-white'
-                }`}
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                Earnings
-              </button>
+            {/* Language Selector & Main Navigation Segmented Switcher */}
+            <div className="flex items-center gap-2">
+              <LanguageSelector compact />
+              <div className="flex rounded-full bg-white/10 p-1 border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setMainTab('transit')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all tap-target ${
+                    mainTab === 'transit'
+                      ? 'bg-[#F37021] text-white shadow-sm font-black'
+                      : 'text-neutral-300 hover:text-white'
+                  }`}
+                >
+                  <Car className="h-3.5 w-3.5" />
+                  <span className="hidden xs:inline">{t('portal.vanTransit', 'Transit')}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMainTab('earnings')}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all tap-target ${
+                    mainTab === 'earnings'
+                      ? 'bg-[#F37021] text-white shadow-sm font-black'
+                      : 'text-neutral-300 hover:text-white'
+                  }`}
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                  <span className="hidden xs:inline">{t('portal.myEarnings', 'Earnings')}</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -163,7 +169,7 @@ export default function MobileArtisanPortalPage() {
                 }`}
               >
                 <Calendar className="h-4 w-4" />
-                Book a Service
+                {t('portal.bookService', 'Book a Service')}
               </button>
 
               <button
@@ -176,7 +182,7 @@ export default function MobileArtisanPortalPage() {
                 }`}
               >
                 <Clock className="h-4 w-4" />
-                Booking Status
+                {t('portal.bookingStatus', 'Booking Status')}
                 {activeAlertCount > 0 && (
                   <span className="flex h-5 w-5 items-center justify-center rounded-full bg-white text-[#F37021] font-black text-[10px] shadow-xs">
                     {activeAlertCount}

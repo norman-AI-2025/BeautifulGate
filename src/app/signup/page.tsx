@@ -5,11 +5,14 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { MobilityType, UserRole } from '@/types';
 
 export default function SignUpPage() {
   const router = useRouter();
   const { signup } = useApp();
+  const { t } = useLanguage();
 
   const [role, setRole] = useState<UserRole>('customer');
   const [fullName, setFullName] = useState('');
@@ -44,7 +47,12 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-100/60 flex flex-col justify-center items-center px-4 py-12">
+    <div className="min-h-screen bg-neutral-100/60 flex flex-col justify-center items-center px-4 py-12 relative">
+      {/* Top Floating Language Selector */}
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-8">
+        <LanguageSelector />
+      </div>
+
       {/* Brand Header */}
       <div className="mb-6 text-center">
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white border border-neutral-200/80 shadow-md p-2 mb-3">
@@ -57,14 +65,18 @@ export default function SignUpPage() {
             className="object-contain"
           />
         </div>
-        <h1 className="text-2xl font-black tracking-tight text-neutral-900">Beautiful Gate</h1>
+        <h1 className="text-2xl font-black tracking-tight text-neutral-900">
+          {t('brand.name', 'Beautiful Gate')}
+        </h1>
         <p className="text-sm text-neutral-500 font-medium mt-1">
-          Assisted Mobility & Artisan Registration
+          {t('brand.subtitle', 'Assisted Mobility')} & Artisan Registration
         </p>
       </div>
 
       <div className="w-full max-w-lg rounded-3xl bg-white border border-neutral-200 p-8 shadow-xl">
-        <h2 className="text-xl font-bold text-neutral-900 tracking-tight">Create Account</h2>
+        <h2 className="text-xl font-bold text-neutral-900 tracking-tight">
+          {t('auth.createAccount', 'Create Account')}
+        </h2>
         <p className="text-xs text-neutral-500 mt-1 mb-6">
           Register for door-to-door accessible hospital transit & artisan workshop craft opportunities.
         </p>
@@ -78,7 +90,7 @@ export default function SignUpPage() {
         {/* Segmented Registration Selector */}
         <div className="mb-6">
           <label className="block text-xs font-semibold text-neutral-700 mb-2">
-            Account Registration Category
+            {t('auth.categoryRole', 'Account Registration Category')}
           </label>
           <div className="grid grid-cols-2 p-1 rounded-xl bg-neutral-100 border border-neutral-200">
             <button
@@ -90,7 +102,7 @@ export default function SignUpPage() {
                   : 'text-neutral-500 hover:text-black'
               }`}
             >
-              OKU Beneficiary / Caregiver
+              {t('auth.beneficiaryRole', 'OKU Beneficiary / Caregiver')}
             </button>
             <button
               type="button"
@@ -101,7 +113,7 @@ export default function SignUpPage() {
                   : 'text-neutral-500 hover:text-black'
               }`}
             >
-              Staff / Driver
+              {t('auth.driverStaffRole', 'Staff / Driver')}
             </button>
           </div>
         </div>

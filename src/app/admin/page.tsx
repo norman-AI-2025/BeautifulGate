@@ -2,6 +2,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { ArtisanDrawer } from '@/components/ArtisanDrawer';
 import { AnalyticsCharts } from '@/components/AnalyticsCharts';
 import { LinearStageIndicator } from '@/components/LinearStageIndicator';
@@ -41,6 +43,7 @@ export default function AdminPage() {
     getArtisanStats, 
     exportPayrollCSV 
   } = useApp();
+  const { t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<'dispatch' | 'artisans' | 'analytics'>('dispatch');
 
@@ -171,10 +174,10 @@ export default function AdminPage() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-bold uppercase tracking-widest text-[#F37021]">
-                  Supervisor Control Tower
+                  {t('admin.title', 'Supervisor Control Tower')}
                 </span>
                 <span className="inline-flex items-center rounded-full bg-[#F37021] text-white font-black px-2.5 py-0.5 text-xs shadow-xs">
-                  Admin Dispatch Active
+                  {t('common.verified', 'Admin Dispatch Active')}
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-1">
@@ -182,44 +185,47 @@ export default function AdminPage() {
               </h1>
             </div>
 
-            {/* Top-Level Navigation Bar */}
-            <div className="flex rounded-full bg-white/10 p-1 border border-white/10 self-start sm:self-auto">
-              <button
-                type="button"
-                onClick={() => setActiveTab('dispatch')}
-                className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
-                  activeTab === 'dispatch'
-                    ? 'bg-[#F37021] text-white font-black shadow-sm'
-                    : 'text-neutral-300 hover:text-white'
-                }`}
-              >
-                <Car className="h-4 w-4" />
-                Transit Dispatch
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('artisans')}
-                className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
-                  activeTab === 'artisans'
-                    ? 'bg-[#F37021] text-white font-black shadow-sm'
-                    : 'text-neutral-300 hover:text-white'
-                }`}
-              >
-                <Sparkles className="h-4 w-4" />
-                Artisans & Workshop
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('analytics')}
-                className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
-                  activeTab === 'analytics'
-                    ? 'bg-[#F37021] text-white font-black shadow-sm'
-                    : 'text-neutral-300 hover:text-white'
-                }`}
-              >
-                <BarChart3 className="h-4 w-4" />
-                Analytics
-              </button>
+            {/* Top-Level Navigation Bar & Language Selector */}
+            <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+              <LanguageSelector compact />
+              <div className="flex rounded-full bg-white/10 p-1 border border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('dispatch')}
+                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
+                    activeTab === 'dispatch'
+                      ? 'bg-[#F37021] text-white font-black shadow-sm'
+                      : 'text-neutral-300 hover:text-white'
+                  }`}
+                >
+                  <Car className="h-4 w-4" />
+                  {t('admin.tabDispatch', 'Transit Dispatch')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('artisans')}
+                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
+                    activeTab === 'artisans'
+                      ? 'bg-[#F37021] text-white font-black shadow-sm'
+                      : 'text-neutral-300 hover:text-white'
+                  }`}
+                >
+                  <Sparkles className="h-4 w-4" />
+                  {t('admin.tabArtisans', 'Artisans & Workshop')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('analytics')}
+                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
+                    activeTab === 'analytics'
+                      ? 'bg-[#F37021] text-white font-black shadow-sm'
+                      : 'text-neutral-300 hover:text-white'
+                  }`}
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  {t('admin.tabAnalytics', 'Analytics')}
+                </button>
+              </div>
             </div>
           </div>
         </div>

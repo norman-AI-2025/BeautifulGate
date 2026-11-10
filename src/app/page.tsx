@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { 
   HeartHandshake, 
   Car, 
@@ -19,6 +20,7 @@ import { UserRole } from '@/types';
 
 export default function HomePage() {
   const { currentUser, switchRole } = useApp();
+  const { t } = useLanguage();
 
   const handleLaunchRole = (role: UserRole) => {
     switchRole(role);
@@ -45,11 +47,11 @@ export default function HomePage() {
 
           <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3.5 py-1 text-xs font-semibold text-[#D9530F] mb-6">
             <span className="h-2 w-2 rounded-full bg-[#F37021]" />
-            Beautiful Gate Foundation for the Disabled
+            {t('home.pill', 'Beautiful Gate Foundation for the Disabled')}
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-neutral-900 leading-[1.1]">
-            Assisted Mobility &<br className="hidden sm:inline" /> Artisan Workshop Platform
+            {t('home.title', 'Assisted Mobility & Artisan Workshop Platform')}
           </h1>
 
           {/* Quick Launch CTA Buttons */}
@@ -60,7 +62,7 @@ export default function HomePage() {
               className="px-6 py-3.5 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white font-extrabold text-sm shadow-md flex items-center tap-target"
             >
               <HeartHandshake className="h-4 w-4 mr-2" />
-              Launch Beneficiary Portal
+              {t('home.launchPortal', 'Launch Beneficiary Portal')}
             </Link>
 
             <Link
@@ -69,7 +71,7 @@ export default function HomePage() {
               className="px-6 py-3.5 rounded-2xl bg-[#18181B] hover:bg-black text-white font-extrabold text-sm shadow-md flex items-center tap-target"
             >
               <Car className="h-4 w-4 mr-2 text-[#F37021]" />
-              Driver Console
+              {t('home.launchDriver', 'Driver Console')}
             </Link>
 
             <Link
@@ -78,7 +80,7 @@ export default function HomePage() {
               className="px-6 py-3.5 rounded-2xl bg-white hover:bg-neutral-100 text-neutral-800 font-extrabold text-sm border border-neutral-300 shadow-xs flex items-center tap-target"
             >
               <Shield className="h-4 w-4 mr-2 text-[#F37021]" />
-              Supervisor Control Tower
+              {t('home.launchAdmin', 'Supervisor Control Tower')}
             </Link>
           </div>
         </div>
@@ -88,10 +90,10 @@ export default function HomePage() {
       <section className="mx-auto max-w-6xl px-4 pt-16 sm:px-6 lg:px-8">
         <div className="mb-10 text-center sm:text-left">
           <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-            Engineered Subsystems
+            {t('home.subsystems', 'Engineered Subsystems')}
           </span>
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 mt-1">
-            Integrated Mobility & Artisan Workflows
+            {t('home.subsystemsTitle', 'Integrated Mobility & Artisan Workflows')}
           </h2>
         </div>
 
@@ -103,7 +105,7 @@ export default function HomePage() {
                 <HeartHandshake className="h-6 w-6 stroke-[2]" />
               </div>
               <h3 className="text-xl font-extrabold tracking-tight text-neutral-900">
-                Beneficiary Portal
+                {t('nav.portal', 'Beneficiary Portal')}
               </h3>
             </div>
 
@@ -113,7 +115,7 @@ export default function HomePage() {
                 onClick={() => handleLaunchRole('customer')}
                 className="w-full py-3 px-4 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-bold flex items-center justify-between shadow-xs tap-target"
               >
-                <span>Enter as Siti Nurhaliza</span>
+                <span>{t('home.enterAsSiti', 'Enter as Siti Nurhaliza')}</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -126,7 +128,7 @@ export default function HomePage() {
                 <Car className="h-6 w-6 stroke-[2]" />
               </div>
               <h3 className="text-xl font-extrabold tracking-tight text-neutral-900">
-                Driver Console
+                {t('nav.driver', 'Driver Console')}
               </h3>
             </div>
 
@@ -136,7 +138,7 @@ export default function HomePage() {
                 onClick={() => handleLaunchRole('driver')}
                 className="w-full py-3 px-4 rounded-xl bg-[#18181B] hover:bg-black text-white text-xs font-bold flex items-center justify-between shadow-xs tap-target"
               >
-                <span>Enter as Johan bin Ariffin</span>
+                <span>{t('home.enterAsJohan', 'Enter as Johan bin Ariffin')}</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -149,7 +151,7 @@ export default function HomePage() {
                 <Shield className="h-6 w-6 stroke-[2]" />
               </div>
               <h3 className="text-xl font-extrabold tracking-tight text-neutral-900">
-                Supervisor Control Tower
+                {t('nav.admin', 'Supervisor Control Tower')}
               </h3>
             </div>
 
@@ -159,7 +161,7 @@ export default function HomePage() {
                 onClick={() => handleLaunchRole('admin')}
                 className="w-full py-3 px-4 rounded-xl bg-white hover:bg-neutral-100 text-neutral-900 border border-neutral-300 text-xs font-bold flex items-center justify-between shadow-xs tap-target"
               >
-                <span>Enter as Faridah Hashim</span>
+                <span>{t('home.enterAsFaridah', 'Enter as Faridah Hashim')}</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -173,47 +175,47 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
             <div className="lg:col-span-7 space-y-4">
               <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">
-                Official NGO Vehicle Manifest
+                {t('home.vehicleManifest', 'Official NGO Vehicle Manifest')}
               </span>
               <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
-                Toyota HiAce High-Roof Commuter
+                {t('home.vehicleModel', 'Toyota HiAce High-Roof Commuter')}
               </h3>
               <p className="text-sm text-neutral-300 leading-relaxed">
-                White Pearl · Plate <span className="font-mono font-bold text-white bg-neutral-800 px-2 py-0.5 rounded-sm">WVV 4108</span>. Fitted with heavy-duty wheelchair lock-down floor clamps and rear hydraulic boarding lift.
+                {t('home.vehiclePlate', 'White Pearl · Plate WVV 4108. Fitted with heavy-duty wheelchair lock-down floor clamps and rear hydraulic boarding lift.')}
               </p>
 
               <div className="grid grid-cols-3 gap-3 pt-2 text-center text-xs">
                 <div className="rounded-xl bg-neutral-800 p-3">
-                  <p className="text-neutral-400 font-medium">Row 1 Cab</p>
-                  <p className="font-bold text-white mt-1">Driver + 1 Pax</p>
+                  <p className="text-neutral-400 font-medium">{t('home.row1Cab', 'Row 1 Cab')}</p>
+                  <p className="font-bold text-white mt-1">{t('home.row1Desc', 'Driver + 1 Pax')}</p>
                 </div>
                 <div className="rounded-xl bg-neutral-800 p-3">
-                  <p className="text-neutral-400 font-medium">Row 2 Cabin</p>
-                  <p className="font-bold text-white mt-1">4 Regular Seats</p>
+                  <p className="text-neutral-400 font-medium">{t('home.row2Cabin', 'Row 2 Cabin')}</p>
+                  <p className="font-bold text-white mt-1">{t('home.row2Desc', '4 Regular Seats')}</p>
                 </div>
                 <div className="rounded-xl bg-neutral-800 p-3">
-                  <p className="text-neutral-400 font-medium">Row 3 Rear</p>
-                  <p className="font-bold text-white mt-1">2 Wheelchair Bays</p>
+                  <p className="text-neutral-400 font-medium">{t('home.row3Rear', 'Row 3 Rear')}</p>
+                  <p className="font-bold text-white mt-1">{t('home.row3Desc', '2 Wheelchair Bays')}</p>
                 </div>
               </div>
             </div>
 
             <div className="lg:col-span-5 rounded-2xl bg-neutral-800/90 border border-neutral-700 p-5 space-y-3">
               <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-neutral-400">Total Seating Capacity</span>
-                <span className="font-bold text-white">7 Passengers</span>
+                <span className="text-neutral-400">{t('home.totalCapacity', 'Total Seating Capacity')}</span>
+                <span className="font-bold text-white">{t('home.totalCapacityVal', '7 Passengers')}</span>
               </div>
               <div className="flex items-center justify-between text-xs font-mono border-t border-neutral-700/80 pt-2">
-                <span className="text-neutral-400">Accessibility Gear</span>
-                <span className="font-bold text-white">Hydraulic Lift</span>
+                <span className="text-neutral-400">{t('home.accessGear', 'Accessibility Gear')}</span>
+                <span className="font-bold text-white">{t('home.accessGearVal', 'Hydraulic Lift')}</span>
               </div>
               <div className="flex items-center justify-between text-xs font-mono border-t border-neutral-700/80 pt-2">
-                <span className="text-neutral-400">Operating Route</span>
-                <span className="font-bold text-white">Hospital Tuanku Ja&apos;afar</span>
+                <span className="text-neutral-400">{t('home.operatingRoute', 'Operating Route')}</span>
+                <span className="font-bold text-white">{t('home.operatingRouteVal', "Hospital Tuanku Ja'afar")}</span>
               </div>
               <div className="flex items-center justify-between text-xs font-mono border-t border-neutral-700/80 pt-2">
-                <span className="text-neutral-400">Partner Resorts</span>
-                <span className="font-bold text-white">The Datai, Desaru, Pangkor</span>
+                <span className="text-neutral-400">{t('home.resorts', 'Partner Resorts')}</span>
+                <span className="font-bold text-white">{t('home.resortsVal', 'The Datai, Desaru, Pangkor')}</span>
               </div>
             </div>
           </div>

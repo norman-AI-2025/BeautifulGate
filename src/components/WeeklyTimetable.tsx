@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useLanguage } from '@/context/LanguageContext';
 import { ChevronLeft, ChevronRight, Calendar, CalendarDays, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import { TransitBooking } from '@/types';
 
@@ -53,6 +54,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
   bookings,
   onSelectSlot,
 }) => {
+  const { t } = useLanguage();
   const [selectedIsoDate, setSelectedIsoDate] = useState<string>('2026-11-10');
   const [selectedDayObj, setSelectedDayObj] = useState<DaySchedule>(DEFAULT_DAYS[1]);
 
@@ -172,7 +174,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
       <div className="p-5 border-b border-neutral-200 bg-neutral-50/70 space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h3 className="text-sm font-extrabold text-neutral-900 tracking-tight">
-            1. Choose Date of Service
+            1. {t('timetable.selectDate', 'Choose Date of Service')}
           </h3>
 
           {/* USER SPEC: Click and expand the calendar to select any upcoming date */}
@@ -182,7 +184,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#F37021] text-white font-black text-xs shadow-xs hover:bg-[#D9530F] transition-all tap-target self-start sm:self-auto"
           >
             <CalendarDays className="h-4 w-4 text-orange-200" />
-            <span>Select Date: {selectedDayObj.name}, {selectedDayObj.dateStr}</span>
+            <span>{t('timetable.selectDate', 'Select Date')}: {selectedDayObj.name}, {selectedDayObj.dateStr}</span>
             {isCalendarExpanded ? (
               <ChevronUp className="h-4 w-4 ml-1" />
             ) : (
@@ -331,13 +333,13 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
                   {/* USER SPEC: FOR AVAILABLE JUST LEAVE IT BLANK, DONT PUT NOTES! */}
                   {status === 'booked' && (
                     <span className="text-[10px] uppercase font-black bg-neutral-900 text-white px-2 py-0.5 rounded">
-                      Booked
+                      {t('timetable.legendBooked', 'Booked')}
                     </span>
                   )}
 
                   {status === 'pending' && (
                     <span className="text-[10px] uppercase font-black bg-yellow-900 text-white px-2 py-0.5 rounded">
-                      Pending
+                      {t('timetable.legendPending', 'Pending')}
                     </span>
                   )}
                 </button>
@@ -350,15 +352,15 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
         <div className="flex items-center gap-6 pt-3 border-t border-neutral-100 text-xs font-bold text-neutral-600">
           <div className="flex items-center gap-2">
             <span className="inline-block h-3.5 w-3.5 rounded-md border-2 border-neutral-300 bg-white" />
-            <span>Available (Blank)</span>
+            <span>{t('timetable.legendAvailable', 'Available')}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="inline-block h-3.5 w-3.5 rounded-md bg-[#00c0f0]" />
-            <span>Booked</span>
+            <span>{t('timetable.legendBooked', 'Booked')}</span>
           </div>
           <div className="flex items-center gap-2">
             <span className="inline-block h-3.5 w-3.5 rounded-md bg-yellow-400" />
-            <span>Pending</span>
+            <span>{t('timetable.legendPending', 'Pending')}</span>
           </div>
         </div>
       </div>

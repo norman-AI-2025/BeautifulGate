@@ -5,12 +5,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { ArrowRight, UserCheck, Car, Shield } from 'lucide-react';
 import { UserRole } from '@/types';
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, switchRole } = useApp();
+  const { t } = useLanguage();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,7 +39,12 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-100/60 flex flex-col justify-center items-center px-4 py-12">
+    <div className="min-h-screen bg-neutral-100/60 flex flex-col justify-center items-center px-4 py-12 relative">
+      {/* Top Floating Language Selector */}
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-8">
+        <LanguageSelector />
+      </div>
+
       {/* Brand Header */}
       <div className="mb-6 text-center">
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white border border-neutral-200/80 shadow-md p-2 mb-3">
@@ -49,17 +57,21 @@ export default function LoginPage() {
             className="object-contain"
           />
         </div>
-        <h1 className="text-2xl font-black tracking-tight text-neutral-900">Beautiful Gate</h1>
+        <h1 className="text-2xl font-black tracking-tight text-neutral-900">
+          {t('brand.name', 'Beautiful Gate')}
+        </h1>
         <p className="text-sm text-neutral-500 font-medium mt-1">
-          Assisted Mobility & Artisan Workshop Platform
+          {t('home.title', 'Assisted Mobility & Artisan Workshop Platform')}
         </p>
       </div>
 
       {/* Centered Modal Card */}
       <div className="w-full max-w-md rounded-3xl bg-white border border-neutral-200 p-8 shadow-xl">
-        <h2 className="text-xl font-bold text-neutral-900 tracking-tight">Sign In</h2>
+        <h2 className="text-xl font-bold text-neutral-900 tracking-tight">
+          {t('auth.signIn', 'Sign In')}
+        </h2>
         <p className="text-xs text-neutral-500 mt-1 mb-6">
-          Access your transit bookings and workshop craft earnings.
+          {t('auth.accessSubtitle', 'Access your transit bookings and workshop craft earnings.')}
         </p>
 
         {errorMsg && (
@@ -71,7 +83,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-              Email Address
+              {t('auth.email', 'Email Address')}
             </label>
             <input
               type="email"
@@ -86,10 +98,10 @@ export default function LoginPage() {
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-semibold text-neutral-700">
-                Password
+                {t('auth.password', 'Password')}
               </label>
               <a href="#" className="text-xs font-semibold text-neutral-500 hover:text-black">
-                Forgot?
+                {t('auth.forgot', 'Forgot?')}
               </a>
             </div>
             <input
@@ -108,15 +120,15 @@ export default function LoginPage() {
               type="submit"
               className="w-full py-3.5 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white font-extrabold text-sm shadow-md transition-all active:scale-[0.99] tap-target"
             >
-              Sign In
+              {t('auth.signIn', 'Sign In')}
             </button>
           </div>
         </form>
 
         <div className="mt-6 text-center text-xs text-neutral-600">
-          <span>Don&apos;t have an account? </span>
+          <span>{t('auth.noAccount', "Don't have an account?")} </span>
           <Link href="/signup" className="font-bold text-[#F37021] hover:underline">
-            Create an account
+            {t('auth.createAccount', 'Create an account')}
           </Link>
         </div>
 
@@ -124,9 +136,11 @@ export default function LoginPage() {
         <div className="mt-8 border-t border-neutral-200 pt-6">
           <div className="flex items-center justify-between mb-3">
             <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
-              Dev / Evaluator Quick Access
+              {t('auth.devQuickAccess', 'Dev / Evaluator Quick Access')}
             </span>
-            <span className="text-[10px] font-medium text-neutral-400">1-Click Auth</span>
+            <span className="text-[10px] font-medium text-neutral-400">
+              {t('auth.oneClickAuth', '1-Click Auth')}
+            </span>
           </div>
 
           <div className="space-y-2">

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { AppProvider } from '@/context/AppContext';
+import { LanguageProvider } from '@/context/LanguageContext';
 import { Header } from '@/components/Header';
 
 export const metadata: Metadata = {
@@ -16,10 +17,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased min-h-screen bg-[#fbfbfd] text-[#1d1d1f]">
-        <AppProvider>
-          <Header />
-          {children}
-        </AppProvider>
+        <LanguageProvider>
+          <AppProvider>
+            <Header />
+            {children}
+          </AppProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

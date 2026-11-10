@@ -5,6 +5,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
+import { useLanguage } from '@/context/LanguageContext';
+import { LanguageSelector } from '@/components/LanguageSelector';
 import { LogOut, User, Shield, Car, HeartHandshake } from 'lucide-react';
 import { UserRole } from '@/types';
 
@@ -12,6 +14,7 @@ export const Header: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, switchRole, logout } = useApp();
+  const { t } = useLanguage();
 
   const handleRoleSwitch = (role: UserRole) => {
     switchRole(role);
@@ -27,9 +30,9 @@ export const Header: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-neutral-200 bg-white/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-2.5 sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 lg:px-8 py-2.5">
         {/* Brand */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 sm:gap-6">
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="relative h-10 w-10 shrink-0">
               <Image 
@@ -42,9 +45,11 @@ export const Header: React.FC = () => {
               />
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-base font-black tracking-tight text-neutral-900">Beautiful Gate</span>
-              <span className="rounded-full bg-orange-50 text-[#F37021] border border-orange-200 px-2 py-0.5 text-[10px] font-black tracking-wider uppercase">
-                Assisted Mobility
+              <span className="text-base font-black tracking-tight text-neutral-900">
+                {t('brand.name', 'Beautiful Gate')}
+              </span>
+              <span className="hidden sm:inline-block rounded-full bg-orange-50 text-[#F37021] border border-orange-200 px-2 py-0.5 text-[10px] font-black tracking-wider uppercase">
+                {t('brand.subtitle', 'Assisted Mobility')}
               </span>
             </div>
           </Link>
@@ -60,7 +65,7 @@ export const Header: React.FC = () => {
               }`}
             >
               <HeartHandshake className="h-4 w-4" />
-              Beneficiary Portal
+              {t('nav.portal', 'Beneficiary Portal')}
             </Link>
 
             <Link
@@ -72,7 +77,7 @@ export const Header: React.FC = () => {
               }`}
             >
               <Car className="h-4 w-4" />
-              Driver Console
+              {t('nav.driver', 'Driver Console')}
             </Link>
 
             <Link
@@ -84,13 +89,16 @@ export const Header: React.FC = () => {
               }`}
             >
               <Shield className="h-4 w-4" />
-              Control Tower
+              {t('nav.admin', 'Control Tower')}
             </Link>
           </nav>
         </div>
 
-        {/* Right Section: Quick Switcher & User Profile */}
-        <div className="flex items-center gap-3">
+        {/* Right Section: Language Selector, Quick Switcher & User Profile */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Universal Language Selector Button (visible on all pages, mobile & desktop) */}
+          <LanguageSelector compact />
+
           {/* Quick Demo Switcher Pill */}
           <div className="hidden lg:flex items-center rounded-full bg-neutral-100 p-1 border border-neutral-200 text-xs">
             <button
@@ -102,7 +110,7 @@ export const Header: React.FC = () => {
               }`}
               title="Test as Siti Nurhaliza"
             >
-              Artisan
+              {t('nav.artisanRole', 'Artisan')}
             </button>
             <button
               onClick={() => handleRoleSwitch('driver')}
@@ -113,7 +121,7 @@ export const Header: React.FC = () => {
               }`}
               title="Test as Johan bin Ariffin"
             >
-              Driver
+              {t('nav.driverRole', 'Driver')}
             </button>
             <button
               onClick={() => handleRoleSwitch('admin')}
@@ -124,13 +132,13 @@ export const Header: React.FC = () => {
               }`}
               title="Test as Faridah binti Hashim"
             >
-              Supervisor
+              {t('nav.supervisorRole', 'Supervisor')}
             </button>
           </div>
 
           {/* User Session Info */}
           {currentUser ? (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-semibold text-neutral-900 leading-tight">
                   {currentUser.full_name}
@@ -138,10 +146,10 @@ export const Header: React.FC = () => {
                 <div className="flex items-center justify-end gap-1.5">
                   <span className="text-[11px] font-medium uppercase tracking-wider text-neutral-500">
                     {currentUser.role === 'customer'
-                      ? 'Beneficiary'
+                      ? t('auth.beneficiaryRole', 'Beneficiary')
                       : currentUser.role === 'driver'
-                      ? 'Driver'
-                      : 'Supervisor'}
+                      ? t('auth.driverStaffRole', 'Driver')
+                      : t('nav.supervisorRole', 'Supervisor')}
                   </span>
                   <span className="text-neutral-300">•</span>
                   <span className="text-[11px] font-mono text-neutral-500">
@@ -153,9 +161,9 @@ export const Header: React.FC = () => {
               {/* Sign Out Button */}
               <button
                 onClick={handleLogout}
-                className="flex items-center justify-center h-10 w-10 rounded-full border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-100 hover:text-black transition-colors tap-target"
-                title="Sign Out"
-                aria-label="Sign Out"
+                className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-100 hover:text-black transition-colors tap-target"
+                title={t('nav.signOut', 'Sign Out')}
+                aria-label={t('nav.signOut', 'Sign Out')}
               >
                 <LogOut className="h-4 w-4" />
               </button>
@@ -163,10 +171,10 @@ export const Header: React.FC = () => {
           ) : (
             <Link
               href="/login"
-              className="apple-btn-primary text-xs px-4 py-2"
+              className="apple-btn-primary text-xs px-3 sm:px-4 py-1.5 sm:py-2"
             >
-              <User className="h-3.5 w-3.5 mr-1.5" />
-              Sign In
+              <User className="h-3.5 w-3.5 mr-1" />
+              {t('nav.signIn', 'Sign In')}
             </Link>
           )}
         </div>

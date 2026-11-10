@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { AssignedSpace, MobilityType, TransitBooking } from '@/types';
 import { useApp } from '@/context/AppContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface VanFloorPlanModalProps {
   isOpen: boolean;
@@ -49,6 +50,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
   onBookingSuccess,
 }) => {
   const { currentUser, createBooking } = useApp();
+  const { t } = useLanguage();
 
   // USER SPEC: "each booking can book up to 2 seats"
   const [selectedSeats, setSelectedSeats] = useState<AssignedSpace[]>([]);
@@ -198,7 +200,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
         <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-3.5 bg-neutral-50/80">
           <div className="flex items-center gap-2">
             <h2 className="text-base font-extrabold text-neutral-900">
-              Seat Selection
+              {t('vanModal.seatSelection', 'Seat Selection')}
             </h2>
             <span className="rounded-md bg-[#F37021] text-white px-2.5 py-0.5 text-xs font-bold">
               {selectedDay.split(',')[0]}
@@ -211,7 +213,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
           <button
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 hover:text-black hover:bg-neutral-200 transition-colors tap-target"
-            aria-label="Close modal"
+            aria-label={t('vanModal.close', 'Close modal')}
           >
             <X className="h-5 w-5" />
           </button>
@@ -232,15 +234,15 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
             <div className="flex items-center gap-4 text-[10px] font-bold text-neutral-500 mb-2.5">
               <span className="flex items-center gap-1.5">
                 <span className="h-3 w-3 rounded-md border-2 border-neutral-300 bg-white" />
-                Available
+                {t('vanModal.legendAvailable', 'Available')}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="h-3 w-3 rounded-md bg-[#F37021]" />
-                Selected
+                {t('vanModal.legendSelected', 'Selected')}
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="h-3 w-3 rounded-md bg-neutral-300" />
-                Occupied
+                {t('vanModal.legendOccupied', 'Occupied')}
               </span>
             </div>
 
@@ -513,7 +515,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                   : 'bg-[#F37021] hover:bg-[#D9530F] text-white'
               }`}
             >
-              Confirm Van Booking ({selectedSeats.length} {selectedSeats.length === 1 ? 'Seat' : 'Seats'}) · {selectedTimeSlot}
+              {t('vanModal.confirmBooking', 'Confirm & Submit Booking')} ({selectedSeats.length} {selectedSeats.length === 1 ? 'Seat' : 'Seats'}) · {selectedTimeSlot}
             </button>
           </div>
         </form>
