@@ -106,3 +106,4 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     </div>
   );
 };
+

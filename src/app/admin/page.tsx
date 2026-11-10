@@ -28,7 +28,12 @@ import {
   MapPin,
   Building2,
   Phone,
-  AlertCircle
+  AlertCircle,
+  UserCheck,
+  ArrowRight,
+  RotateCcw,
+  CheckCircle2,
+  Play
 } from 'lucide-react';
 import { TransitBooking, ArtisanSummary, TransitStatus } from '@/types';
 
@@ -40,6 +45,7 @@ export default function AdminPage() {
     workLogs, 
     approveBooking, 
     declineBooking, 
+    updateBookingStatus,
     getArtisanStats, 
     exportPayrollCSV 
   } = useApp();
@@ -57,6 +63,12 @@ export default function AdminPage() {
   // USER SPEC: Each record can be clicked to expand to see more details
   const [expandedBookingId, setExpandedBookingId] = useState<string | null>(null);
 
+  // Active Dispatch interactive states & animation controls
+  const [selectedActiveDispatchId, setSelectedActiveDispatchId] = useState<string | null>(null);
+  const [animatingStatusKey, setAnimatingStatusKey] = useState<string | null>(null);
+  const [statusFeedbackMsg, setStatusFeedbackMsg] = useState<string | null>(null);
+  const [showStatusDropdown, setShowStatusDropdown] = useState<boolean>(false);
+
   // Compute metrics for Dispatch
   const totalBookingsCount = bookings.length;
   const pendingCount = bookings.filter(b => b.status === 'pending').length;
@@ -67,14 +79,78 @@ export default function AdminPage() {
     ['dropped_off', 'en_route_next'].includes(b.status)
   ).length;
 
+  // Active trips available for dispatch focus
+  const activeDispatchesList = useMemo(() => {
+    return bookings.filter(b => b.status !== 'declined');
+  }, [bookings]);
+
   // PRIORITY CURRENT DISPATCH:
-  // Find the booking currently active on the road (en_route_pickup, picked_up, en_route_hospital)
-  // or the highest priority approved ride
+  // Find selected active dispatch or currently on road or highest priority approved ride
   const currentActiveDispatch = useMemo(() => {
+    if (selectedActiveDispatchId) {
+      const found = bookings.find(b => b.id === selectedActiveDispatchId);
+      if (found) return found;
+    }
     return bookings.find(b => 
       ['en_route_pickup', 'picked_up', 'en_route_hospital'].includes(b.status)
     ) || bookings.find(b => b.status === 'approved') || bookings[0];
-  }, [bookings]);
+  }, [bookings, selectedActiveDispatchId]);
+
+  // Handler to switch status with soundless tactile visual animation
+  const handleUpdateActiveDispatchStatus = (bookingId: string, newStatus: TransitStatus) => {
+    updateBookingStatus(bookingId, newStatus);
+    setAnimatingStatusKey(newStatus);
+    setShowStatusDropdown(false);
+    setStatusFeedbackMsg(`Status switched to: ${newStatus.replace(/_/g, ' ')}`);
+    
+    // Clear animation key after completion
+    setTimeout(() => {
+      setAnimatingStatusKey(null);
+    }, 700);
+    setTimeout(() => {
+      setStatusFeedbackMsg(null);
+    }, 3500);
+  };
+
+  // Helper for sequential status progression
+  const getNextStatusAction = (status: TransitStatus): { nextStatus: TransitStatus | null; label: string } => {
+    switch (status) {
+      case 'pending':
+        return { nextStatus: 'approved', label: 'Approve & Schedule' };
+      case 'approved':
+        return { nextStatus: 'en_route_pickup', label: 'Depart for Pickup' };
+      case 'en_route_pickup':
+        return { nextStatus: 'picked_up', label: 'Confirm Picked Up' };
+      case 'picked_up':
+        return { nextStatus: 'en_route_hospital', label: 'Depart for Hospital' };
+      case 'en_route_hospital':
+        return { nextStatus: 'dropped_off', label: 'Confirm Dropped Off' };
+      case 'dropped_off':
+      case 'en_route_next':
+      default:
+        return { nextStatus: null, label: 'Trip Completed' };
+    }
+  };
+
+  const getStagePercentage = (status: TransitStatus): number => {
+    switch (status) {
+      case 'pending':
+        return 5;
+      case 'approved':
+        return 12;
+      case 'en_route_pickup':
+        return 37;
+      case 'picked_up':
+        return 62;
+      case 'en_route_hospital':
+        return 85;
+      case 'dropped_off':
+      case 'en_route_next':
+        return 100;
+      default:
+        return 10;
+    }
+  };
 
   // Filtered dispatch bookings
   const filteredBookings = useMemo(() => {
@@ -240,11 +316,16 @@ export default function AdminPage() {
             {/* ============================================================== */}
             {/* 1. USER SPEC: PRIORITIZE THE CURRENT DISPATCH (HERO CARD)     */}
             {/* PRIORITIZE: PICK UP ADDRESS, DESTINATION, STATUS, CONTACT     */}
-            {/* NUMBER, NAME AND TIME SLOT ONLY                               */}
+            {/* NUMBER, NAME AND TIME SLOT ONLY + INTERACTIVE STATUS ANIMATION  */}
             {/* ============================================================== */}
             {currentActiveDispatch && (
-              <div className="rounded-3xl border-2 border-[#F37021] bg-gradient-to-r from-neutral-950 via-stone-900 to-orange-950 text-white p-6 sm:p-7 shadow-lg space-y-4">
-                {/* Header: Title, Time Slot & Status */}
+              <div 
+                key={currentActiveDispatch.id}
+                className={`rounded-3xl border-2 border-[#F37021] bg-gradient-to-br from-neutral-950 via-stone-900 to-orange-950 text-white p-5 sm:p-7 shadow-xl space-y-5 transition-all duration-300 ${
+                  animatingStatusKey ? 'ring-4 ring-[#F37021]/60 shadow-orange-500/20 shadow-2xl' : ''
+                }`}
+              >
+                {/* Header: Title, Active Ride Switcher & Animated Status */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3.5 border-b border-white/10 gap-3">
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-3 w-3 relative">
@@ -252,26 +333,236 @@ export default function AdminPage() {
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-[#F37021]" />
                     </span>
                     <h2 className="text-sm font-black uppercase tracking-wider text-orange-400">
-                      Current Active Dispatch
+                      {t('admin.activeDispatchTitle', 'Current Active Dispatch')}
                     </h2>
                   </div>
 
-                  <div className="flex items-center gap-2.5">
+                  {/* Multi-Dispatch Switcher (if more than 1 ride today) */}
+                  {activeDispatchesList.length > 1 && (
+                    <div className="flex items-center gap-1 overflow-x-auto py-1 max-w-full">
+                      {activeDispatchesList.slice(0, 4).map((b) => (
+                        <button
+                          key={b.id}
+                          type="button"
+                          onClick={() => setSelectedActiveDispatchId(b.id)}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold whitespace-nowrap transition-all tap-target ${
+                            currentActiveDispatch.id === b.id
+                              ? 'bg-[#F37021] text-white shadow-xs'
+                              : 'bg-white/10 text-neutral-300 hover:bg-white/20 hover:text-white'
+                          }`}
+                        >
+                          {b.passenger_name.split(' ')[0]} ({b.appointment_time.split('-')[0].trim()})
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex items-center gap-2.5 self-end sm:self-auto">
                     {/* Time Slot */}
-                    <span className="font-mono text-xs font-black bg-white/10 text-orange-200 border border-orange-500/30 px-3 py-1 rounded-xl shadow-xs">
-                      {currentActiveDispatch.appointment_time}
+                    <span className="font-mono text-xs font-black bg-white/10 text-orange-200 border border-orange-500/30 px-3 py-1.5 rounded-xl shadow-xs flex items-center gap-1.5">
+                      <Clock className="h-3.5 w-3.5 text-[#F37021]" />
+                      <span>{currentActiveDispatch.appointment_time}</span>
                     </span>
 
-                    {/* Status */}
-                    <span className={`text-xs font-black uppercase tracking-wide px-3 py-1 rounded-xl shadow-xs ${
-                      currentActiveDispatch.status === 'en_route_pickup' || currentActiveDispatch.status === 'picked_up' || currentActiveDispatch.status === 'en_route_hospital'
-                        ? 'bg-[#F37021] text-white'
-                        : currentActiveDispatch.status === 'dropped_off' || currentActiveDispatch.status === 'en_route_next'
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-neutral-800 text-white'
-                    }`}>
-                      {currentActiveDispatch.status.replace(/_/g, ' ')}
+                    {/* Interactive Animated Status Pill with Dropdown */}
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                        className={`text-xs font-black uppercase tracking-wider px-3.5 py-1.5 rounded-xl shadow-md transition-all flex items-center gap-2 tap-target active:scale-95 ${
+                          animatingStatusKey ? 'animate-status-switch scale-105' : ''
+                        } ${
+                          currentActiveDispatch.status === 'en_route_pickup' || currentActiveDispatch.status === 'picked_up' || currentActiveDispatch.status === 'en_route_hospital'
+                            ? 'bg-[#F37021] text-white ring-2 ring-orange-400/40 shadow-orange-500/30'
+                            : currentActiveDispatch.status === 'dropped_off' || currentActiveDispatch.status === 'en_route_next'
+                            ? 'bg-emerald-500 text-white ring-2 ring-emerald-400/40 shadow-emerald-500/30'
+                            : 'bg-neutral-800 text-white'
+                        }`}
+                        title="Click to change status"
+                      >
+                        <span className="flex h-2 w-2 relative">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-80" />
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                        </span>
+                        <span key={currentActiveDispatch.status} className="animate-in fade-in zoom-in-95 duration-200">
+                          {currentActiveDispatch.status.replace(/_/g, ' ')}
+                        </span>
+                        <ChevronDown className="h-3.5 w-3.5 opacity-80" />
+                      </button>
+
+                      {/* Apple-style Interactive Status Popover */}
+                      {showStatusDropdown && (
+                        <div className="absolute right-0 mt-2 w-56 rounded-2xl border border-white/20 bg-neutral-900/95 backdrop-blur-xl p-1.5 shadow-2xl z-50 text-white animate-in fade-in zoom-in-95 duration-150">
+                          <div className="px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wider text-neutral-400 border-b border-white/10 mb-1">
+                            Switch Transit Status
+                          </div>
+                          {[
+                            { val: 'approved' as TransitStatus, label: 'Approved & Scheduled' },
+                            { val: 'en_route_pickup' as TransitStatus, label: 'En Route to Pickup' },
+                            { val: 'picked_up' as TransitStatus, label: 'Passenger Picked Up' },
+                            { val: 'en_route_hospital' as TransitStatus, label: 'En Route to Hospital' },
+                            { val: 'dropped_off' as TransitStatus, label: 'Arrived / Dropped Off' },
+                          ].map((st) => (
+                            <button
+                              key={st.val}
+                              type="button"
+                              onClick={() => handleUpdateActiveDispatchStatus(currentActiveDispatch.id, st.val)}
+                              className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold text-left transition-all ${
+                                currentActiveDispatch.status === st.val
+                                  ? 'bg-[#F37021] text-white'
+                                  : 'text-neutral-300 hover:bg-white/10 hover:text-white'
+                              }`}
+                            >
+                              <span>{st.label}</span>
+                              {currentActiveDispatch.status === st.val && (
+                                <Check className="h-3.5 w-3.5 stroke-[3]" />
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Animated Status Feedback Toast if triggered */}
+                {statusFeedbackMsg && (
+                  <div className="rounded-xl bg-orange-500/20 border border-orange-500/40 p-2.5 text-xs font-bold text-orange-200 flex items-center justify-between gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <span className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-[#F37021]" />
+                      {statusFeedbackMsg}
                     </span>
+                    <button 
+                      onClick={() => setStatusFeedbackMsg(null)}
+                      className="text-orange-300 hover:text-white text-xs font-mono"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+
+                {/* ============================================================== */}
+                {/* INTERACTIVE & HIGH-VISIBILITY TRANSIT STAGE PROGRESSION STEPPER */}
+                {/* ============================================================== */}
+                <div className="rounded-2xl bg-white/5 border border-white/10 p-4 sm:p-5 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-orange-400 flex items-center gap-1.5">
+                      <Navigation className="h-3.5 w-3.5 text-[#F37021]" />
+                      Interactive Transit State Progression
+                    </span>
+                    <span className="text-[10px] text-neutral-400 font-medium hidden sm:inline">
+                      Click any stage icon to transition status
+                    </span>
+                  </div>
+
+                  {/* Horizontal Progress Stepper with Animated Fill Line */}
+                  <div className="relative pt-2 pb-1">
+                    {/* Background Track */}
+                    <div className="absolute top-6 left-6 right-6 h-1.5 -translate-y-1/2 bg-white/15 rounded-full overflow-hidden" aria-hidden="true">
+                      {/* Animated Progress Line */}
+                      <div
+                        className="h-full bg-gradient-to-r from-[#F37021] via-amber-400 to-emerald-400 rounded-full transition-all duration-700 ease-out animate-progress-glow"
+                        style={{ width: `${getStagePercentage(currentActiveDispatch.status)}%` }}
+                      />
+                    </div>
+
+                    {/* 5 Stage Clickable Buttons */}
+                    <div className="relative flex justify-between items-start">
+                      {[
+                        { status: 'approved' as TransitStatus, label: 'Approved', sub: 'Standby', icon: Clock },
+                        { status: 'en_route_pickup' as TransitStatus, label: 'To Pickup', sub: 'Departed', icon: Navigation },
+                        { status: 'picked_up' as TransitStatus, label: 'Onboard', sub: 'Secured', icon: UserCheck },
+                        { status: 'en_route_hospital' as TransitStatus, label: 'To Hospital', sub: 'En Route', icon: Building2 },
+                        { status: 'dropped_off' as TransitStatus, label: 'Arrived', sub: 'Finished', icon: CheckCircle2 },
+                      ].map((step, idx) => {
+                        const stepPct = getStagePercentage(step.status);
+                        const currentPct = getStagePercentage(currentActiveDispatch.status);
+                        const isCurrent = currentActiveDispatch.status === step.status || (step.status === 'approved' && currentActiveDispatch.status === 'pending');
+                        const isPassed = currentPct > stepPct;
+
+                        return (
+                          <div key={step.status} className="flex flex-col items-center text-center max-w-[70px] sm:max-w-[80px]">
+                            {/* Interactive Step Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleUpdateActiveDispatchStatus(currentActiveDispatch.id, step.status)}
+                              className={`relative flex h-10 w-10 sm:h-11 sm:w-11 items-center justify-center rounded-2xl font-bold transition-all duration-300 tap-target ${
+                                isCurrent
+                                  ? 'bg-[#F37021] text-white shadow-lg ring-4 ring-[#F37021]/50 scale-110 z-10 animate-status-switch'
+                                  : isPassed
+                                  ? 'bg-emerald-500 text-white shadow-sm hover:scale-105'
+                                  : 'bg-neutral-800 text-neutral-400 border border-white/20 hover:bg-neutral-700 hover:text-white'
+                              }`}
+                              title={`Set status to ${step.label}`}
+                            >
+                              <step.icon className="h-5 w-5 stroke-[2.2]" />
+                              
+                              {/* Pulsing beacon dot on current active stage */}
+                              {isCurrent && (
+                                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-white" />
+                                </span>
+                              )}
+                            </button>
+
+                            {/* Label */}
+                            <span className={`text-[10px] sm:text-xs font-black tracking-tight mt-2 block transition-colors ${
+                              isCurrent
+                                ? 'text-orange-400 font-extrabold'
+                                : isPassed
+                                ? 'text-emerald-300'
+                                : 'text-neutral-400'
+                            }`}>
+                              {step.label}
+                            </span>
+                            <span className="text-[9px] text-neutral-400 hidden sm:block">
+                              {step.sub}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Stage Advancement Quick Action Button */}
+                  <div className="pt-2 flex flex-col sm:flex-row sm:items-center justify-between border-t border-white/10 gap-3">
+                    {(() => {
+                      const action = getNextStatusAction(currentActiveDispatch.status);
+                      if (action.nextStatus) {
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateActiveDispatchStatus(currentActiveDispatch.id, action.nextStatus!)}
+                            className="px-5 py-2.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white font-black text-xs flex items-center justify-center gap-2 shadow-md transition-all active:scale-[0.98] tap-target"
+                          >
+                            <Play className="h-3.5 w-3.5 fill-current" />
+                            <span>Advance Stage: {action.label}</span>
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </button>
+                        );
+                      }
+                      return (
+                        <div className="flex items-center gap-2 text-emerald-400 font-bold text-xs py-1">
+                          <CheckCircle2 className="h-4 w-4" />
+                          <span>Trip Completed · Patient safely delivered to HTJ</span>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateActiveDispatchStatus(currentActiveDispatch.id, 'approved')}
+                            className="ml-3 text-neutral-400 hover:text-white underline text-[11px] flex items-center gap-1"
+                          >
+                            <RotateCcw className="h-3 w-3" />
+                            <span>Reset to Standby</span>
+                          </button>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Driver assigned info */}
+                    <div className="text-right text-[11px] text-neutral-300">
+                      <span className="text-neutral-400">Assigned Driver: </span>
+                      <span className="font-bold text-white">{currentActiveDispatch.assigned_driver || 'Johan bin Ariffin'}</span>
+                    </div>
                   </div>
                 </div>
 
@@ -286,6 +577,9 @@ export default function AdminPage() {
                       <h3 className="text-xl font-black text-white mt-0.5">
                         {currentActiveDispatch.passenger_name}
                       </h3>
+                      <p className="text-[11px] text-neutral-400 mt-0.5">
+                        Allocated Space: <span className="font-bold text-white">{currentActiveDispatch.assigned_space}</span>
+                      </p>
                     </div>
 
                     <div className="flex items-center gap-2 pt-2 border-t border-white/10">
