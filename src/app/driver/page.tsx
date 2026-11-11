@@ -18,7 +18,9 @@ import {
   Armchair,
   Accessibility,
   Clock,
-  RotateCcw
+  RotateCcw,
+  HeartHandshake,
+  Banknote
 } from 'lucide-react';
 import { TransitBooking, TransitStatus } from '@/types';
 
@@ -432,7 +434,7 @@ export default function DriverPage() {
                                     <h3 className="text-base font-black text-neutral-900 leading-tight">
                                       {booking.passenger_name}
                                     </h3>
-                                    <div className="flex items-center gap-1.5 mt-1">
+                                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
                                       <span className="inline-flex items-center gap-1 font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-orange-50 text-orange-950 border border-orange-200">
                                         {isWheelchair ? (
                                           <Accessibility className="h-3.5 w-3.5 text-[#F37021]" />
@@ -441,6 +443,26 @@ export default function DriverPage() {
                                         )}
                                         {booking.assigned_space}
                                       </span>
+
+                                      {booking.donation && (
+                                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md ${
+                                          booking.donation.method === 'cash'
+                                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                            : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                        }`}>
+                                          {booking.donation.method === 'cash' ? (
+                                            <>
+                                              <Banknote className="h-3.5 w-3.5 text-amber-700" />
+                                              <span>{t('driver.collectCashDonation', 'Collect Cash: RM {amount}').replace('{amount}', booking.donation.amount.toFixed(2))}</span>
+                                            </>
+                                          ) : (
+                                            <>
+                                              <HeartHandshake className="h-3.5 w-3.5 text-emerald-700" />
+                                              <span>{t('driver.qrDonated', 'QR Donated: RM {amount}').replace('{amount}', booking.donation.amount.toFixed(2))}</span>
+                                            </>
+                                          )}
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
 
