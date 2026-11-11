@@ -49,6 +49,7 @@ import {
 import Image from 'next/image';
 import { ProfileModal } from '@/components/ProfileModal';
 import { VehicleModal } from '@/components/VehicleModal';
+import { UserAvatar } from '@/components/UserAvatar';
 import { TransitBooking, ArtisanSummary, TransitStatus, Profile } from '@/types';
 
 // Helper to normalize and sort time slots chronologically
@@ -494,7 +495,7 @@ export default function AdminPage() {
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-1">
-                Beautiful Gate Operations
+                {t('admin.operationsTitle', 'Beautiful Gate Operations')}
               </h1>
             </div>
 
@@ -1852,7 +1853,7 @@ export default function AdminPage() {
                           {activeVehicle.brand} {activeVehicle.model}
                         </h3>
                         <p className="text-xs text-neutral-500 font-medium">
-                          {activeVehicle.notes || 'Fleet vehicle managed by Beautiful Gate Foundation'}
+                          {activeVehicle.notes || t('admin.fleetAssetNotes', 'Fleet vehicle managed by Beautiful Gate Foundation')}
                         </p>
                       </div>
                     </div>
@@ -1866,7 +1867,7 @@ export default function AdminPage() {
                         className="px-3.5 py-1.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-black flex items-center gap-1.5 shadow-sm tap-target transition-all active:scale-95"
                       >
                         <Edit3 className="h-3.5 w-3.5" />
-                        <span>Edit Vehicle</span>
+                        <span>{t('admin.editVehicle', 'Edit Vehicle')}</span>
                       </button>
                     </div>
                   </div>
@@ -1896,7 +1897,7 @@ export default function AdminPage() {
                     <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
                         <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                          Car Plate
+                          {t('admin.carPlateLabel', 'Car Plate')}
                         </span>
                         <span className="font-mono font-black text-base text-neutral-900 mt-1 block">
                           {activeVehicle.plate}
@@ -1908,13 +1909,13 @@ export default function AdminPage() {
                             ? 'text-rose-700 bg-rose-100'
                             : 'text-amber-700 bg-amber-100'
                         }`}>
-                          {activeVehicle.status === 'active' ? 'Active Operation' : activeVehicle.status === 'maintenance' ? 'Under Maintenance' : 'Standby Reserve'}
+                          {activeVehicle.status === 'active' ? t('admin.activeOperation', 'Active Operation') : activeVehicle.status === 'maintenance' ? t('admin.underMaintenance', 'Under Maintenance') : t('admin.standbyReserve', 'Standby Reserve')}
                         </span>
                       </div>
 
                       <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
                         <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                          Colour
+                          {t('admin.colourLabel', 'Colour')}
                         </span>
                         <div className="flex items-center gap-2 mt-1">
                           <span className="h-3.5 w-3.5 rounded-full bg-white border-2 border-neutral-400 shadow-xs shrink-0" />
@@ -1923,16 +1924,16 @@ export default function AdminPage() {
                           </span>
                         </div>
                         <span className="text-[10px] text-neutral-500 font-medium block mt-1.5 truncate">
-                          Factory Exterior Finish
+                          {t('admin.factoryExteriorFinish', 'Factory Exterior Finish')}
                         </span>
                       </div>
 
                       <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
                         <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                          Seatings
+                          {t('admin.seatingsLabel', 'Seatings')}
                         </span>
                         <span className="font-black text-sm text-neutral-900 mt-1 block">
-                          Accessible Layout
+                          {t('admin.accessibleLayout', 'Accessible Layout')}
                         </span>
                         <p className="text-[10px] text-neutral-600 mt-1 font-medium leading-relaxed line-clamp-3">
                           {activeVehicle.seats}
@@ -1953,21 +1954,21 @@ export default function AdminPage() {
                   </div>
                   <div>
                     <h3 className="text-base font-black text-neutral-900">
-                      Driver Leave Requests & Approvals
+                      {t('admin.leaveRequestsTitle', 'Driver Leave Requests & Approvals')}
                     </h3>
                     <p className="text-xs text-neutral-500 font-medium">
-                      Approved leave blocks beneficiary transport bookings and marks driver as on leave
+                      {t('admin.leaveRequestsDesc', 'Approved leave blocks beneficiary transport bookings and marks driver as on leave')}
                     </p>
                   </div>
                 </div>
                 <span className="text-xs font-bold px-3 py-1 rounded-full bg-neutral-100 text-neutral-700 self-start sm:self-auto">
-                  {driverLeaves.filter(l => l.status === 'pending').length} Pending Review
+                  {driverLeaves.filter(l => l.status === 'pending').length} {t('admin.pendingReview', 'Pending Review')}
                 </span>
               </div>
 
               {driverLeaves.length === 0 ? (
                 <div className="text-center py-6 text-neutral-400 text-xs font-medium">
-                  No driver leave requests recorded.
+                  {t('admin.noLeaveRequests', 'No driver leave requests recorded.')}
                 </div>
               ) : (
                 <div className="space-y-2.5">
@@ -1986,17 +1987,17 @@ export default function AdminPage() {
                               ? 'bg-rose-100 text-rose-800 border border-rose-300'
                               : 'bg-amber-100 text-amber-800 border border-amber-300'
                           }`}>
-                            {leave.status === 'approved' ? 'Approved · Bookings Blocked' : leave.status === 'rejected' ? 'Rejected' : 'Pending Approval'}
+                            {leave.status === 'approved' ? t('admin.statusApprovedBlocked', 'Approved · Bookings Blocked') : leave.status === 'rejected' ? t('admin.statusRejected', 'Rejected') : t('admin.statusPendingApproval', 'Pending Approval')}
                           </span>
                         </div>
                         {leave.reason && (
                           <p className="text-xs text-neutral-600 font-medium">
-                            Reason: {leave.reason}
+                            {t('admin.leaveReasonLabel', 'Reason')}: {leave.reason}
                           </p>
                         )}
                         {leave.approved_by && (
                           <p className="text-[10px] text-neutral-400 font-medium">
-                            Reviewed by: {leave.approved_by}
+                            {t('admin.reviewedByLabel', 'Reviewed by')}: {leave.approved_by}
                           </p>
                         )}
                       </div>
@@ -2009,7 +2010,7 @@ export default function AdminPage() {
                             className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1 shadow-xs tap-target transition-all active:scale-95"
                           >
                             <Check className="h-3.5 w-3.5" />
-                            <span>Approve</span>
+                            <span>{t('admin.approve', 'Approve')}</span>
                           </button>
                           <button
                             type="button"
@@ -2017,7 +2018,7 @@ export default function AdminPage() {
                             className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-rose-600 font-bold text-xs flex items-center gap-1 tap-target transition-all active:scale-95"
                           >
                             <X className="h-3.5 w-3.5" />
-                            <span>Reject</span>
+                            <span>{t('admin.reject', 'Reject')}</span>
                           </button>
                         </div>
                       )}
@@ -2179,22 +2180,12 @@ export default function AdminPage() {
                           {/* User Photo & Name */}
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <div className="flex items-center gap-3">
-                              <div className="h-10 w-10 rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-200 flex items-center justify-center shrink-0">
-                                {p.avatar_url ? (
-                                  <Image
-                                    src={p.avatar_url}
-                                    alt={p.full_name}
-                                    width={40}
-                                    height={40}
-                                    className="h-full w-full object-cover"
-                                    unoptimized={p.avatar_url.startsWith('data:')}
-                                  />
-                                ) : (
-                                  <span className="font-extrabold text-sm text-[#F37021]">
-                                    {p.full_name.charAt(0).toUpperCase()}
-                                  </span>
-                                )}
-                              </div>
+                              <UserAvatar
+                                src={p.avatar_url}
+                                name={p.full_name}
+                                size={40}
+                                className="rounded-2xl border border-neutral-200"
+                              />
                               <div>
                                 <p className="font-extrabold text-neutral-900 text-sm flex items-center gap-1.5">
                                   <span>{p.full_name}</span>

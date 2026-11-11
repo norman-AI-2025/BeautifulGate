@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { ProfileModal } from '@/components/ProfileModal';
+import { UserAvatar } from '@/components/UserAvatar';
 import { 
   Phone, 
   MessageSquare, 
@@ -431,7 +432,7 @@ export default function DriverPage() {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500/20 hover:bg-[#F37021] text-orange-200 hover:text-white border border-orange-400/40 text-xs font-bold transition-all tap-target shadow-xs"
               >
                 <Calendar className="h-3.5 w-3.5" />
-                <span className="hidden xs:inline">Request Leave</span>
+                <span className="hidden xs:inline">{t('driver.requestLeave', 'Request Leave')}</span>
               </button>
 
               {/* Driver Profile Button */}
@@ -441,22 +442,14 @@ export default function DriverPage() {
                 className="flex items-center gap-2 p-1 sm:px-2 rounded-2xl bg-white/10 hover:bg-white/20 transition-all tap-target text-left group"
                 title={t('profile.editDriverProfile', 'Edit Driver Profile & Photo')}
               >
-                <div className="relative h-9 w-9 rounded-xl overflow-hidden bg-orange-100 border border-orange-400 shadow-xs flex items-center justify-center shrink-0">
-                  {driverProfile?.avatar_url ? (
-                    <Image
-                      src={driverProfile.avatar_url}
-                      alt={driverProfile.full_name}
-                      width={36}
-                      height={36}
-                      className="h-full w-full object-cover"
-                      unoptimized={driverProfile.avatar_url.startsWith('data:')}
-                    />
-                  ) : (
-                    <span className="font-black text-xs text-[#F37021]">
-                      {driverProfile?.full_name ? driverProfile.full_name.charAt(0) : 'J'}
-                    </span>
-                  )}
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <div className="relative group shrink-0">
+                  <UserAvatar
+                    src={driverProfile?.avatar_url}
+                    name={driverProfile?.full_name || 'Driver'}
+                    size={36}
+                    className="rounded-xl border border-orange-400 shadow-xs"
+                  />
+                  <div className="absolute inset-0 rounded-xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Camera className="h-3.5 w-3.5 text-white" />
                   </div>
                 </div>
@@ -560,7 +553,7 @@ export default function DriverPage() {
                     <span className={`mt-1 text-[8px] px-1 py-0.2 rounded font-black uppercase tracking-wider ${
                       isSelected ? 'bg-white text-amber-900' : 'bg-amber-200 text-amber-900'
                     }`}>
-                      Leave
+                      {t('driver.onLeaveTag', 'Leave')}
                     </span>
                   ) : runCount > 0 ? (
                     <span className={`mt-1 text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold leading-none ${
@@ -584,10 +577,10 @@ export default function DriverPage() {
           <div className="rounded-3xl border-2 border-amber-400 bg-amber-50 p-5 shadow-sm space-y-2 animate-in fade-in-50">
             <div className="flex items-center gap-2.5 text-amber-950 font-black text-sm sm:text-base">
               <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
-              <span>ON LEAVE · Transport Services Suspended</span>
+              <span>{t('driver.onLeaveBannerTitle', 'ON LEAVE · Transport Services Suspended')}</span>
             </div>
             <p className="text-xs text-amber-900 leading-relaxed font-medium">
-              You are officially registered as <strong>ON LEAVE</strong> on {formatDisplayDate(selectedYmd, language)} with administrator approval. Public beneficiary bookings for this day are closed and no transport missions are assigned.
+              {t('driver.onLeaveBannerDesc', 'You are officially registered as ON LEAVE on {date} with administrator approval. Public beneficiary bookings for this day are closed and no transport missions are assigned.').replace('{date}', formatDisplayDate(selectedYmd, language))}
             </p>
           </div>
         )}
@@ -959,17 +952,17 @@ export default function DriverPage() {
               </button>
               <div className="flex items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500 text-white">
-                  Staff Dispatch
+                  {t('driver.staffDispatch', 'Staff Dispatch')}
                 </span>
                 <span className="font-mono text-xs text-amber-300 font-bold">
-                  {driverProfile?.full_name || 'Driver'}
+                  {driverProfile?.full_name || t('nav.driverRole', 'Driver')}
                 </span>
               </div>
               <h2 className="text-xl font-black text-white mt-1.5">
-                Request Driver Leave
+                {t('driver.leaveModalTitle', 'Request Driver Leave')}
               </h2>
               <p className="text-xs text-neutral-300 mt-0.5">
-                Submitted leaves require administrator approval before transit bookings are suspended
+                {t('driver.leaveModalDesc', 'Submitted leaves require administrator approval before transit bookings are suspended')}
               </p>
             </div>
 
@@ -977,13 +970,13 @@ export default function DriverPage() {
               onSubmit={async (e) => {
                 e.preventDefault();
                 if (!leaveDate) {
-                  setLeaveError('Please select a valid date.');
+                  setLeaveError(t('driver.selectDateError', 'Please select a valid date.'));
                   return;
                 }
                 try {
                   await requestDriverLeave({
                     date: leaveDate,
-                    reason: leaveReason.trim() || 'Driver Personal Leave',
+                    reason: leaveReason.trim() || t('driver.defaultLeaveReason', 'Driver Personal Leave'),
                   });
                   setLeaveSubmitted(true);
                   setTimeout(() => {
@@ -992,7 +985,7 @@ export default function DriverPage() {
                     setLeaveReason('');
                   }, 900);
                 } catch {
-                  setLeaveError('Failed to submit leave request.');
+                  setLeaveError(t('driver.submitLeaveError', 'Failed to submit leave request.'));
                 }
               }}
               className="p-5 sm:p-6 space-y-4"
@@ -1005,13 +998,13 @@ export default function DriverPage() {
 
               {leaveSubmitted && (
                 <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black">
-                  Leave request submitted successfully. Awaiting Administrator approval.
+                  {t('driver.leaveSubmittedSuccess', 'Leave request submitted successfully. Awaiting Administrator approval.')}
                 </div>
               )}
 
               <div>
                 <label className="text-xs font-bold text-neutral-700 block mb-1">
-                  Leave Date
+                  {t('driver.leaveDate', 'Leave Date')}
                 </label>
                 <input
                   type="date"
@@ -1024,13 +1017,13 @@ export default function DriverPage() {
 
               <div>
                 <label className="text-xs font-bold text-neutral-700 block mb-1">
-                  Reason for Leave (Optional)
+                  {t('driver.leaveReason', 'Reason for Leave (Optional)')}
                 </label>
                 <input
                   type="text"
                   value={leaveReason}
                   onChange={(e) => setLeaveReason(e.target.value)}
-                  placeholder="e.g. Medical appointment, family matter, routine checkup"
+                  placeholder={t('driver.leaveReasonPlaceholder', 'e.g. Medical appointment, family matter, routine checkup')}
                   className="w-full px-3.5 py-2.5 rounded-2xl border border-neutral-300 bg-neutral-50 focus:bg-white text-neutral-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#F37021] transition-all"
                 />
               </div>
@@ -1041,14 +1034,14 @@ export default function DriverPage() {
                   onClick={() => setIsLeaveModalOpen(false)}
                   className="px-4 py-2.5 rounded-2xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-bold transition-all tap-target"
                 >
-                  Cancel
+                  {t('common.cancel', 'Cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={leaveSubmitted}
                   className="px-5 py-2.5 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-black shadow-md transition-all tap-target disabled:opacity-50"
                 >
-                  {leaveSubmitted ? 'Submitted' : 'Submit Leave Request'}
+                  {leaveSubmitted ? t('driver.submitted', 'Submitted') : t('driver.submitLeaveRequest', 'Submit Leave Request')}
                 </button>
               </div>
             </form>

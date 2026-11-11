@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { CardProduct, CardWorkLog, Profile } from '@/types';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface AnalyticsChartsProps {
   workLogs: CardWorkLog[];
@@ -14,6 +15,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
   products,
   profiles,
 }) => {
+  const { t } = useLanguage();
   // Aggregate volume by product / resort client
   const clientDistribution = products.map(prod => {
     const logsForProduct = workLogs.filter(l => l.card_id === prod.id);
@@ -38,7 +40,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
     { label: 'Sep', units: 840, wages: 1470 },
     { label: 'Oct', units: 1280, wages: 2379 },
     {
-      label: 'Nov (MTD)',
+      label: t('analytics.currentMtd', 'Nov (MTD)'),
       units: workLogs
         .filter(l => l.logged_date.startsWith('2026-11'))
         .reduce((sum, l) => sum + l.units_completed, 0),
@@ -52,10 +54,10 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
 
   // Weekly breakdown for current month (4 weeks)
   const weeklyData = [
-    { label: 'Week 1', units: 280 },
-    { label: 'Week 2', units: 340 },
-    { label: 'Week 3', units: 310 },
-    { label: 'Week 4 (Current)', units: 210 },
+    { label: t('analytics.week1', 'Week 1'), units: 280 },
+    { label: t('analytics.week2', 'Week 2'), units: 340 },
+    { label: t('analytics.week3', 'Week 3'), units: 310 },
+    { label: t('analytics.week4', 'Week 4 (Current)'), units: 210 },
   ];
   const maxWeeklyUnits = Math.max(...weeklyData.map(d => d.units), 100);
 
@@ -67,14 +69,14 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-sm font-bold text-neutral-900 tracking-tight">
-                Monthly Card Production Volume
+                {t('analytics.monthlyTitle', 'Monthly Card Production Volume')}
               </h3>
               <p className="text-xs text-neutral-500 mt-0.5">
-                Output across all workshop artisan beneficiaries
+                {t('analytics.monthlySubtitle', 'Output across all workshop artisan beneficiaries')}
               </p>
             </div>
             <span className="text-xs font-mono font-semibold text-neutral-600 bg-neutral-100 px-2.5 py-1 rounded-md border border-neutral-200">
-              Units Produced
+              {t('analytics.unitsProduced', 'Units Produced')}
             </span>
           </div>
 
@@ -105,8 +107,8 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
           </div>
 
           <div className="mt-4 flex items-center justify-between text-xs text-neutral-500">
-            <span>Historical 6-Month Trajectory</span>
-            <span className="font-semibold text-neutral-900">Highest: {maxMonthlyUnits} units</span>
+            <span>{t('analytics.trajectory', 'Historical 6-Month Trajectory')}</span>
+            <span className="font-semibold text-neutral-900">{t('analytics.highest', 'Highest')}: {maxMonthlyUnits} {t('analytics.units', 'units')}</span>
           </div>
         </div>
 
@@ -115,14 +117,14 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
           <div className="flex items-center justify-between mb-6">
             <div>
               <h3 className="text-sm font-bold text-neutral-900 tracking-tight">
-                Resort Client Distribution
+                {t('analytics.resortTitle', 'Resort Client Distribution')}
               </h3>
               <p className="text-xs text-neutral-500 mt-0.5">
-                Volume breakdown by partner eco-luxury hotels
+                {t('analytics.resortSubtitle', 'Volume breakdown by partner eco-luxury hotels')}
               </p>
             </div>
             <span className="text-xs font-mono font-semibold text-neutral-600 bg-neutral-100 px-2.5 py-1 rounded-md border border-neutral-200">
-              {clientDistribution.length} Clients
+              {clientDistribution.length} {t('analytics.clientsCount', 'Clients')}
             </span>
           </div>
 
@@ -138,7 +140,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                       <span className="text-neutral-500 ml-2">· {item.name}</span>
                     </div>
                     <div className="font-mono text-neutral-700 font-semibold">
-                      {item.units} cards ({percentage}%)
+                      {item.units} {t('analytics.cardsCount', 'cards')} ({percentage}%)
                     </div>
                   </div>
 
@@ -151,9 +153,9 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                   </div>
 
                   <div className="flex justify-between text-[11px] text-neutral-500">
-                    <span>Piece Rate: RM {item.pieceRate.toFixed(2)}</span>
+                    <span>{t('analytics.pieceRate', 'Piece Rate')}: RM {item.pieceRate.toFixed(2)}</span>
                     <span className="font-semibold text-neutral-800">
-                      Disbursed: RM {item.revenue.toFixed(2)}
+                      {t('analytics.disbursed', 'Disbursed')}: RM {item.revenue.toFixed(2)}
                     </span>
                   </div>
                 </div>

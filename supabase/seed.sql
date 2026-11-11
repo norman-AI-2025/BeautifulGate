@@ -73,7 +73,7 @@ insert into public.profiles (
   '370, Lrg S2 F7/1 Garden Homes, S''ban 2, 70300 S''ban, N. Sembilan',
   'Public Bank',
   '3198 0000 0000',
-  '/images/staff-tanbeechian.jpg',
+  null,
   'Spouse / Family Contact',
   '+60 12-252 3642',
   'Class D',

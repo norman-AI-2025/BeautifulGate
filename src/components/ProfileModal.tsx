@@ -30,6 +30,7 @@ export interface ProfileModalProps {
   isOpen: boolean;
   onClose: () => void;
   targetProfile?: Profile | null;
+  profile?: Profile | null;
   mode?: 'edit_self' | 'admin_manage_driver' | 'admin_view';
 }
 
@@ -45,6 +46,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   isOpen,
   onClose,
   targetProfile,
+  profile: explicitProfile,
   mode = 'edit_self',
 }) => {
   const { currentUser, profiles, updateProfile } = useApp();
@@ -53,7 +55,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Active profile being edited or viewed (with fallback so modal always pops up)
-  const profile = targetProfile || currentUser || profiles[0] || {
+  const profile = explicitProfile || targetProfile || currentUser || profiles[0] || {
     id: 'user-default',
     full_name: 'Beneficiary User',
     ic_or_oku_number: 'OKU-PENDING',
@@ -83,6 +85,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [driverStatus, setDriverStatus] = useState<'active' | 'on_leave' | 'standby'>('active');
   const [isApproved, setIsApproved] = useState(true);
   const [notes, setNotes] = useState('');
+  const [avatarError, setAvatarError] = useState(false);
 
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -104,6 +107,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setEmergencyContact(profile.emergency_contact || '');
       setEmergencyPhone(profile.emergency_phone || '');
       setAvatarUrl(profile.avatar_url);
+      setAvatarError(false);
       setDriverLicense(profile.driver_license || '');
       setVehiclePlate(profile.assigned_vehicle_plate || '');
       setDriverStatus(profile.driver_status || 'active');
@@ -291,7 +295,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           <div className="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 shadow-xs">
             <div className="relative group shrink-0">
               <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-3xl overflow-hidden bg-white border-2 border-neutral-200 shadow-md flex items-center justify-center relative">
-                {avatarUrl ? (
+                {avatarUrl && !avatarError ? (
                   <Image
                     src={avatarUrl}
                     alt={fullName || 'Profile Photo'}
@@ -299,10 +303,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     height={96}
                     className="h-full w-full object-cover"
                     unoptimized={avatarUrl.startsWith('data:')}
+                    onError={() => setAvatarError(true)}
                   />
                 ) : (
                   <div className="h-full w-full bg-gradient-to-br from-orange-100 to-amber-200 text-[#F37021] font-black text-2xl flex items-center justify-center">
-                    {fullName ? fullName.charAt(0).toUpperCase() : <User className="h-8 w-8 text-neutral-400" />}
+                    {fullName ? fullName.split(' ').map(w => w[0]).filter(Boolean).slice(0, 2).join('').toUpperCase() : <User className="h-8 w-8 text-neutral-400" />}
                   </div>
                 )}
 

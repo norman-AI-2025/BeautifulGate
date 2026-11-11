@@ -10,6 +10,7 @@ import { LinearStageIndicator } from '@/components/LinearStageIndicator';
 import { ServiceRatingCard } from '@/components/ServiceRatingCard';
 import { TransitDonationModal } from '@/components/TransitDonationModal';
 import { ProfileModal } from '@/components/ProfileModal';
+import { UserAvatar } from '@/components/UserAvatar';
 import { 
   Car, 
   Sparkles, 
@@ -116,22 +117,14 @@ export default function MobileArtisanPortalPage() {
               className="flex items-center gap-3 cursor-pointer group"
               title={t('profile.editMyProfile', 'Click to edit your profile and photo')}
             >
-              <div className="relative h-11 w-11 rounded-2xl overflow-hidden bg-orange-100 border-2 border-orange-400/80 shadow-xs flex items-center justify-center shrink-0 group-hover:border-white transition-colors">
-                {currentUser?.avatar_url ? (
-                  <Image
-                    src={currentUser.avatar_url}
-                    alt={currentUser.full_name}
-                    width={44}
-                    height={44}
-                    className="h-full w-full object-cover"
-                    unoptimized={currentUser.avatar_url.startsWith('data:')}
-                  />
-                ) : (
-                  <span className="font-black text-sm text-[#F37021]">
-                    {(currentUser?.full_name?.charAt(0) || 'U').toUpperCase()}
-                  </span>
-                )}
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <div className="relative group shrink-0">
+                <UserAvatar
+                  src={currentUser?.avatar_url}
+                  name={currentUser?.full_name || 'Beneficiary'}
+                  size={44}
+                  className="rounded-2xl border-2 border-orange-400/80 shadow-xs group-hover:border-white transition-colors"
+                />
+                <div className="absolute inset-0 rounded-2xl bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Camera className="h-4 w-4 text-white" />
                 </div>
               </div>

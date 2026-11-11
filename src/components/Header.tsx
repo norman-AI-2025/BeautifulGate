@@ -9,6 +9,7 @@ import { useLanguage } from '@/context/LanguageContext';
 import { LogOut, User } from 'lucide-react';
 import { UserRole } from '@/types';
 import { ProfileModal } from '@/components/ProfileModal';
+import { UserAvatar } from '@/components/UserAvatar';
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
@@ -62,22 +63,12 @@ export const Header: React.FC = () => {
                 className="flex items-center gap-2.5 p-1 rounded-2xl hover:bg-neutral-100 transition-all tap-target text-left group"
                 title={t('profile.editMyProfile', 'Click to edit your profile and photo')}
               >
-                <div className="relative h-9 w-9 rounded-full overflow-hidden bg-orange-100 border-2 border-neutral-200 shadow-xs flex items-center justify-center shrink-0 group-hover:border-[#F37021] transition-colors">
-                  {currentUser.avatar_url ? (
-                    <Image
-                      src={currentUser.avatar_url}
-                      alt={currentUser.full_name}
-                      width={36}
-                      height={36}
-                      className="h-full w-full object-cover"
-                      unoptimized={currentUser.avatar_url.startsWith('data:')}
-                    />
-                  ) : (
-                    <span className="font-extrabold text-xs text-[#F37021]">
-                      {(currentUser.full_name?.charAt(0) || 'U').toUpperCase()}
-                    </span>
-                  )}
-                </div>
+                <UserAvatar
+                  src={currentUser.avatar_url}
+                  name={currentUser.full_name}
+                  size={36}
+                  className="border-2 border-neutral-200 group-hover:border-[#F37021] transition-colors shadow-xs"
+                />
 
                 <div className="text-right hidden sm:block">
                   <p className="text-xs font-black text-neutral-900 leading-tight group-hover:text-[#F37021] transition-colors">
@@ -137,6 +128,7 @@ export const Header: React.FC = () => {
         <ProfileModal
           isOpen={isProfileModalOpen}
           onClose={() => setIsProfileModalOpen(false)}
+          profile={currentUser}
           mode="edit_self"
         />
       )}

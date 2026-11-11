@@ -83,12 +83,12 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setErrorMsg('Please select a valid image file (PNG, JPG, WebP).');
+      setErrorMsg(t('vehicleModal.invalidPhoto', 'Please select a valid image file (PNG, JPG, WebP).'));
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setErrorMsg('Image size exceeds 5MB limit. Please choose a smaller photo.');
+      setErrorMsg(t('vehicleModal.photoTooLarge', 'Image size exceeds 5MB limit. Please choose a smaller photo.'));
       return;
     }
 
@@ -104,7 +104,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!plate.trim()) {
-      setErrorMsg('Vehicle plate number is required.');
+      setErrorMsg(t('vehicleModal.plateRequired', 'Vehicle plate number is required.'));
       return;
     }
 
@@ -126,7 +126,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
         onClose();
       }, 700);
     } catch {
-      setErrorMsg('Failed to update vehicle.');
+      setErrorMsg(t('vehicleModal.saveFailed', 'Failed to update vehicle.'));
     }
   };
 
@@ -147,7 +147,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
 
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-500 text-white">
-              Fleet Asset
+              {t('vehicleModal.fleetAsset', 'Fleet Asset')}
             </span>
             <span className="font-mono text-xs text-orange-300 font-bold">
               {plate || 'WVV 4108'}
@@ -155,10 +155,10 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-1.5">
-            Edit Vehicle Profile
+            {t('vehicleModal.title', 'Edit Vehicle Profile')}
           </h2>
           <p className="text-xs text-neutral-300 mt-0.5">
-            Update official fleet specification, passenger seating layout, and operational status.
+            {t('vehicleModal.subtitle', 'Update official fleet specification, passenger seating layout, and operational status.')}
           </p>
         </div>
 
@@ -174,7 +174,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
           {isSuccess && (
             <div className="rounded-2xl border border-emerald-300 bg-emerald-50 p-3 text-xs font-bold text-emerald-900 flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-              <span>Vehicle profile updated successfully!</span>
+              <span>{t('vehicleModal.saveSuccess', 'Vehicle profile updated successfully!')}</span>
             </div>
           )}
 
@@ -194,14 +194,14 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
                 className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-[10px] font-bold gap-1"
               >
                 <Camera className="h-4 w-4" />
-                <span>Change Image</span>
+                <span>{t('vehicleModal.changeImage', 'Change Image')}</span>
               </button>
             </div>
 
             <div className="flex-1 text-center sm:text-left space-y-1.5">
-              <h4 className="text-xs font-black text-neutral-900">Vehicle Photo</h4>
+              <h4 className="text-xs font-black text-neutral-900">{t('vehicleModal.vehiclePhoto', 'Vehicle Photo')}</h4>
               <p className="text-[11px] text-neutral-500">
-                Official exterior vehicle photo shown across beneficiary booking and dispatch screens.
+                {t('vehicleModal.vehiclePhotoDesc', 'Official exterior vehicle photo shown across beneficiary booking and dispatch screens.')}
               </p>
               <input
                 ref={fileInputRef}
@@ -216,7 +216,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
                   onClick={() => fileInputRef.current?.click()}
                   className="px-3 py-1.5 rounded-xl bg-neutral-900 hover:bg-black text-white text-xs font-bold tap-target transition-all"
                 >
-                  Upload New Photo
+                  {t('vehicleModal.uploadNewPhoto', 'Upload New Photo')}
                 </button>
                 {imageUrl !== '/images/toyota-hiace-van.jpg' && (
                   <button
@@ -224,7 +224,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
                     onClick={() => setImageUrl('/images/toyota-hiace-van.jpg')}
                     className="px-2.5 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-600 text-xs font-bold tap-target transition-all"
                   >
-                    Reset
+                    {t('vehicleModal.reset', 'Reset')}
                   </button>
                 )}
               </div>
@@ -235,7 +235,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Car Plate Number
+                {t('vehicleModal.carPlate', 'Car Plate Number')}
               </label>
               <input
                 type="text"
@@ -249,16 +249,16 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
 
             <div>
               <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Operational Status
+                {t('vehicleModal.operationalStatus', 'Operational Status')}
               </label>
               <select
                 value={status}
                 onChange={(e) => setStatus(e.target.value as any)}
                 className="apple-input w-full font-bold text-xs"
               >
-                <option value="active">Active in Fleet</option>
-                <option value="maintenance">Under Scheduled Maintenance</option>
-                <option value="standby">Standby Reserve</option>
+                <option value="active">{t('vehicleModal.statusActive', 'Active in Fleet')}</option>
+                <option value="maintenance">{t('vehicleModal.statusMaintenance', 'Under Scheduled Maintenance')}</option>
+                <option value="standby">{t('vehicleModal.statusStandby', 'Standby Reserve')}</option>
               </select>
             </div>
           </div>
@@ -267,7 +267,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Brand
+                {t('vehicleModal.brand', 'Brand')}
               </label>
               <input
                 type="text"
@@ -281,7 +281,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
 
             <div>
               <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Model Specification
+                {t('vehicleModal.model', 'Model Specification')}
               </label>
               <input
                 type="text"
@@ -295,7 +295,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
 
             <div>
               <label className="block text-xs font-bold text-neutral-700 mb-1">
-                Colour
+                {t('vehicleModal.color', 'Colour')}
               </label>
               <input
                 type="text"
@@ -311,7 +311,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
           {/* Seatings & Layout */}
           <div>
             <label className="block text-xs font-bold text-neutral-700 mb-1">
-              Seating Capacity & Layout
+              {t('vehicleModal.seatingLayout', 'Seating Capacity & Layout')}
             </label>
             <input
               type="text"
@@ -326,7 +326,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
           {/* Accessibility Equipment & Notes */}
           <div>
             <label className="block text-xs font-bold text-neutral-700 mb-1">
-              Accessibility Gear & Maintenance Notes
+              {t('vehicleModal.notes', 'Accessibility Gear & Maintenance Notes')}
             </label>
             <textarea
               rows={2}
@@ -344,14 +344,14 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
               onClick={onClose}
               className="px-4 py-2.5 rounded-xl border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-100 text-xs font-bold tap-target transition-all"
             >
-              Cancel
+              {t('vehicleModal.cancel', 'Cancel')}
             </button>
             <button
               type="submit"
               className="px-6 py-2.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-black shadow-md tap-target transition-all active:scale-95 flex items-center gap-1.5"
             >
               <Check className="h-4 w-4 stroke-[2.5]" />
-              <span>Save Vehicle Details</span>
+              <span>{t('vehicleModal.saveDetails', 'Save Vehicle Details')}</span>
             </button>
           </div>
         </form>
@@ -361,3 +361,4 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
 
   return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 };
+
