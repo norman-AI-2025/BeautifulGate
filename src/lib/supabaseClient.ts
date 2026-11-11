@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Profile, TransitBooking, CardProduct, CardWorkLog, Vehicle, DriverLeave, LeaveStatus } from '@/types';
+import { Profile, TransitBooking, CardProduct, CardWorkLog, Vehicle, DriverLeave, LeaveStatus, BeneficiaryType } from '@/types';
 
 // Environment variables for Supabase connection
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -20,8 +20,10 @@ export const supabase: SupabaseClient | null = isSupabaseConfigured()
   : null;
 
 // ==============================================================================
-// PROFILES API
+// PROFILES API (With Automatic Fallback for Schemas Missing 'beneficiary_type')
 // ==============================================================================
+let hasNativeBeneficiaryTypeColumn: boolean | null = null;
+
 export async function dbFetchProfiles(): Promise<Profile[] | null> {
   if (!supabase) return null;
   const { data, error } = await supabase
@@ -33,20 +35,85 @@ export async function dbFetchProfiles(): Promise<Profile[] | null> {
     console.error('Supabase fetchProfiles error:', error);
     return null;
   }
-  return data as Profile[];
+
+  // Parse beneficiary_type from notes tag if the column does not exist in Supabase table
+  const mapped = (data as Profile[]).map((p) => {
+    let beneficiaryType = p.beneficiary_type;
+    let cleanNotes = p.notes || '';
+
+    if (!beneficiaryType && p.notes) {
+      const match = p.notes.match(/\[beneficiary:(resident|daycare|non_resident)\]/);
+      if (match) {
+        beneficiaryType = match[1] as BeneficiaryType;
+        cleanNotes = p.notes.replace(/\[beneficiary:(resident|daycare|non_resident)\]\s?/, '').trim();
+      }
+    }
+
+    // Default to 'resident' for beneficiaries if not specified
+    if (!beneficiaryType && p.role === 'customer') {
+      beneficiaryType = 'resident';
+    }
+
+    return {
+      ...p,
+      beneficiary_type: beneficiaryType,
+      notes: cleanNotes || undefined,
+    };
+  });
+
+  return mapped;
 }
 
 export async function dbUpsertProfile(profile: Partial<Profile> & { id: string }): Promise<boolean> {
   if (!supabase) return false;
-  const { error } = await supabase
+
+  const beneficiaryType = profile.beneficiary_type;
+
+  // If native column support is unknown or supported, try native upsert first
+  if (hasNativeBeneficiaryTypeColumn !== false) {
+    const { error } = await supabase
+      .from('profiles')
+      .upsert({
+        ...profile,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'id' });
+
+    if (!error) {
+      hasNativeBeneficiaryTypeColumn = true;
+      return true;
+    }
+
+    // If error indicates column does not exist in Supabase (PGRST204)
+    if (error.code === 'PGRST204' || error.message?.includes('beneficiary_type')) {
+      console.warn('Supabase does not have beneficiary_type column yet. Storing classification safely in notes...');
+      hasNativeBeneficiaryTypeColumn = false;
+    } else {
+      console.error('Supabase upsertProfile error:', error);
+      return false;
+    }
+  }
+
+  // Graceful Fallback: For Supabase instances without the 'beneficiary_type' column,
+  // embed [beneficiary:TYPE] into notes so it persists across all devices without schema errors!
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { beneficiary_type, ...profileWithoutCol } = profile;
+  
+  let mergedNotes = profile.notes || '';
+  if (beneficiaryType) {
+    mergedNotes = mergedNotes.replace(/\[beneficiary:(resident|daycare|non_resident)\]\s?/, '').trim();
+    mergedNotes = `[beneficiary:${beneficiaryType}] ${mergedNotes}`.trim();
+  }
+
+  const { error: fallbackError } = await supabase
     .from('profiles')
     .upsert({
-      ...profile,
+      ...profileWithoutCol,
+      notes: mergedNotes || null,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'id' });
 
-  if (error) {
-    console.error('Supabase upsertProfile error:', error);
+  if (fallbackError) {
+    console.error('Supabase upsertProfile fallback error:', fallbackError);
     return false;
   }
   return true;
