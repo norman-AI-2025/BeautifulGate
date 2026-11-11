@@ -103,6 +103,45 @@ interface WeekDayItem {
   isToday: boolean;
 }
 
+export const generateCurrentWeekDays = (): WeekDayItem[] => {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 is Sun, 1 is Mon...
+  const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diffToMonday);
+
+  const dayNamesEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const dayNamesZh = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+  const dayNamesMs = ['Ahd', 'Isn', 'Sel', 'Rab', 'Kha', 'Jum', 'Sab'];
+  const fullDaysEn = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  const todayYmd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+  const days: WeekDayItem[] = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    const dateNum = d.getDate();
+    const dayIdx = d.getDay();
+    const ymd = `${year}-${String(month + 1).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`;
+
+    days.push({
+      ymd,
+      key: `${fullDaysEn[dayIdx]}, ${dateNum} ${shortMonths[month]} ${year}`,
+      dayNameEn: dayNamesEn[dayIdx],
+      dayNameZh: dayNamesZh[dayIdx],
+      dayNameMs: dayNamesMs[dayIdx],
+      dateNum: `${dateNum} ${shortMonths[month]}`,
+      isToday: ymd === todayYmd,
+    });
+  }
+  return days;
+};
+
 const WEEK_DAYS: WeekDayItem[] = [
   { ymd: '2026-11-09', key: 'Monday, 9 Nov 2026', dayNameEn: 'Mon', dayNameZh: '周一', dayNameMs: 'Isn', dateNum: '9 Nov', isToday: false },
   { ymd: '2026-11-10', key: 'Tuesday, 10 Nov 2026', dayNameEn: 'Tue', dayNameZh: '周二', dayNameMs: 'Sel', dateNum: '10 Nov', isToday: true },
@@ -158,24 +197,50 @@ export default function DriverPage() {
   } = useApp();
   const { t, language } = useLanguage();
 
-  // Selected date in weekly calendar view (defaults to today '2026-11-10')
+  const [weekDaysList, setWeekDaysList] = useState<WeekDayItem[]>(WEEK_DAYS);
   const [selectedYmd, setSelectedYmd] = useState<string>('2026-11-10');
   const [showCompletedRuns, setShowCompletedRuns] = useState<boolean>(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState<boolean>(false);
   const [cashDonationModalBooking, setCashDonationModalBooking] = useState<TransitBooking | null>(null);
 
-  // Leave Form states
-  const [leaveDate, setLeaveDate] = useState<string>('2026-11-12');
-  const [leaveReason, setLeaveReason] = useState<string>('');
-  const [leaveSubmitted, setLeaveSubmitted] = useState<boolean>(false);
-  const [leaveError, setLeaveError] = useState<string>('');
+  // Sync with client-side date dynamically for date and time sensitivity
+  useEffect(() => {
+    const liveWeek = generateCurrentWeekDays();
+    setWeekDaysList(liveWeek);
+    const todayItem = liveWeek.find(d => d.isToday) || liveWeek[0];
+    if (todayItem) {
+      setSelectedYmd(todayItem.ymd);
+    }
+  }, []);
 
   // Driver profile being viewed/edited
   const driverProfile = useMemo(() => {
     if (currentUser?.role === 'driver') return currentUser;
     return profiles.find(p => p.role === 'driver') || currentUser;
   }, [currentUser, profiles]);
+
+  // AUTO-POPUP FOR DRIVER:
+  // When an artisan donates cash to driver, automatically popup the cash collection receipt!
+  const pendingCashDonationBooking = useMemo(() => {
+    return bookings.find(b => 
+      b.donation && 
+      b.donation.method === 'cash' && 
+      b.donation.status !== 'paid' &&
+      (!b.assigned_driver || !driverProfile?.full_name || b.assigned_driver === driverProfile.full_name)
+    );
+  }, [bookings, driverProfile]);
+
+  useEffect(() => {
+    if (pendingCashDonationBooking && !cashDonationModalBooking) {
+      setCashDonationModalBooking(pendingCashDonationBooking);
+    }
+  }, [pendingCashDonationBooking, cashDonationModalBooking]);
+
+  const [leaveDate, setLeaveDate] = useState<string>('2026-11-12');
+  const [leaveReason, setLeaveReason] = useState<string>('');
+  const [leaveSubmitted, setLeaveSubmitted] = useState<boolean>(false);
+  const [leaveError, setLeaveError] = useState<string>('');
 
   // Approved bookings assigned to driver or all unassigned/driver runs
   const allJohanApprovedBookings = useMemo(() => {
@@ -189,12 +254,12 @@ export default function DriverPage() {
   // Counts of approved bookings per day in the upcoming week
   const dayRunsCountMap = useMemo(() => {
     const map = new Map<string, number>();
-    WEEK_DAYS.forEach((d) => {
+    weekDaysList.forEach((d) => {
       const count = allJohanApprovedBookings.filter(b => normalizeDateToYMD(b.date) === d.ymd).length;
       map.set(d.ymd, count);
     });
     return map;
-  }, [allJohanApprovedBookings]);
+  }, [allJohanApprovedBookings, weekDaysList]);
 
   // Filter approved bookings for the selected day in the calendar
   const johanBookings = useMemo(() => {
@@ -511,7 +576,7 @@ export default function DriverPage() {
 
           {/* 7-Day Calendar Strip */}
           <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-            {WEEK_DAYS.map((d) => {
+            {weekDaysList.map((d) => {
               const isSelected = selectedYmd === d.ymd;
               const runCount = dayRunsCountMap.get(d.ymd) || 0;
               const dayLabel = getDayLabel(d, language);

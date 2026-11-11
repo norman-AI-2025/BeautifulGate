@@ -352,23 +352,37 @@ export default function MobileArtisanPortalPage() {
                           </div>
                         </div>
 
-                        {/* Voluntary Transit Donation Button (Replaces Boarding Pass) */}
+                        {/* Voluntary Transit Donation Button */}
                         <button
                           type="button"
                           onClick={() => setSelectedDonationBooking(b)}
                           className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 tap-target transition-all shadow-xs ${
-                            b.donation
+                            b.donation?.status === 'paid'
                               ? 'border border-emerald-400 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                              : b.donation
+                              ? 'border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100'
                               : 'border-2 border-[#F37021] bg-gradient-to-r from-orange-500 to-[#D9530F] text-white hover:opacity-95 shadow-md shadow-orange-500/20'
                           }`}
                         >
-                          <HeartHandshake className={`h-4 w-4 ${b.donation ? 'text-emerald-600' : 'text-white'}`} />
-                          {b.donation ? (
-                            <span>
-                              {t('donation.donated', 'Donation Completed')}: <span className="font-mono font-extrabold text-emerald-950">RM {b.donation.amount.toFixed(2)}</span> ({b.donation.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')})
-                            </span>
+                          {b.donation?.status === 'paid' ? (
+                            <>
+                              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                              <span>
+                                {t('donation.donated', 'Donation Completed')}: <span className="font-mono font-extrabold text-emerald-950">RM {b.donation.amount.toFixed(2)}</span> ({b.donation.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')})
+                              </span>
+                            </>
+                          ) : b.donation ? (
+                            <>
+                              <Clock className="h-4 w-4 text-amber-600" />
+                              <span>
+                                {t('donation.pendingVerification', 'Pending Driver Receipt')}: <span className="font-mono font-extrabold text-amber-950">RM {b.donation.amount.toFixed(2)}</span> ({t('donation.cashToDriver', 'Cash')})
+                              </span>
+                            </>
                           ) : (
-                            <span>{t('donation.button', 'Make a Transit Donation (Cash / QR)')}</span>
+                            <>
+                              <HeartHandshake className="h-4 w-4 text-white" />
+                              <span>{t('donation.button', 'Make a Transit Donation (Cash / QR)')}</span>
+                            </>
                           )}
                         </button>
                       </div>
