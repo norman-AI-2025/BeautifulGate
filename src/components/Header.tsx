@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { LogOut, User, Shield, Car, HeartHandshake } from 'lucide-react';
+import { LogOut, User } from 'lucide-react';
 import { UserRole } from '@/types';
 import { ProfileModal } from '@/components/ProfileModal';
 
@@ -47,45 +47,6 @@ export const Header: React.FC = () => {
               </span>
             </div>
           </Link>
-
-          {/* Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1 pl-4 border-l border-neutral-200">
-            <Link
-              href="/portal"
-              className={`px-3 py-1.5 rounded-xl text-sm font-bold transition-all tap-target flex items-center gap-1.5 ${
-                pathname === '/portal'
-                  ? 'bg-[#F37021] text-white shadow-xs'
-                  : 'text-neutral-600 hover:text-black hover:bg-neutral-100'
-              }`}
-            >
-              <HeartHandshake className="h-4 w-4" />
-              {t('nav.portal', 'Beneficiary Portal')}
-            </Link>
-
-            <Link
-              href="/driver"
-              className={`px-3 py-1.5 rounded-xl text-sm font-bold transition-all tap-target flex items-center gap-1.5 ${
-                pathname === '/driver'
-                  ? 'bg-[#F37021] text-white shadow-xs'
-                  : 'text-neutral-600 hover:text-black hover:bg-neutral-100'
-              }`}
-            >
-              <Car className="h-4 w-4" />
-              {t('nav.driver', 'Driver Console')}
-            </Link>
-
-            <Link
-              href="/admin"
-              className={`px-3 py-1.5 rounded-xl text-sm font-bold transition-all tap-target flex items-center gap-1.5 ${
-                pathname === '/admin'
-                  ? 'bg-[#F37021] text-white shadow-xs'
-                  : 'text-neutral-600 hover:text-black hover:bg-neutral-100'
-              }`}
-            >
-              <Shield className="h-4 w-4" />
-              {t('nav.admin', 'Control Tower')}
-            </Link>
-          </nav>
         </div>
 
         {/* Right Section: User Profile & Actions */}
