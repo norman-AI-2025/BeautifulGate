@@ -19,12 +19,16 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email.trim()) {
-      setErrorMsg('Please enter your email address.');
+      setErrorMsg(t('auth.enterEmail', 'Please enter your email address.'));
+      return;
+    }
+    if (!password) {
+      setErrorMsg(t('auth.enterPassword', 'Please enter your password.'));
       return;
     }
     try {
-      const success = await Promise.resolve(login(email));
-      if (success) {
+      const result = await login(email, password);
+      if (result.success) {
         // Read authenticated role from current user session
         let role = 'customer';
         try {
@@ -43,10 +47,16 @@ export default function LoginPage() {
           router.push('/portal');
         }
       } else {
-        setErrorMsg('Invalid email or account not found.');
+        if (result.error === 'invalid_password') {
+          setErrorMsg(t('auth.invalidPassword', 'Incorrect password. Please try again.'));
+        } else if (result.error === 'account_not_found') {
+          setErrorMsg(t('auth.accountNotFound', 'Account not found with this email. Please create an account.'));
+        } else {
+          setErrorMsg(t('auth.invalidCredentials', 'Invalid email or password. Please try again.'));
+        }
       }
     } catch {
-      setErrorMsg('Unable to sign in. Please check your credentials.');
+      setErrorMsg(t('auth.errorSignIn', 'Unable to sign in. Please check your network and credentials.'));
     }
   };
 

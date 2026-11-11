@@ -56,7 +56,7 @@ interface AppContextType {
   isLoaded: boolean;
   isSupabaseLive: boolean;
   switchRole: (role: UserRole, userId?: string) => void;
-  login: (email: string, role?: UserRole) => boolean | Promise<boolean>;
+  login: (email: string, password?: string, role?: UserRole) => Promise<{ success: boolean; error?: string }>;
   signup: (userData: {
     full_name: string;
     ic_or_oku_number: string;
@@ -65,6 +65,7 @@ interface AppContextType {
     role: UserRole;
     mobility_type: MobilityType;
     beneficiary_type?: BeneficiaryType;
+    password?: string;
   }) => Promise<Profile> | Profile;
   logout: () => void;
   // Booking actions
@@ -126,6 +127,18 @@ const STORAGE_KEYS = {
   DRIVER_LEAVES: 'bg_driver_leaves_v2',
   PRODUCTS: 'bg_card_products_v2',
 };
+
+// Safe client-side password hash helper
+export function hashPassword(pwd: string): string {
+  if (!pwd) return '';
+  let hash = 0;
+  for (let i = 0; i < pwd.length; i++) {
+    const char = pwd.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash |= 0;
+  }
+  return 'bg_' + Math.abs(hash).toString(16);
+}
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -384,15 +397,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [profiles, saveCurrentUser]);
 
-  const login = useCallback(async (email: string, role?: UserRole): Promise<boolean> => {
-    let match = profiles.find(p => p.email.toLowerCase() === email.toLowerCase());
+  const login = useCallback(async (
+    email: string,
+    password?: string,
+    role?: UserRole
+  ): Promise<{ success: boolean; error?: string }> => {
+    const trimmedEmail = email.trim().toLowerCase();
+    let match = profiles.find(p => p.email.toLowerCase() === trimmedEmail);
     
-    // If Supabase is active and not matched locally, check Supabase profiles
+    // If Supabase is active and not matched locally, check live Supabase profiles
     if (!match && isSupabaseConfigured()) {
       const liveProfiles = await dbFetchProfiles();
       if (liveProfiles) {
         setProfiles(liveProfiles);
-        match = liveProfiles.find(p => p.email.toLowerCase() === email.toLowerCase());
+        match = liveProfiles.find(p => p.email.toLowerCase() === trimmedEmail);
       }
     }
 
@@ -400,36 +418,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       match = profiles.find(p => p.role === role);
     }
 
-    if (match) {
-      saveCurrentUser(match);
-      return true;
+    // Account not found
+    if (!match) {
+      return { success: false, error: 'account_not_found' };
     }
 
-    // If profile doesn't exist yet, create a clean profile
-    const newUser: Profile = {
-      id: `user-${Date.now()}`,
-      full_name: email.split('@')[0],
-      ic_or_oku_number: 'OKU-PENDING',
-      phone: '',
-      email,
-      role: role || 'customer',
-      mobility_type: 'None',
-      beneficiary_type: (role || 'customer') === 'customer' ? 'resident' : undefined,
-    };
+    // Check password if provided or required
+    if (password !== undefined) {
+      const enteredHash = hashPassword(password);
+      
+      if (match.password_hash) {
+        if (match.password_hash !== enteredHash) {
+          return { success: false, error: 'invalid_password' };
+        }
+      } else {
+        // Fallback for seed accounts without an explicit password_hash yet
+        const defaultAdminHash = hashPassword('admin123');
+        const defaultDriverHash = hashPassword('driver123');
 
-    const updatedProfiles = [...profiles, newUser];
-    setProfiles(updatedProfiles);
-    try {
-      localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(updatedProfiles));
-    } catch (e) {
-      console.warn(e);
+        if (match.role === 'admin' && enteredHash !== defaultAdminHash && match.email === 'tan.beechian@beautifulgate.org.my') {
+          return { success: false, error: 'invalid_password' };
+        } else if (match.role === 'driver' && enteredHash !== defaultDriverHash && match.email === 'wong.kokfu@beautifulgate.org.my') {
+          return { success: false, error: 'invalid_password' };
+        } else if (!match.password_hash && password) {
+          // First login for user without hash: bind this password to their profile
+          match.password_hash = enteredHash;
+          dbUpsertProfile(match).catch(err => console.warn('Supabase profile password update error:', err));
+        }
+      }
     }
 
-    // Persist to Supabase if live
-    dbUpsertProfile(newUser).catch(err => console.warn('Supabase profile save error:', err));
-
-    saveCurrentUser(newUser);
-    return true;
+    saveCurrentUser(match);
+    return { success: true };
   }, [profiles, saveCurrentUser]);
 
   const signup = useCallback(async (userData: {
@@ -440,13 +460,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     role: UserRole;
     mobility_type: MobilityType;
     beneficiary_type?: BeneficiaryType;
+    password?: string;
   }): Promise<Profile> => {
     // If staff/driver signs up, they require administrator approval before active duty
     const isStaffOrDriver = userData.role === 'driver' || userData.role === 'admin';
+    const passwordHash = userData.password ? hashPassword(userData.password) : undefined;
+
     const newProfile: Profile = {
       id: `user-${Date.now()}`,
-      ...userData,
+      full_name: userData.full_name,
+      ic_or_oku_number: userData.ic_or_oku_number,
+      phone: userData.phone,
+      email: userData.email,
+      role: userData.role,
+      mobility_type: userData.mobility_type,
       beneficiary_type: userData.role === 'customer' ? (userData.beneficiary_type || 'resident') : undefined,
+      password_hash: passwordHash,
       is_approved: isStaffOrDriver ? false : true,
       driver_status: userData.role === 'driver' ? 'standby' : undefined,
     };

@@ -36,16 +36,26 @@ export async function dbFetchProfiles(): Promise<Profile[] | null> {
     return null;
   }
 
-  // Parse beneficiary_type from notes tag if the column does not exist in Supabase table
+  // Parse beneficiary_type and password_hash from notes tag if the column does not exist in Supabase table
   const mapped = (data as Profile[]).map((p) => {
     let beneficiaryType = p.beneficiary_type;
+    let passwordHash = p.password_hash;
     let cleanNotes = p.notes || '';
 
-    if (!beneficiaryType && p.notes) {
-      const match = p.notes.match(/\[beneficiary:(resident|daycare|non_resident)\]/);
-      if (match) {
-        beneficiaryType = match[1] as BeneficiaryType;
-        cleanNotes = p.notes.replace(/\[beneficiary:(resident|daycare|non_resident)\]\s?/, '').trim();
+    if (p.notes) {
+      if (!beneficiaryType) {
+        const match = p.notes.match(/\[beneficiary:(resident|daycare|non_resident)\]/);
+        if (match) {
+          beneficiaryType = match[1] as BeneficiaryType;
+          cleanNotes = cleanNotes.replace(/\[beneficiary:(resident|daycare|non_resident)\]\s?/, '').trim();
+        }
+      }
+      if (!passwordHash) {
+        const pwdMatch = p.notes.match(/\[pwd:(.+?)\]/);
+        if (pwdMatch) {
+          passwordHash = pwdMatch[1];
+          cleanNotes = cleanNotes.replace(/\[pwd:.+?\]\s?/, '').trim();
+        }
       }
     }
 
@@ -57,6 +67,7 @@ export async function dbFetchProfiles(): Promise<Profile[] | null> {
     return {
       ...p,
       beneficiary_type: beneficiaryType,
+      password_hash: passwordHash,
       notes: cleanNotes || undefined,
     };
   });
@@ -93,15 +104,19 @@ export async function dbUpsertProfile(profile: Partial<Profile> & { id: string }
     }
   }
 
-  // Graceful Fallback: For Supabase instances without the 'beneficiary_type' column,
-  // embed [beneficiary:TYPE] into notes so it persists across all devices without schema errors!
+  // Graceful Fallback: For Supabase instances without native columns,
+  // embed [beneficiary:TYPE] and [pwd:HASH] into notes so it persists safely across all devices!
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { beneficiary_type, ...profileWithoutCol } = profile;
+  const { beneficiary_type, password_hash, ...profileWithoutCol } = profile;
   
   let mergedNotes = profile.notes || '';
   if (beneficiaryType) {
     mergedNotes = mergedNotes.replace(/\[beneficiary:(resident|daycare|non_resident)\]\s?/, '').trim();
     mergedNotes = `[beneficiary:${beneficiaryType}] ${mergedNotes}`.trim();
+  }
+  if (profile.password_hash) {
+    mergedNotes = mergedNotes.replace(/\[pwd:.+?\]\s?/, '').trim();
+    mergedNotes = `[pwd:${profile.password_hash}] ${mergedNotes}`.trim();
   }
 
   const { error: fallbackError } = await supabase

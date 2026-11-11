@@ -620,6 +620,12 @@ export const translations = {
       customerOkuLabel: 'Malaysian IC / OKU Card No.',
       driverStaffLabel: 'Staff ID / Malaysian IC',
       driverRequiresAdminApproval: 'Notice: New Staff & Driver registrations require administrator approval before operational dispatch.',
+      invalidPassword: 'Incorrect password. Please try again.',
+      accountNotFound: 'Account not found with this email. Please create an account.',
+      invalidCredentials: 'Invalid email or password. Please try again.',
+      enterEmail: 'Please enter your email address.',
+      enterPassword: 'Please enter your password.',
+      errorSignIn: 'Unable to sign in. Please check your network and credentials.',
     },
     // User & Driver Profile
     profile: {
@@ -1356,6 +1362,12 @@ export const translations = {
       customerOkuLabel: '马来西亚身份证 / OKU 卡号',
       driverStaffLabel: '职员编号 / 马来西亚身份证',
       driverRequiresAdminApproval: '注意：新注册的职员与司机需经管理员审批通过后方可执行营运调度。',
+      invalidPassword: '密码不正确，请重新输入。',
+      accountNotFound: '未找到此邮箱对应的账户，请先注册。',
+      invalidCredentials: '邮箱或密码不正确，请重试。',
+      enterEmail: '请输入您的电子邮箱地址。',
+      enterPassword: '请输入您的安全密码。',
+      errorSignIn: '登录失败，请检查网络连接或登录凭据。',
     },
     // User & Driver Profile
     profile: {
@@ -2092,6 +2104,12 @@ export const translations = {
       customerOkuLabel: 'No. Kad Pengenalan / Kad OKU',
       driverStaffLabel: 'ID Kakitangan / No. Kad Pengenalan',
       driverRequiresAdminApproval: 'Notis: Pendaftaran kakitangan & pemandu baharu memerlukan kelulusan pentadbir sebelum boleh ditugaskan.',
+      invalidPassword: 'Kata laluan salah. Sila cuba lagi.',
+      accountNotFound: 'Akaun tidak dijumpai dengan emel ini. Sila daftar akaun dahulu.',
+      invalidCredentials: 'Emel atau kata laluan tidak sah. Sila cuba lagi.',
+      enterEmail: 'Sila masukkan alamat emel anda.',
+      enterPassword: 'Sila masukkan kata laluan anda.',
+      errorSignIn: 'Gagal log masuk. Sila semak sambungan rangkaian dan bukti kelayakan anda.',
     },
     // User & Driver Profile
     profile: {

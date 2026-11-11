@@ -36,6 +36,7 @@ export default function SignUpPage() {
         ic_or_oku_number: icOrOku,
         phone: phone,
         email: email,
+        password: password,
         role: role,
         mobility_type: role === 'driver' ? 'None' : mobilityProfile,
         beneficiary_type: role === 'customer' ? beneficiaryType : undefined,
