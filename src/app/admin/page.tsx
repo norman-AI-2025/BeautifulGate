@@ -1343,16 +1343,16 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Table (Action column removed) */}
+              {/* Table (Prioritized: Time Slot, Date, Name, Assigned Driver, Payment Method, Amount, Status) */}
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-neutral-50/80 border-b border-neutral-200 text-neutral-600 uppercase tracking-wider font-bold">
                     <tr>
-                      <th className="py-3.5 px-4">{t('admin.refCol', 'Reference')}</th>
-                      <th className="py-3.5 px-4">{t('admin.beneficiaryCol', 'Beneficiary')}</th>
-                      <th className="py-3.5 px-4">{t('admin.routeCol', 'Destination')}</th>
+                      <th className="py-3.5 px-4">{t('admin.timeSlot', 'Time Slot')}</th>
+                      <th className="py-3.5 px-4">{t('admin.date', 'Date')}</th>
+                      <th className="py-3.5 px-4">{t('admin.name', 'Name')}</th>
                       <th className="py-3.5 px-4">{t('admin.driverCol', 'Assigned Driver')}</th>
-                      <th className="py-3.5 px-4">{t('admin.methodCol', 'Method')}</th>
+                      <th className="py-3.5 px-4">{t('admin.methodCol', 'Payment Method')}</th>
                       <th className="py-3.5 px-4">{t('admin.amountCol', 'Amount (MYR)')}</th>
                       <th className="py-3.5 px-4">{t('admin.statusCol', 'Status')}</th>
                     </tr>
@@ -1363,47 +1363,40 @@ export default function AdminPage() {
 
                       return (
                         <tr key={b.id} className="hover:bg-neutral-50/80 transition-colors">
-                          {/* Reference */}
-                          <td className="py-4 px-4 whitespace-nowrap">
-                            <span className="font-mono font-bold text-neutral-900">
-                              BG-TR-{b.id.toUpperCase()}
-                            </span>
-                            <span className="block text-[10px] text-neutral-400 mt-0.5">
-                              {new Date(d.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · {formatBookingDate(b.date)}
-                            </span>
+                          {/* 1. Time Slot */}
+                          <td className="py-4 px-4 whitespace-nowrap font-mono font-bold text-neutral-950">
+                            <div className="flex items-center gap-1.5">
+                              <Clock className="h-3.5 w-3.5 text-neutral-400" />
+                              <span>{b.appointment_time}</span>
+                            </div>
                           </td>
 
-                          {/* Beneficiary */}
+                          {/* 2. Date */}
+                          <td className="py-4 px-4 whitespace-nowrap font-semibold text-neutral-700">
+                            {formatBookingDate(b.date)}
+                          </td>
+
+                          {/* 3. Name */}
                           <td className="py-4 px-4 whitespace-nowrap">
-                            <span className="font-extrabold text-neutral-900 block">
+                            <span className="font-extrabold text-neutral-900 block leading-tight">
                               {b.passenger_name}
                             </span>
-                            <span className="font-mono text-[10px] text-neutral-500">
+                            <span className="font-mono text-[10px] text-neutral-500 block mt-0.5">
                               OKU: {b.oku_id}
                             </span>
                           </td>
 
-                          {/* Destination */}
-                          <td className="py-4 px-4">
-                            <span className="font-bold text-neutral-900 block truncate max-w-xs">
-                              {b.hospital_name}
-                            </span>
-                            <span className="text-[10px] text-neutral-500 block">
-                              {b.appointment_time}
-                            </span>
-                          </td>
-
-                          {/* Driver & Van */}
+                          {/* 4. Assigned Driver */}
                           <td className="py-4 px-4 whitespace-nowrap">
-                            <span className="font-bold text-neutral-900 block">
+                            <span className="font-bold text-neutral-900 block leading-tight">
                               {b.assigned_driver}
                             </span>
-                            <span className="font-mono text-[10px] text-neutral-500">
+                            <span className="font-mono text-[10px] text-neutral-500 block mt-0.5">
                               {b.assigned_vehicle.plate}
                             </span>
                           </td>
 
-                          {/* Method */}
+                          {/* 5. Payment Method */}
                           <td className="py-4 px-4 whitespace-nowrap">
                             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold ${
                               d.method === 'cash'
@@ -1424,12 +1417,12 @@ export default function AdminPage() {
                             </span>
                           </td>
 
-                          {/* Amount */}
+                          {/* 6. Amount */}
                           <td className="py-4 px-4 whitespace-nowrap font-mono font-black text-sm text-[#F37021]">
                             RM {d.amount.toFixed(2)}
                           </td>
 
-                          {/* Status */}
+                          {/* 7. Status */}
                           <td className="py-4 px-4 whitespace-nowrap">
                             <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                               d.status === 'paid'

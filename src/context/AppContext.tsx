@@ -415,45 +415,104 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     saveBookings(updated);
   }, [bookings, saveBookings]);
 
-  // Export Donation CSV for financial audit and tax reporting
+  // Export Donation CSV with Monthly Summary Totals (Total in a Month, Total from QR, Total from Cash to Driver)
   const exportDonationsCSV = useCallback(() => {
     const donatedBookings = bookings.filter(b => Boolean(b.donation));
+
+    // Calculate monthly totals (within 30 days of simulated date 11 Nov 2026)
+    const SIMULATED_BASELINE_MS = new Date('2026-11-11T12:00:00+08:00').getTime();
+    const isWithinMonth = (dateStr?: string) => {
+      if (!dateStr) return true;
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return true;
+      const diffDays = (SIMULATED_BASELINE_MS - d.getTime()) / (1000 * 60 * 60 * 24);
+      return diffDays >= -1 && diffDays <= 30;
+    };
+
+    const monthDonations = donatedBookings.filter(b => isWithinMonth(b.donation?.timestamp));
+    const totalMonth = monthDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0);
+    const qrMonth = monthDonations.filter(b => b.donation?.method === 'qr');
+    const totalQrMonth = qrMonth.reduce((sum, b) => sum + (b.donation?.amount || 0), 0);
+    const cashMonth = monthDonations.filter(b => b.donation?.method === 'cash');
+    const totalCashMonth = cashMonth.reduce((sum, b) => sum + (b.donation?.amount || 0), 0);
+
     const rows = [
+      ['"BEAUTIFUL GATE FOUNDATION FOR THE DISABLED"'],
+      ['"TRANSIT DONATION & ACCESSIBLE TRANSPORT SUBSIDY AUDIT"'],
+      ['"Generated At"', `"${new Date().toLocaleString()}"`],
+      ['"Audit Period Scope"', '"Month-to-Date Audit"'],
+      ['""'],
+      ['"=== MONTHLY AUDIT SUMMARY TOTALS ==="'],
+      ['"Metric Description"', '"Amount (MYR)"', '"Contributions Count"'],
+      ['"Total in a Month"', `"RM ${totalMonth.toFixed(2)}"`, `"${monthDonations.length} contributions"`],
+      ['"Total from QR in a Month"', `"RM ${totalQrMonth.toFixed(2)}"`, `"${qrMonth.length} contributions"`],
+      ['"Total from Cash to Driver in a Month"', `"RM ${totalCashMonth.toFixed(2)}"`, `"${cashMonth.length} contributions"`],
+      ['""'],
+      ['"=== DETAILED TRANSACTION AUDIT LEDGER ==="'],
       [
-        'Reference ID',
-        'Date',
         'Time Slot',
-        'Beneficiary Name',
+        'Date',
+        'Passenger Name',
+        'Assigned Driver',
+        'Payment Method',
+        'Amount (MYR)',
+        'Status',
+        'Destination Hospital',
+        'Reference ID',
         'OKU Number',
         'Contact Phone',
-        'Destination Hospital',
-        'Assigned Driver',
-        'Vehicle Plate',
-        'Amount (MYR)',
-        'Payment Method',
-        'Reconciliation Status',
-        'Donation Timestamp'
+        'Timestamp'
       ],
     ];
 
     donatedBookings.forEach(b => {
       const d = b.donation!;
       rows.push([
-        `"BG-TR-${b.id.toUpperCase()}"`,
-        `"${b.date}"`,
         `"${b.appointment_time}"`,
+        `"${b.date}"`,
         `"${b.passenger_name}"`,
+        `"${b.assigned_driver} (${b.assigned_vehicle.plate})"`,
+        `"${d.method === 'cash' ? 'Cash to Driver' : 'DuitNow QR'}"`,
+        `"${d.amount.toFixed(2)}"`,
+        `"${d.status === 'paid' ? 'Paid / Reconciled' : 'Pledged to Driver'}"`,
+        `"${b.hospital_name}"`,
+        `"BG-TR-${b.id.toUpperCase()}"`,
         `"${b.oku_id}"`,
         `"${b.phone}"`,
-        `"${b.hospital_name}"`,
-        `"${b.assigned_driver}"`,
-        `"${b.assigned_vehicle.plate}"`,
-        `"${d.amount.toFixed(2)}"`,
-        `"${d.method === 'cash' ? 'Cash to Driver' : 'DuitNow QR'}"`,
-        `"${d.status === 'paid' ? 'Paid / Reconciled' : 'Pledged to Driver'}"`,
         `"${d.timestamp}"`
       ]);
     });
+
+    // Summary totals at bottom of spreadsheet
+    rows.push(['""']);
+    rows.push(['"--- MONTHLY LEDGER TOTALS ---"']);
+    rows.push([
+      '""',
+      '""',
+      '""',
+      '""',
+      '"TOTAL IN A MONTH"',
+      `"RM ${totalMonth.toFixed(2)}"`,
+      `"${monthDonations.length} records"`
+    ]);
+    rows.push([
+      '""',
+      '""',
+      '""',
+      '""',
+      '"TOTAL FROM QR IN A MONTH"',
+      `"RM ${totalQrMonth.toFixed(2)}"`,
+      `"${qrMonth.length} records"`
+    ]);
+    rows.push([
+      '""',
+      '""',
+      '""',
+      '""',
+      '"TOTAL FROM CASH TO DRIVER IN A MONTH"',
+      `"RM ${totalCashMonth.toFixed(2)}"`,
+      `"${cashMonth.length} records"`
+    ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
     const encodedUri = encodeURI(csvContent);
