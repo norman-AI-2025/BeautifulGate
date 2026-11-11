@@ -15,17 +15,25 @@ import {
   Calendar,
   Layers,
   FileSpreadsheet,
-  UserPlus
+  UserPlus,
+  Star
 } from 'lucide-react';
 import { UserRole } from '@/types';
 
 export default function HomePage() {
-  const { currentUser, switchRole } = useApp();
+  const { currentUser, profiles, bookings } = useApp();
   const { t } = useLanguage();
 
-  const handleLaunchRole = (role: UserRole) => {
-    switchRole(role);
-  };
+  // Find assigned driver profile and rating from bookings if any
+  const driverProfile = profiles.find(p => p.role === 'driver');
+  const vehiclePlate = driverProfile?.assigned_vehicle_plate || 'WVV 4108';
+  const driverName = driverProfile?.full_name || 'Johan bin Ariffin';
+  const driverAvatar = driverProfile?.avatar_url || '/images/driver-johan.jpg';
+
+  const ratedBookings = bookings.filter(b => typeof b.rating === 'number' && b.rating > 0);
+  const averageRating = ratedBookings.length > 0 
+    ? (ratedBookings.reduce((sum, b) => sum + (b.rating || 0), 0) / ratedBookings.length).toFixed(1)
+    : '5.0';
 
   return (
     <div className="min-h-screen bg-[#fbfbfd] text-neutral-900 pb-20">
@@ -76,90 +84,85 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3 Core Architecture Modules */}
-      <section className="mx-auto max-w-6xl px-4 pt-16 sm:px-6 lg:px-8">
-        <div className="mb-10 text-center sm:text-left">
-          <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-            {t('home.subsystems', 'Engineered Subsystems')}
-          </span>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-neutral-900 mt-1">
-            {t('home.subsystemsTitle', 'Integrated Mobility & Artisan Workflows')}
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1: Beneficiary Portal */}
-          <div className="rounded-3xl border border-neutral-200 bg-white p-7 shadow-xs flex flex-col justify-between hover:border-[#F37021] transition-all group">
-            <div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-[#F37021] mb-6 group-hover:bg-[#F37021] group-hover:text-white transition-colors">
-                <HeartHandshake className="h-6 w-6 stroke-[2]" />
-              </div>
-              <h3 className="text-xl font-extrabold tracking-tight text-neutral-900">
-                {t('nav.portal', 'Beneficiary Portal')}
-              </h3>
-            </div>
-
-            <div className="pt-6 mt-6 border-t border-neutral-100">
-              <Link
-                href="/portal"
-                className="w-full py-3 px-4 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-bold flex items-center justify-between shadow-xs tap-target"
-              >
-                <span>{t('home.launchPortal', 'Launch Beneficiary Portal')}</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Card 2: Driver Console */}
-          <div className="rounded-3xl border border-neutral-200 bg-white p-7 shadow-xs flex flex-col justify-between hover:border-[#18181B] transition-all group">
-            <div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-100 text-stone-800 mb-6 group-hover:bg-[#18181B] group-hover:text-white transition-colors">
-                <Car className="h-6 w-6 stroke-[2]" />
-              </div>
-              <h3 className="text-xl font-extrabold tracking-tight text-neutral-900">
-                {t('nav.driver', 'Driver Console')}
-              </h3>
-            </div>
-
-            <div className="pt-6 mt-6 border-t border-neutral-100">
-              <Link
-                href="/driver"
-                className="w-full py-3 px-4 rounded-xl bg-[#18181B] hover:bg-black text-white text-xs font-bold flex items-center justify-between shadow-xs tap-target"
-              >
-                <span>{t('home.launchDriver', 'Driver Console')}</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Card 3: Control Tower */}
-          <div className="rounded-3xl border border-neutral-200 bg-white p-7 shadow-xs flex flex-col justify-between hover:border-neutral-900 transition-all group">
-            <div>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-800 mb-6 group-hover:bg-neutral-900 group-hover:text-white transition-colors">
-                <Shield className="h-6 w-6 stroke-[2]" />
-              </div>
-              <h3 className="text-xl font-extrabold tracking-tight text-neutral-900">
-                {t('nav.admin', 'Supervisor Control Tower')}
-              </h3>
-            </div>
-
-            <div className="pt-6 mt-6 border-t border-neutral-100">
-              <Link
-                href="/admin"
-                className="w-full py-3 px-4 rounded-xl bg-white hover:bg-neutral-100 text-neutral-900 border border-neutral-300 text-xs font-bold flex items-center justify-between shadow-xs tap-target"
-              >
-                <span>{t('home.launchAdmin', 'Supervisor Control Tower')}</span>
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Fleet Physical Layout Specification Callout */}
-      <section className="mx-auto max-w-6xl px-4 pt-16 sm:px-6 lg:px-8">
-        <div className="rounded-3xl border border-neutral-900 bg-neutral-900 text-white p-8 sm:p-10 shadow-lg">
+      <section className="mx-auto max-w-6xl px-4 pt-12 sm:px-6 lg:px-8">
+        <div className="rounded-3xl border border-neutral-900 bg-neutral-900 text-white p-6 sm:p-8 lg:p-10 shadow-2xl">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+            
+            {/* Left Column: Vehicle & Driver Visual Showcase */}
+            <div className="lg:col-span-5 space-y-4">
+              {/* Van Image Container with Plate Badge */}
+              <div className="relative h-56 sm:h-64 w-full rounded-2xl overflow-hidden border border-neutral-700/80 shadow-md group">
+                <Image
+                  src="/images/toyota-hiace-van.jpg"
+                  alt="Toyota HiAce Commuter Van"
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  priority
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                
+                {/* Floating Plate & Vehicle Badge */}
+                <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-black text-sm px-3 py-1 rounded-xl bg-white text-neutral-900 shadow-md border border-neutral-300">
+                      {vehiclePlate}
+                    </span>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-1 rounded-lg bg-orange-500/90 text-white backdrop-blur-xs">
+                      Toyota HiAce
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-bold text-emerald-400 bg-black/60 backdrop-blur-xs px-2.5 py-1 rounded-lg flex items-center gap-1 border border-emerald-500/30">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                    Hydraulic Lift
+                  </span>
+                </div>
+              </div>
+
+              {/* Dedicated Driver Profile Card */}
+              <div className="rounded-2xl border border-neutral-800 bg-neutral-800/80 p-3.5 sm:p-4 flex items-center justify-between gap-3 shadow-inner">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="relative h-14 w-14 rounded-2xl overflow-hidden border-2 border-orange-400 shadow-md shrink-0">
+                    <Image
+                      src={driverAvatar}
+                      alt={driverName}
+                      fill
+                      className="object-cover"
+                    />
+                    <div className="absolute bottom-0.5 right-0.5 bg-emerald-600 text-white rounded-full p-0.5 shadow-xs">
+                      <CheckCircle2 className="h-2.5 w-2.5 stroke-[3]" />
+                    </div>
+                  </div>
+
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-orange-400">
+                        {t('nav.driverRole', 'Dedicated Driver')}
+                      </span>
+                    </div>
+                    <h4 className="text-sm font-black text-white truncate">
+                      {driverName}
+                    </h4>
+                    <p className="text-[11px] text-neutral-400 truncate">
+                      {driverProfile?.driver_license || 'GDL Certified Transit Operator'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Driver Rating Badge */}
+                <div className="text-right shrink-0 pl-2">
+                  <div className="inline-flex items-center gap-1 bg-amber-400/20 border border-amber-400/30 px-2.5 py-1 rounded-xl text-amber-300">
+                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                    <span className="font-mono font-black text-xs">{averageRating}</span>
+                  </div>
+                  <span className="text-[10px] text-neutral-400 block mt-0.5">
+                    {ratedBookings.length > 0 ? `${ratedBookings.length} reviews` : 'Top Rated'}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column: Original Vehicle Descriptions & Seating Specs */}
             <div className="lg:col-span-7 space-y-4">
               <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">
                 {t('home.vehicleManifest', 'Official NGO Vehicle Manifest')}
@@ -171,38 +174,40 @@ export default function HomePage() {
                 {t('home.vehiclePlate', 'White Pearl · Plate WVV 4108. Fitted with heavy-duty wheelchair lock-down floor clamps and rear hydraulic boarding lift.')}
               </p>
 
+              {/* Seating Rows Specification */}
               <div className="grid grid-cols-3 gap-3 pt-2 text-center text-xs">
-                <div className="rounded-xl bg-neutral-800 p-3">
+                <div className="rounded-xl bg-neutral-800 p-3 border border-neutral-700/60">
                   <p className="text-neutral-400 font-medium">{t('home.row1Cab', 'Row 1 Cab')}</p>
                   <p className="font-bold text-white mt-1">{t('home.row1Desc', 'Driver + 1 Pax')}</p>
                 </div>
-                <div className="rounded-xl bg-neutral-800 p-3">
+                <div className="rounded-xl bg-neutral-800 p-3 border border-neutral-700/60">
                   <p className="text-neutral-400 font-medium">{t('home.row2Cabin', 'Row 2 Cabin')}</p>
                   <p className="font-bold text-white mt-1">{t('home.row2Desc', '4 Regular Seats')}</p>
                 </div>
-                <div className="rounded-xl bg-neutral-800 p-3">
+                <div className="rounded-xl bg-neutral-800 p-3 border border-neutral-700/60">
                   <p className="text-neutral-400 font-medium">{t('home.row3Rear', 'Row 3 Rear')}</p>
                   <p className="font-bold text-white mt-1">{t('home.row3Desc', '2 Wheelchair Bays')}</p>
                 </div>
               </div>
-            </div>
 
-            <div className="lg:col-span-5 rounded-2xl bg-neutral-800/90 border border-neutral-700 p-5 space-y-3">
-              <div className="flex items-center justify-between text-xs font-mono">
-                <span className="text-neutral-400">{t('home.totalCapacity', 'Total Seating Capacity')}</span>
-                <span className="font-bold text-white">{t('home.totalCapacityVal', '7 Passengers')}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs font-mono border-t border-neutral-700/80 pt-2">
-                <span className="text-neutral-400">{t('home.accessGear', 'Accessibility Gear')}</span>
-                <span className="font-bold text-white">{t('home.accessGearVal', 'Hydraulic Lift')}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs font-mono border-t border-neutral-700/80 pt-2">
-                <span className="text-neutral-400">{t('home.operatingRoute', 'Operating Route')}</span>
-                <span className="font-bold text-white">{t('home.operatingRouteVal', "Hospital Tuanku Ja'afar")}</span>
-              </div>
-              <div className="flex items-center justify-between text-xs font-mono border-t border-neutral-700/80 pt-2">
-                <span className="text-neutral-400">{t('home.resorts', 'Partner Resorts')}</span>
-                <span className="font-bold text-white">{t('home.resortsVal', 'The Datai, Desaru, Pangkor')}</span>
+              {/* Technical Spec List */}
+              <div className="rounded-2xl bg-neutral-800/90 border border-neutral-700 p-4 sm:p-5 space-y-3">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-neutral-400">{t('home.totalCapacity', 'Total Seating Capacity')}</span>
+                  <span className="font-bold text-white">{t('home.totalCapacityVal', '7 Passengers')}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs font-mono border-t border-neutral-700/80 pt-2">
+                  <span className="text-neutral-400">{t('home.accessGear', 'Accessibility Gear')}</span>
+                  <span className="font-bold text-white">{t('home.accessGearVal', 'Hydraulic Lift')}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs font-mono border-t border-neutral-700/80 pt-2">
+                  <span className="text-neutral-400">{t('home.operatingRoute', 'Operating Route')}</span>
+                  <span className="font-bold text-white">{t('home.operatingRouteVal', "Hospital Tuanku Ja'afar")}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs font-mono border-t border-neutral-700/80 pt-2">
+                  <span className="text-neutral-400">{t('home.resorts', 'Partner Resorts')}</span>
+                  <span className="font-bold text-white">{t('home.resortsVal', 'The Datai, Desaru, Pangkor')}</span>
+                </div>
               </div>
             </div>
           </div>
