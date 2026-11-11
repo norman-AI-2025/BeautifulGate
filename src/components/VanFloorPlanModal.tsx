@@ -10,14 +10,10 @@ import {
   MapPin, 
   Locate, 
   User, 
-  Building2,
-  CheckCircle2,
-  Check,
-  Sparkles,
-  ArrowRight,
-  ShieldCheck
+  Building2, 
+  CheckCircle2 
 } from 'lucide-react';
-import { AssignedSpace, TransitBooking } from '@/types';
+import { AssignedSpace, TransitBooking, MobilityType } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -321,7 +317,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
       date: selectedDay,
       assigned_space: assignedSpaceString,
       pickup_address: pickupAddress,
-      mobility_type: (mobilityType as any) || 'Manual Wheelchair',
+      mobility_type: (mobilityType as MobilityType) || 'Manual Wheelchair',
     });
 
     onBookingSuccess(newBooking.id);
@@ -669,41 +665,6 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                       ))}
                     </div>
                   )}
-                </div>
-
-                {/* USER SPEC: Allow user to click real suggested destinations within Malaysia */}
-                <div className="space-y-1.5 pt-1">
-                  <div className="flex items-center justify-between text-[11px]">
-                    <span className="font-bold text-neutral-600 flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 text-[#F37021]" />
-                      {t('vanModal.suggestedDestinations', 'Suggested Destinations in Malaysia')}:
-                    </span>
-                    <span className="text-[10px] text-neutral-400">
-                      {t('vanModal.clickToSelect', 'Click to select')}
-                    </span>
-                  </div>
-
-                  {/* Clickable Real Malaysian Destination Badges */}
-                  <div className="flex flex-wrap gap-1.5 max-h-36 overflow-y-auto pr-1">
-                    {CURATED_MALAYSIAN_DESTINATIONS.map((item) => {
-                      const isSelected = selectedDestinationItem?.id === item.id || destQuery === item.name;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => handleSelectDestination(item)}
-                          className={`px-2.5 py-1 rounded-xl text-xs font-bold transition-all tap-target flex items-center gap-1.5 ${
-                            isSelected
-                              ? 'bg-[#F37021] text-white shadow-xs font-black ring-2 ring-orange-200'
-                              : 'bg-neutral-100 hover:bg-orange-50 text-neutral-800 hover:text-[#F37021] border border-neutral-200'
-                          }`}
-                        >
-                          {isSelected && <Check className="h-3 w-3 text-white" />}
-                          <span>{item.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
                 </div>
 
                 {/* Selected Verified Destination Card */}
