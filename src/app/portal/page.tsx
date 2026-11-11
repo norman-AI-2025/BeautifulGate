@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -35,7 +36,9 @@ import {
 import { TransitBooking } from '@/types';
 
 export default function MobileArtisanPortalPage() {
+  const router = useRouter();
   const { 
+    isLoaded,
     currentUser, 
     bookings, 
     products, 
@@ -44,6 +47,14 @@ export default function MobileArtisanPortalPage() {
     profiles 
   } = useApp();
   const { t } = useLanguage();
+
+  // Route Authentication Guard: Only authenticated users can access
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!currentUser) {
+      router.replace('/login');
+    }
+  }, [isLoaded, currentUser, router]);
 
   const driverProfile = profiles.find(p => p.role === 'driver');
 
@@ -106,6 +117,18 @@ export default function MobileArtisanPortalPage() {
     ? workLogs.filter(l => l.worker_id === currentUser.id)
     : workLogs
   ).slice(0, 5);
+
+  // Block rendering dashboard if not authenticated
+  if (!isLoaded || !currentUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-100">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 border-2 border-[#F37021] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-bold text-neutral-600">Loading portal session...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-neutral-900 pb-28">

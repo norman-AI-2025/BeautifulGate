@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { ArtisanDrawer } from '@/components/ArtisanDrawer';
@@ -101,7 +102,9 @@ interface DispatchSlotGroup {
 }
 
 export default function AdminPage() {
+  const router = useRouter();
   const { 
+    isLoaded,
     currentUser,
     bookings, 
     profiles, 
@@ -126,6 +129,16 @@ export default function AdminPage() {
     deleteProfile,
   } = useApp();
   const { t } = useLanguage();
+
+  // Route Authentication Guard: Only authenticated Admins can access
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!currentUser) {
+      router.replace('/login');
+    } else if (currentUser.role !== 'admin') {
+      router.replace(currentUser.role === 'driver' ? '/driver' : '/portal');
+    }
+  }, [isLoaded, currentUser, router]);
 
   const [activeTab, setActiveTab] = useState<'dispatch' | 'artisans' | 'analytics' | 'donations' | 'directory'>('dispatch');
   const [donationTimeRange, setDonationTimeRange] = useState<'1_week' | '1_month' | '1_year'>('1_month');
@@ -571,6 +584,18 @@ export default function AdminPage() {
     }
     return 'Pending';
   };
+
+  // Block rendering dashboard if not authenticated or not admin
+  if (!isLoaded || !currentUser || currentUser.role !== 'admin') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-900 text-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-bold text-neutral-400">Verifying administrative access...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-neutral-900 pb-24">

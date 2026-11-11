@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -9,12 +9,25 @@ import { useLanguage } from '@/context/LanguageContext';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, switchRole } = useApp();
+  const { currentUser, isLoaded, login, switchRole } = useApp();
   const { t } = useLanguage();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+
+  // If already logged in, redirect directly to dashboard
+  useEffect(() => {
+    if (isLoaded && currentUser) {
+      if (currentUser.role === 'admin') {
+        router.replace('/admin');
+      } else if (currentUser.role === 'driver') {
+        router.replace('/driver');
+      } else {
+        router.replace('/portal');
+      }
+    }
+  }, [isLoaded, currentUser, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

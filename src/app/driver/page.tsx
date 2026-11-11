@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
@@ -184,7 +185,9 @@ const formatDisplayDate = (dateOrYmd: string, lang: string): string => {
 };
 
 export default function DriverPage() {
+  const router = useRouter();
   const { 
+    isLoaded,
     bookings, 
     updateBookingStatus, 
     currentUser, 
@@ -196,6 +199,16 @@ export default function DriverPage() {
     verifyDonation 
   } = useApp();
   const { t, language } = useLanguage();
+
+  // Route Authentication Guard: Only authenticated Drivers (or Admins) can access
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!currentUser) {
+      router.replace('/login');
+    } else if (currentUser.role !== 'driver' && currentUser.role !== 'admin') {
+      router.replace('/portal');
+    }
+  }, [isLoaded, currentUser, router]);
 
   const [weekDaysList, setWeekDaysList] = useState<WeekDayItem[]>(WEEK_DAYS);
   const [selectedYmd, setSelectedYmd] = useState<string>('2026-11-10');
@@ -467,6 +480,18 @@ export default function DriverPage() {
       });
     }
   };
+
+  // Block rendering dashboard if not authenticated or not driver/admin
+  if (!isLoaded || !currentUser || (currentUser.role !== 'driver' && currentUser.role !== 'admin')) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-900 text-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-bold text-neutral-400">Verifying driver credentials...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f8fafc] text-neutral-900 pb-28">
