@@ -195,6 +195,10 @@ export const translations = {
       searching: 'Searching...',
       seat: 'Seat',
       seats: 'Seats',
+      suggestedDestinations: 'Suggested Destinations in Malaysia',
+      verifiedMalaysia: 'Verified Destination within Malaysia',
+      clickToSelect: 'Click to select',
+      changeDestination: 'Change',
     },
     // Driver Console
     driver: {
@@ -695,6 +699,10 @@ export const translations = {
       searching: '正在搜索...',
       seat: '个座位',
       seats: '个座位',
+      suggestedDestinations: '推荐马来西亚目的地',
+      verifiedMalaysia: '已核实马来西亚医疗目的地',
+      clickToSelect: '点击快速选择',
+      changeDestination: '更换',
     },
     // Driver Console
     driver: {
@@ -1195,6 +1203,10 @@ export const translations = {
       searching: 'Mencari...',
       seat: 'Tempat Duduk',
       seats: 'Tempat Duduk',
+      suggestedDestinations: 'Destinasi Hospital Malaysia Dicadangkan',
+      verifiedMalaysia: 'Destinasi Disahkan di Malaysia',
+      clickToSelect: 'Klik untuk pilih',
+      changeDestination: 'Tukar',
     },
     // Driver Console
     driver: {

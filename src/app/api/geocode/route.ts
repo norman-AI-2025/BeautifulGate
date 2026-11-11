@@ -133,6 +133,46 @@ const VERIFIED_MALAYSIAN_HOSPITALS: VerifiedLocation[] = [
     state: 'Selangor',
     is_verified_hospital: true,
   },
+  {
+    id: 'my-hosp-sunway',
+    name: 'Pusat Perubatan Sunway (Sunway Medical Centre)',
+    display_name: 'Sunway Medical Centre, 5 Jalan Lagoon Selatan, Bandar Sunway, 47500 Petaling Jaya, Selangor, Malaysia',
+    lat: 3.0674,
+    lon: 101.6095,
+    country_code: 'my',
+    state: 'Selangor',
+    is_verified_hospital: true,
+  },
+  {
+    id: 'my-hosp-sjmc',
+    name: 'Subang Jaya Medical Centre (SJMC)',
+    display_name: 'Subang Jaya Medical Centre, 1 Jalan SS 12/1A, 47500 Subang Jaya, Selangor, Malaysia',
+    lat: 3.0772,
+    lon: 101.5934,
+    country_code: 'my',
+    state: 'Selangor',
+    is_verified_hospital: true,
+  },
+  {
+    id: 'my-hosp-hukm',
+    name: 'Hospital Canselor Tuanku Muhriz UKM (HUKM Cheras)',
+    display_name: 'Hospital Canselor Tuanku Muhriz UKM, Jalan Yaacob Latif, Bandar Tun Razak, 56000 Cheras, Kuala Lumpur, Malaysia',
+    lat: 3.0998,
+    lon: 101.7226,
+    country_code: 'my',
+    state: 'Kuala Lumpur',
+    is_verified_hospital: true,
+  },
+  {
+    id: 'my-hosp-kpj-seremban',
+    name: 'KPJ Seremban Specialist Hospital',
+    display_name: 'KPJ Seremban Specialist Hospital, Jalan Tan Sri Manickavasagam, 70200 Seremban, Negeri Sembilan, Malaysia',
+    lat: 2.7235,
+    lon: 101.9288,
+    country_code: 'my',
+    state: 'Negeri Sembilan',
+    is_verified_hospital: true,
+  },
 ];
 
 export async function GET(request: Request) {
@@ -140,7 +180,7 @@ export async function GET(request: Request) {
   const query = searchParams.get('q')?.trim() || '';
 
   if (!query || query.length < 2) {
-    return NextResponse.json(VERIFIED_MALAYSIAN_HOSPITALS.slice(0, 6));
+    return NextResponse.json(VERIFIED_MALAYSIAN_HOSPITALS.slice(0, 10));
   }
 
   const queryLower = query.toLowerCase();
