@@ -58,13 +58,13 @@ interface DaySchedule {
 }
 
 const DEFAULT_DAYS: DaySchedule[] = [
-  { key: 'mon', name: 'Monday', dateStr: '9 Nov, 2026', isoDate: '2026-11-09', isHoliday: true, holidayReason: 'HARI DEEPAVALI' },
-  { key: 'tue', name: 'Tuesday', dateStr: '10 Nov, 2026', isoDate: '2026-11-10', isToday: true },
-  { key: 'wed', name: 'Wednesday', dateStr: '11 Nov, 2026', isoDate: '2026-11-11' },
-  { key: 'thu', name: 'Thursday', dateStr: '12 Nov, 2026', isoDate: '2026-11-12' },
-  { key: 'fri', name: 'Friday', dateStr: '13 Nov, 2026', isoDate: '2026-11-13' },
-  { key: 'sat', name: 'Saturday', dateStr: '14 Nov, 2026', isoDate: '2026-11-14' },
-  { key: 'sun', name: 'Sunday', dateStr: '15 Nov, 2026', isoDate: '2026-11-15' },
+  { key: 'mon', name: 'Monday', dateStr: '9 Nov 2026', isoDate: '2026-11-09', isHoliday: true, holidayReason: 'HARI DEEPAVALI' },
+  { key: 'tue', name: 'Tuesday', dateStr: '10 Nov 2026', isoDate: '2026-11-10', isToday: true },
+  { key: 'wed', name: 'Wednesday', dateStr: '11 Nov 2026', isoDate: '2026-11-11' },
+  { key: 'thu', name: 'Thursday', dateStr: '12 Nov 2026', isoDate: '2026-11-12' },
+  { key: 'fri', name: 'Friday', dateStr: '13 Nov 2026', isoDate: '2026-11-13' },
+  { key: 'sat', name: 'Saturday', dateStr: '14 Nov 2026', isoDate: '2026-11-14' },
+  { key: 'sun', name: 'Sunday', dateStr: '15 Nov 2026', isoDate: '2026-11-15' },
 ];
 
 export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({

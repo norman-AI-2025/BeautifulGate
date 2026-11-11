@@ -47,6 +47,36 @@ const normalizeSlotTime = (rawTime: string): string => {
   return clean.replace(/\b(am|pm)\b/i, (m) => m.toUpperCase());
 };
 
+// Robust date normalizer supporting ISO YYYY-MM-DD, with/without comma, e.g. "Tuesday, 10 Nov, 2026", "10 Nov 2026"
+export const normalizeDateToYMD = (dateStr?: string): string => {
+  if (!dateStr) return '2026-11-10';
+  const clean = dateStr.trim();
+  const ymdMatch = clean.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (ymdMatch) return `${ymdMatch[1]}-${ymdMatch[2]}-${ymdMatch[3]}`;
+
+  const dayMonthMatch = clean.match(/(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*,?\s*(\d{4})?/i);
+  if (dayMonthMatch) {
+    const day = dayMonthMatch[1].padStart(2, '0');
+    const monthNames: Record<string, string> = {
+      jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+      jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+    };
+    const month = monthNames[dayMonthMatch[2].toLowerCase().slice(0, 3)] || '11';
+    const year = dayMonthMatch[3] || '2026';
+    return `${year}-${month}-${day}`;
+  }
+
+  const parsed = new Date(clean);
+  if (!isNaN(parsed.getTime())) {
+    const y = parsed.getFullYear();
+    const m = String(parsed.getMonth() + 1).padStart(2, '0');
+    const d = String(parsed.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  return clean;
+};
+
 interface TimeSlotGroup {
   slotKey: string;
   displayTime: string;
@@ -58,6 +88,7 @@ interface TimeSlotGroup {
 }
 
 interface WeekDayItem {
+  ymd: string;
   key: string;
   dayNameEn: string;
   dayNameZh: string;
@@ -67,13 +98,13 @@ interface WeekDayItem {
 }
 
 const WEEK_DAYS: WeekDayItem[] = [
-  { key: 'Monday, 9 Nov 2026', dayNameEn: 'Mon', dayNameZh: '周一', dayNameMs: 'Isn', dateNum: '9 Nov', isToday: false },
-  { key: 'Tuesday, 10 Nov 2026', dayNameEn: 'Tue', dayNameZh: '周二', dayNameMs: 'Sel', dateNum: '10 Nov', isToday: true },
-  { key: 'Wednesday, 11 Nov 2026', dayNameEn: 'Wed', dayNameZh: '周三', dayNameMs: 'Rab', dateNum: '11 Nov', isToday: false },
-  { key: 'Thursday, 12 Nov 2026', dayNameEn: 'Thu', dayNameZh: '周四', dayNameMs: 'Kha', dateNum: '12 Nov', isToday: false },
-  { key: 'Friday, 13 Nov 2026', dayNameEn: 'Fri', dayNameZh: '周五', dayNameMs: 'Jum', dateNum: '13 Nov', isToday: false },
-  { key: 'Saturday, 14 Nov 2026', dayNameEn: 'Sat', dayNameZh: '周六', dayNameMs: 'Sab', dateNum: '14 Nov', isToday: false },
-  { key: 'Sunday, 15 Nov 2026', dayNameEn: 'Sun', dayNameZh: '周日', dayNameMs: 'Ahd', dateNum: '15 Nov', isToday: false },
+  { ymd: '2026-11-09', key: 'Monday, 9 Nov 2026', dayNameEn: 'Mon', dayNameZh: '周一', dayNameMs: 'Isn', dateNum: '9 Nov', isToday: false },
+  { ymd: '2026-11-10', key: 'Tuesday, 10 Nov 2026', dayNameEn: 'Tue', dayNameZh: '周二', dayNameMs: 'Sel', dateNum: '10 Nov', isToday: true },
+  { ymd: '2026-11-11', key: 'Wednesday, 11 Nov 2026', dayNameEn: 'Wed', dayNameZh: '周三', dayNameMs: 'Rab', dateNum: '11 Nov', isToday: false },
+  { ymd: '2026-11-12', key: 'Thursday, 12 Nov 2026', dayNameEn: 'Thu', dayNameZh: '周四', dayNameMs: 'Kha', dateNum: '12 Nov', isToday: false },
+  { ymd: '2026-11-13', key: 'Friday, 13 Nov 2026', dayNameEn: 'Fri', dayNameZh: '周五', dayNameMs: 'Jum', dateNum: '13 Nov', isToday: false },
+  { ymd: '2026-11-14', key: 'Saturday, 14 Nov 2026', dayNameEn: 'Sat', dayNameZh: '周六', dayNameMs: 'Sab', dateNum: '14 Nov', isToday: false },
+  { ymd: '2026-11-15', key: 'Sunday, 15 Nov 2026', dayNameEn: 'Sun', dayNameZh: '周日', dayNameMs: 'Ahd', dateNum: '15 Nov', isToday: false },
 ];
 
 const getDayLabel = (d: WeekDayItem, lang: string): string => {
@@ -82,43 +113,45 @@ const getDayLabel = (d: WeekDayItem, lang: string): string => {
   return d.dayNameEn;
 };
 
-const formatDisplayDate = (dateStr: string, lang: string): string => {
-  if (!dateStr) return '';
+const formatDisplayDate = (dateOrYmd: string, lang: string): string => {
+  const ymd = normalizeDateToYMD(dateOrYmd);
   if (lang === 'zh') {
-    if (dateStr.includes('9 Nov')) return '11月9日 (周一)';
-    if (dateStr.includes('10 Nov')) return '11月10日 (周二 · 今日)';
-    if (dateStr.includes('11 Nov')) return '11月11日 (周三)';
-    if (dateStr.includes('12 Nov')) return '11月12日 (周四)';
-    if (dateStr.includes('13 Nov')) return '11月13日 (周五)';
-    if (dateStr.includes('14 Nov')) return '11月14日 (周六)';
-    if (dateStr.includes('15 Nov')) return '11月15日 (周日)';
+    if (ymd === '2026-11-09') return '11月9日 (周一)';
+    if (ymd === '2026-11-10') return '11月10日 (周二 · 今日)';
+    if (ymd === '2026-11-11') return '11月11日 (周三)';
+    if (ymd === '2026-11-12') return '11月12日 (周四)';
+    if (ymd === '2026-11-13') return '11月13日 (周五)';
+    if (ymd === '2026-11-14') return '11月14日 (周六)';
+    if (ymd === '2026-11-15') return '11月15日 (周日)';
   }
   if (lang === 'ms') {
-    if (dateStr.includes('9 Nov')) return 'Isn, 9 Nov 2026';
-    if (dateStr.includes('10 Nov')) return 'Sel, 10 Nov 2026 (Hari Ini)';
-    if (dateStr.includes('11 Nov')) return 'Rab, 11 Nov 2026';
-    if (dateStr.includes('12 Nov')) return 'Kha, 12 Nov 2026';
-    if (dateStr.includes('13 Nov')) return 'Jum, 13 Nov 2026';
-    if (dateStr.includes('14 Nov')) return 'Sab, 14 Nov 2026';
-    if (dateStr.includes('15 Nov')) return 'Ahd, 15 Nov 2026';
+    if (ymd === '2026-11-09') return 'Isn, 9 Nov 2026';
+    if (ymd === '2026-11-10') return 'Sel, 10 Nov 2026 (Hari Ini)';
+    if (ymd === '2026-11-11') return 'Rab, 11 Nov 2026';
+    if (ymd === '2026-11-12') return 'Kha, 12 Nov 2026';
+    if (ymd === '2026-11-13') return 'Jum, 13 Nov 2026';
+    if (ymd === '2026-11-14') return 'Sab, 14 Nov 2026';
+    if (ymd === '2026-11-15') return 'Ahd, 15 Nov 2026';
   }
-  if (dateStr.includes('10 Nov')) return 'Tuesday, 10 Nov 2026 (Today)';
-  return dateStr;
+  if (ymd === '2026-11-10') return 'Tuesday, 10 Nov 2026 (Today)';
+  const day = WEEK_DAYS.find(d => d.ymd === ymd);
+  return day ? day.key : dateOrYmd;
 };
 
 export default function DriverPage() {
   const { bookings, updateBookingStatus } = useApp();
   const { t, language } = useLanguage();
 
-  // Selected date in weekly calendar view (defaults to today)
-  const [selectedDayKey, setSelectedDayKey] = useState<string>('Tuesday, 10 Nov 2026');
+  // Selected date in weekly calendar view (defaults to today '2026-11-10')
+  const [selectedYmd, setSelectedYmd] = useState<string>('2026-11-10');
+  const [showCompletedRuns, setShowCompletedRuns] = useState<boolean>(false);
 
   // USER SPEC: "for the driver , it will only receive the task list after the bookings are approved by supervisor"
   const allJohanApprovedBookings = useMemo(() => {
     return bookings.filter(b => 
       b.status !== 'pending' && 
       b.status !== 'declined' && 
-      (b.assigned_driver === 'Johan bin Ariffin' || !b.assigned_driver)
+      (!b.assigned_driver || b.assigned_driver === 'Johan bin Ariffin' || b.assigned_driver.toLowerCase().includes('johan'))
     );
   }, [bookings]);
 
@@ -126,16 +159,24 @@ export default function DriverPage() {
   const dayRunsCountMap = useMemo(() => {
     const map = new Map<string, number>();
     WEEK_DAYS.forEach((d) => {
-      const count = allJohanApprovedBookings.filter(b => (b.date || 'Tuesday, 10 Nov 2026') === d.key).length;
-      map.set(d.key, count);
+      const count = allJohanApprovedBookings.filter(b => normalizeDateToYMD(b.date) === d.ymd).length;
+      map.set(d.ymd, count);
     });
     return map;
   }, [allJohanApprovedBookings]);
 
   // Filter approved bookings for the selected day in the calendar
   const johanBookings = useMemo(() => {
-    return allJohanApprovedBookings.filter(b => (b.date || 'Tuesday, 10 Nov 2026') === selectedDayKey);
-  }, [allJohanApprovedBookings, selectedDayKey]);
+    return allJohanApprovedBookings.filter(b => normalizeDateToYMD(b.date) === selectedYmd);
+  }, [allJohanApprovedBookings, selectedYmd]);
+
+  // Bookings still pending supervisor approval on selected day
+  const pendingCountOnSelectedDay = useMemo(() => {
+    return bookings.filter(b => 
+      b.status === 'pending' && 
+      normalizeDateToYMD(b.date) === selectedYmd
+    ).length;
+  }, [bookings, selectedYmd]);
 
   // Group bookings by TIME SLOT (max 6 passengers per slot)
   const allTimeSlotGroups: TimeSlotGroup[] = useMemo(() => {
@@ -198,6 +239,10 @@ export default function DriverPage() {
   // USER SPEC: Queue list ONLY shows current and upcoming expand menu (filter out completed slots)
   const queueTimeSlots = useMemo(() => {
     return allTimeSlotGroups.filter(g => !g.isCompleted);
+  }, [allTimeSlotGroups]);
+
+  const completedTimeSlots = useMemo(() => {
+    return allTimeSlotGroups.filter(g => g.isCompleted);
   }, [allTimeSlotGroups]);
 
   // Active expanded time slot
@@ -382,22 +427,22 @@ export default function DriverPage() {
             </div>
 
             <span className="font-mono text-[10px] font-black px-2.5 py-1 rounded-xl bg-neutral-900 text-white shadow-xs shrink-0">
-              {formatDisplayDate(selectedDayKey, language)}
+              {formatDisplayDate(selectedYmd, language)}
             </span>
           </div>
 
           {/* 7-Day Calendar Strip */}
           <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
             {WEEK_DAYS.map((d) => {
-              const isSelected = selectedDayKey === d.key;
-              const runCount = dayRunsCountMap.get(d.key) || 0;
+              const isSelected = selectedYmd === d.ymd;
+              const runCount = dayRunsCountMap.get(d.ymd) || 0;
               const dayLabel = getDayLabel(d, language);
 
               return (
                 <button
-                  key={d.key}
+                  key={d.ymd}
                   type="button"
-                  onClick={() => setSelectedDayKey(d.key)}
+                  onClick={() => setSelectedYmd(d.ymd)}
                   className={`py-2 px-1 rounded-2xl flex flex-col items-center justify-center transition-all tap-target relative ${
                     isSelected
                       ? 'bg-[#F37021] text-white shadow-md scale-102 font-black'
@@ -449,40 +494,36 @@ export default function DriverPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg sm:text-xl font-extrabold text-neutral-900 tracking-tight">
-              {selectedDayKey === 'Tuesday, 10 Nov 2026' 
+              {selectedYmd === '2026-11-10' 
                 ? t('driver.todayQueue', "Today's Transit Queue") 
-                : `${formatDisplayDate(selectedDayKey, language)}`}
+                : formatDisplayDate(selectedYmd, language)}
             </h2>
             <span className="text-xs font-bold text-orange-950 bg-orange-100 border border-orange-300 px-3 py-1 rounded-full">
-              {queueTimeSlots.length} Time Slots
+              {queueTimeSlots.length} {queueTimeSlots.length === 1 ? 'Time Slot' : 'Time Slots'}
             </span>
           </div>
 
           {queueTimeSlots.length === 0 ? (
-            <div className="rounded-3xl border-2 border-neutral-200 bg-white p-7 text-center space-y-3.5 shadow-xs">
-              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-neutral-100 text-neutral-400 mx-auto shadow-inner">
-                <Car className="h-8 w-8 text-neutral-400" />
+            <div className="rounded-2xl border border-neutral-200 bg-white p-6 text-center space-y-2 shadow-xs">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-400 mx-auto mb-1">
+                <Car className="h-6 w-6 text-neutral-400" />
               </div>
-              <div className="space-y-1">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 text-neutral-700 font-mono font-bold text-xs uppercase tracking-wider border border-neutral-200">
-                  <Clock className="h-3.5 w-3.5 text-neutral-500" />
-                  {formatDisplayDate(selectedDayKey, language)}
-                </span>
-                <h3 className="text-xl font-black text-neutral-900 tracking-tight pt-1">
-                  {t('driver.noCurrentJob', 'No Current Job')}
-                </h3>
-                <p className="text-xs font-medium text-neutral-600 max-w-sm mx-auto leading-relaxed">
-                  {allTimeSlotGroups.length > 0 
-                    ? t('driver.allTasksDone', 'All transit runs completed for this timeslot.')
-                    : t('driver.noCurrentJobDesc', 'You have no active transit runs right now. View the weekly calendar below to see upcoming assignments.')}
-                </p>
-              </div>
-
-              {/* Status helper pill */}
-              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-orange-50 border border-orange-200 text-orange-950 text-xs font-bold">
-                <Calendar className="h-3.5 w-3.5 text-[#F37021]" />
-                <span>{t('driver.upcomingWeekDesc', 'Select a day to view approved hospital runs and passenger rosters.')}</span>
-              </div>
+              <h3 className="text-base font-extrabold text-neutral-900 tracking-tight">
+                {t('driver.noCurrentJob', 'No Current Job')}
+              </h3>
+              <p className="text-xs text-neutral-500 font-medium max-w-xs mx-auto">
+                {allTimeSlotGroups.length > 0 
+                  ? t('driver.allTasksDone', 'All transit runs completed for today.')
+                  : t('driver.noCurrentJobDesc', 'No active runs scheduled for this day.')}
+              </p>
+              {pendingCountOnSelectedDay > 0 && (
+                <div className="pt-2">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-900 text-xs font-bold">
+                    <Clock className="h-3.5 w-3.5 text-amber-600" />
+                    {pendingCountOnSelectedDay} {t('driver.pendingApprovalNotice', 'booking awaiting supervisor approval')}
+                  </span>
+                </div>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -733,6 +774,57 @@ export default function DriverPage() {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Collapsible Completed Runs Section */}
+          {completedTimeSlots.length > 0 && (
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setShowCompletedRuns(!showCompletedRuns)}
+                className="w-full flex items-center justify-between p-3.5 rounded-2xl bg-white border border-neutral-200 text-neutral-700 hover:bg-neutral-50 transition-all text-xs font-bold shadow-xs tap-target"
+              >
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                  <span>{t('driver.completedRuns', 'Completed Runs')} ({completedTimeSlots.length})</span>
+                </div>
+                <ChevronDown className={`h-4 w-4 text-neutral-400 transition-transform duration-200 ${showCompletedRuns ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showCompletedRuns && (
+                <div className="mt-2.5 space-y-3 opacity-90">
+                  {completedTimeSlots.map((slotGroup) => (
+                    <div
+                      key={slotGroup.slotKey}
+                      className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="font-mono text-xs font-black text-neutral-800 bg-neutral-100 border border-neutral-200 px-2.5 py-0.5 rounded-lg">
+                          {slotGroup.displayTime}
+                        </span>
+                        <span className="text-[10px] font-black uppercase text-emerald-800 bg-emerald-100 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                          {t('driver.completedSlot', 'Completed')}
+                        </span>
+                      </div>
+                      <div className="divide-y divide-neutral-100 text-xs">
+                        {slotGroup.bookings.map((b) => (
+                          <div key={b.id} className="py-2 flex items-center justify-between">
+                            <div>
+                              <p className="font-extrabold text-neutral-800">{b.passenger_name}</p>
+                              <p className="text-[11px] text-neutral-500 font-medium">{b.clinic_department}</p>
+                            </div>
+                            <span className="text-[10px] font-mono font-bold text-neutral-500 bg-neutral-50 px-2 py-1 rounded">
+                              {b.assigned_space.split(':')[1]?.trim() || b.assigned_space}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

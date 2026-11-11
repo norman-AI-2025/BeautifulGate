@@ -169,7 +169,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
   isOpen,
   onClose,
   selectedTimeSlot,
-  selectedDay = 'Tuesday, 10 Nov, 2026',
+  selectedDay = 'Tuesday, 10 Nov 2026',
   existingBookingsForSlot,
   onBookingSuccess,
 }) => {
