@@ -49,7 +49,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   profile: explicitProfile,
   mode = 'edit_self',
 }) => {
-  const { currentUser, profiles, updateProfile } = useApp();
+  const { currentUser, profiles, updateProfile, deleteProfile } = useApp();
   const { t } = useLanguage();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -88,6 +88,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const isReadOnly = mode === 'admin_view';
   const isDriverManagement = mode === 'admin_manage_driver' || (profile?.role === 'driver');
@@ -113,8 +115,22 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setNotes(profile.notes || '');
       setErrorMsg('');
       setIsSuccess(false);
+      setIsConfirmingDelete(false);
+      setIsDeleting(false);
     }
   }, [profile, isOpen]);
+
+  const handleDeleteAccount = async () => {
+    if (!isConfirmingDelete) {
+      setIsConfirmingDelete(true);
+      return;
+    }
+    setIsDeleting(true);
+    await deleteProfile(profile.id);
+    setIsDeleting(false);
+    setIsConfirmingDelete(false);
+    onClose();
+  };
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -637,6 +653,24 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
           {/* Action Buttons */}
           <div className="pt-2 flex items-center justify-end gap-3">
+            {currentUser?.role === 'admin' && profile.id !== currentUser.id && (
+              <button
+                type="button"
+                disabled={isDeleting}
+                onClick={handleDeleteAccount}
+                className="mr-auto px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 text-xs font-bold transition-all flex items-center gap-1.5 tap-target disabled:opacity-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>
+                  {isDeleting 
+                    ? t('admin.deleting', 'Deleting...') 
+                    : isConfirmingDelete 
+                    ? t('admin.confirmDeleteBtn', 'Confirm Delete') 
+                    : t('admin.deleteAccount', 'Delete Account')}
+                </span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={onClose}

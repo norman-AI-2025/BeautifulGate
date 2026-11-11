@@ -123,6 +123,7 @@ export default function AdminPage() {
     updateProduct,
     addProduct,
     deleteProduct,
+    deleteProfile,
   } = useApp();
   const { t } = useLanguage();
 
@@ -146,6 +147,16 @@ export default function AdminPage() {
   const [profileModalMode, setProfileModalMode] = useState<'admin_manage_driver' | 'admin_view' | 'edit_self'>('admin_view');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
+  const [profileToDelete, setProfileToDelete] = useState<Profile | null>(null);
+  const [isDeletingProfile, setIsDeletingProfile] = useState(false);
+
+  const handleConfirmDelete = async () => {
+    if (!profileToDelete) return;
+    setIsDeletingProfile(true);
+    await deleteProfile(profileToDelete.id);
+    setIsDeletingProfile(false);
+    setProfileToDelete(null);
+  };
 
 
 
@@ -2428,101 +2439,140 @@ export default function AdminPage() {
                           <td className="py-3.5 px-4 text-right whitespace-nowrap">
                             {isDriver ? (
                               <div className="flex flex-col items-end gap-1.5">
-                                {p.is_approved === false ? (
-                                  <div className="flex items-center gap-1.5">
-                                    <button
-                                      type="button"
-                                      onClick={() => approveDriverAccount(p.id)}
-                                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1 shadow-sm tap-target transition-all active:scale-95"
-                                      title={t('admin.approveStaffDriverTooltip', 'Approve driver for dispatch assignment')}
-                                    >
-                                      <Check className="h-3.5 w-3.5" />
-                                      <span>{t('admin.approveStaff', 'Approve Driver')}</span>
-                                    </button>
+                                <div className="flex items-center gap-1.5">
+                                  {p.is_approved === false ? (
+                                    <>
+                                      <button
+                                        type="button"
+                                        onClick={() => approveDriverAccount(p.id)}
+                                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1 shadow-sm tap-target transition-all active:scale-95"
+                                        title={t('admin.approveStaffDriverTooltip', 'Approve driver for dispatch assignment')}
+                                      >
+                                        <Check className="h-3.5 w-3.5" />
+                                        <span>{t('admin.approveStaff', 'Approve Driver')}</span>
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleManageDriver(p)}
+                                        className="px-2.5 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1 tap-target"
+                                      >
+                                        <Edit3 className="h-3 w-3" />
+                                        <span>{t('common.edit', 'Review')}</span>
+                                      </button>
+                                    </>
+                                  ) : (
                                     <button
                                       type="button"
                                       onClick={() => handleManageDriver(p)}
-                                      className="px-2.5 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1 tap-target"
+                                      className="px-3.5 py-1.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white font-black text-xs flex items-center gap-1.5 shadow-sm tap-target transition-all active:scale-95"
                                     >
-                                      <Edit3 className="h-3 w-3" />
-                                      <span>{t('common.edit', 'Review')}</span>
+                                      <Edit3 className="h-3.5 w-3.5" />
+                                      <span>{t('admin.manageDriver', 'Manage Driver')}</span>
                                     </button>
-                                  </div>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleManageDriver(p)}
-                                    className="px-3.5 py-1.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white font-black text-xs flex items-center gap-1.5 shadow-sm tap-target transition-all active:scale-95"
-                                  >
-                                    <Edit3 className="h-3.5 w-3.5" />
-                                    <span>{t('admin.manageDriver', 'Manage Driver')}</span>
-                                  </button>
-                                )}
+                                  )}
+
+                                  {p.id !== currentUser?.id && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setProfileToDelete(p)}
+                                      className="p-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 transition-all tap-target shadow-xs"
+                                      title={t('admin.deleteDriverTitle', 'Delete Driver Account')}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                </div>
                                 <span className="text-[9px] font-bold text-orange-700 bg-orange-50 px-1.5 py-0.2 rounded">
                                   {t('admin.manageableBadge', 'Administrator Managed')}
                                 </span>
                               </div>
                             ) : p.role === 'admin' ? (
                               <div className="flex flex-col items-end gap-1.5">
-                                {p.is_approved === false && (
-                                  <button
-                                    type="button"
-                                    onClick={() => approveDriverAccount(p.id)}
-                                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1 shadow-sm tap-target transition-all active:scale-95"
-                                  >
-                                    <Check className="h-3.5 w-3.5" />
-                                    <span>{t('admin.approveSupervisor', 'Approve Admin')}</span>
-                                  </button>
-                                )}
-                                {(p.id === currentUser?.id || p.email === currentUser?.email || currentUser?.role === 'admin') ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedProfileForModal(p);
-                                      setProfileModalMode('edit_self');
-                                      setIsProfileModalOpen(true);
-                                    }}
-                                    className="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-[#F37021] text-[#F37021] hover:text-white border border-orange-200 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
-                                  >
-                                    <User className="h-3.5 w-3.5" />
-                                    <span>{t('profile.edit', 'Edit Profile')}</span>
-                                  </button>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleViewProfile(p)}
-                                    className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
-                                  >
-                                    <Eye className="h-3.5 w-3.5 text-neutral-500" />
-                                    <span>{t('admin.viewProfile', 'View Profile')}</span>
-                                  </button>
-                                )}
+                                <div className="flex items-center gap-1.5">
+                                  {p.is_approved === false && (
+                                    <button
+                                      type="button"
+                                      onClick={() => approveDriverAccount(p.id)}
+                                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1 shadow-sm tap-target transition-all active:scale-95"
+                                    >
+                                      <Check className="h-3.5 w-3.5" />
+                                      <span>{t('admin.approveSupervisor', 'Approve Admin')}</span>
+                                    </button>
+                                  )}
+                                  {(p.id === currentUser?.id || p.email === currentUser?.email || currentUser?.role === 'admin') ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedProfileForModal(p);
+                                        setProfileModalMode('edit_self');
+                                        setIsProfileModalOpen(true);
+                                      }}
+                                      className="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-[#F37021] text-[#F37021] hover:text-white border border-orange-200 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
+                                    >
+                                      <User className="h-3.5 w-3.5" />
+                                      <span>{t('profile.edit', 'Edit Profile')}</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleViewProfile(p)}
+                                      className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
+                                    >
+                                      <Eye className="h-3.5 w-3.5 text-neutral-500" />
+                                      <span>{t('admin.viewProfile', 'View Profile')}</span>
+                                    </button>
+                                  )}
+
+                                  {p.id !== currentUser?.id && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setProfileToDelete(p)}
+                                      className="p-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 transition-all tap-target shadow-xs"
+                                      title={t('admin.deleteAccount', 'Delete Account')}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             ) : (
                               <div className="flex flex-col items-end gap-1">
-                                {(p.id === currentUser?.id || p.email === currentUser?.email || currentUser?.role === 'admin') ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setSelectedProfileForModal(p);
-                                      setProfileModalMode('edit_self');
-                                      setIsProfileModalOpen(true);
-                                    }}
-                                    className="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-[#F37021] text-[#F37021] hover:text-white border border-orange-200 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
-                                  >
-                                    <User className="h-3.5 w-3.5" />
-                                    <span>{t('profile.edit', 'Edit Profile')}</span>
-                                  </button>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => handleViewProfile(p)}
-                                    className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
-                                  >
-                                    <Eye className="h-3.5 w-3.5 text-neutral-500" />
-                                    <span>{t('admin.viewProfile', 'View Profile')}</span>
-                                  </button>
-                                )}
+                                <div className="flex items-center gap-1.5">
+                                  {(p.id === currentUser?.id || p.email === currentUser?.email || currentUser?.role === 'admin') ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setSelectedProfileForModal(p);
+                                        setProfileModalMode('edit_self');
+                                        setIsProfileModalOpen(true);
+                                      }}
+                                      className="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-[#F37021] text-[#F37021] hover:text-white border border-orange-200 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
+                                    >
+                                      <User className="h-3.5 w-3.5" />
+                                      <span>{t('profile.edit', 'Edit Profile')}</span>
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleViewProfile(p)}
+                                      className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
+                                    >
+                                      <Eye className="h-3.5 w-3.5 text-neutral-500" />
+                                      <span>{t('admin.viewProfile', 'View Profile')}</span>
+                                    </button>
+                                  )}
+
+                                  {p.id !== currentUser?.id && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setProfileToDelete(p)}
+                                      className="p-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 transition-all tap-target shadow-xs"
+                                      title={t('admin.deleteUserTitle', 'Delete User Account')}
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  )}
+                                </div>
                                 <span className="text-[9px] font-medium text-neutral-400 flex items-center gap-0.5">
                                   <Lock className="h-2.5 w-2.5" />
                                   {t('admin.readOnlyBadge', 'Read-Only · User Managed')}
@@ -2741,6 +2791,86 @@ export default function AdminPage() {
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Profile Confirmation Modal */}
+      {profileToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in-50">
+          <div className="relative w-full max-w-md rounded-3xl bg-white border border-neutral-200 p-6 shadow-2xl space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+                <Trash2 className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-black text-neutral-900">
+                  {t('admin.confirmDeleteTitle', 'Permanently Delete Account')}
+                </h3>
+                <p className="text-xs text-neutral-500 font-medium">
+                  {profileToDelete.role === 'driver' 
+                    ? t('admin.deleteDriverTitle', 'Delete Driver Account') 
+                    : t('admin.deleteUserTitle', 'Delete User Account')}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 space-y-2">
+              <div className="flex items-center gap-3">
+                <UserAvatar 
+                  src={profileToDelete.avatar_url} 
+                  name={profileToDelete.full_name} 
+                  size={40} 
+                  className="rounded-xl border border-neutral-200" 
+                />
+                <div>
+                  <p className="font-extrabold text-sm text-neutral-900 flex items-center gap-1.5">
+                    <span>{profileToDelete.full_name}</span>
+                    {profileToDelete.chinese_name && (
+                      <span className="text-xs font-semibold text-neutral-500">
+                        ({profileToDelete.chinese_name})
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-neutral-500 font-mono">{profileToDelete.email}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-2 border-t border-neutral-200/60 text-[11px] text-neutral-600">
+                <span className="font-mono font-bold">{profileToDelete.ic_or_oku_number}</span>
+                <span>·</span>
+                <span className="font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 rounded-full bg-white border border-neutral-200 text-neutral-700">
+                  {profileToDelete.role === 'driver' 
+                    ? t('auth.driverStaffRole', 'Driver') 
+                    : profileToDelete.role === 'customer' 
+                    ? t('auth.beneficiaryRole', 'Beneficiary') 
+                    : t('nav.supervisorRole', 'Supervisor')}
+                </span>
+              </div>
+            </div>
+
+            <p className="text-xs text-neutral-600 leading-relaxed">
+              {t('admin.confirmDeleteDesc', 'Are you sure you want to permanently delete {name}? Their profile and authentication access will be removed immediately from Beautiful Gate and the Supabase database. This action cannot be undone.').replace('{name}', profileToDelete.full_name)}
+            </p>
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
+              <button
+                type="button"
+                disabled={isDeletingProfile}
+                onClick={() => setProfileToDelete(null)}
+                className="px-4 py-2.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-bold tap-target transition-all disabled:opacity-50"
+              >
+                {t('common.cancel', 'Cancel')}
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingProfile}
+                onClick={handleConfirmDelete}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-md tap-target transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span>{isDeletingProfile ? t('admin.deleting', 'Deleting...') : t('admin.confirmDeleteBtn', 'Yes, Delete Permanently')}</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

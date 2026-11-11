@@ -31,6 +31,7 @@ import {
   supabase,
   dbFetchProfiles,
   dbUpsertProfile,
+  dbDeleteProfile,
   dbFetchBookings,
   dbInsertBooking,
   dbUpdateBooking,
@@ -96,6 +97,7 @@ interface AppContextType {
   exportPayrollCSV: () => void;
   // Profile management
   updateProfile: (profileId: string, updates: Partial<Profile>) => void;
+  deleteProfile: (profileId: string) => Promise<boolean>;
   approveDriverAccount: (profileId: string) => void;
   rejectDriverAccount: (profileId: string) => void;
   // Vehicle management
@@ -496,6 +498,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return prevUser;
     });
   }, []);
+
+  // Administrator permanently deletes a user or driver account
+  const deleteProfile = useCallback(async (profileId: string): Promise<boolean> => {
+    if (currentUser?.id === profileId) {
+      console.warn('Cannot delete currently logged-in administrator account.');
+      return false;
+    }
+
+    setProfiles(prevProfiles => {
+      const updated = prevProfiles.filter(p => p.id !== profileId);
+      try {
+        localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(updated));
+      } catch (err) {
+        console.warn('Storage error deleting profile', err);
+      }
+      return updated;
+    });
+
+    try {
+      await dbDeleteProfile(profileId);
+    } catch (err) {
+      console.warn('Supabase deleteProfile error:', err);
+    }
+    return true;
+  }, [currentUser]);
 
   // Administrator approves staff/driver account
   const approveDriverAccount = useCallback((profileId: string) => {
@@ -1177,6 +1204,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     getArtisanStats,
     exportPayrollCSV,
     updateProfile,
+    deleteProfile,
     approveDriverAccount,
     rejectDriverAccount,
     vehicles,
@@ -1214,6 +1242,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     getArtisanStats,
     exportPayrollCSV,
     updateProfile,
+    deleteProfile,
     approveDriverAccount,
     rejectDriverAccount,
     vehicles,

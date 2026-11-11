@@ -119,6 +119,20 @@ export async function dbUpsertProfile(profile: Partial<Profile> & { id: string }
   return true;
 }
 
+export async function dbDeleteProfile(profileId: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase
+    .from('profiles')
+    .delete()
+    .eq('id', profileId);
+
+  if (error) {
+    console.error('Supabase deleteProfile error:', error);
+    return false;
+  }
+  return true;
+}
+
 // ==============================================================================
 // TRANSIT BOOKINGS API
 // ==============================================================================
