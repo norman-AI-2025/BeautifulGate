@@ -1879,6 +1879,7 @@ export default function AdminPage() {
                         src={activeVehicle.image_url || '/images/toyota-hiace-van.jpg'}
                         alt={`${activeVehicle.brand} ${activeVehicle.model}`}
                         fill
+                        sizes="(max-width: 768px) 100vw, 33vw"
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                         unoptimized={activeVehicle.image_url?.startsWith('data:')}
                       />

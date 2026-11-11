@@ -430,6 +430,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
                       src="/images/toyota-hiace-van.jpg"
                       alt="Toyota HiAce High-Roof Commuter Accessible Van"
                       fill
+                      sizes="(max-width: 1024px) 100vw, 58vw"
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                       priority
                     />
@@ -508,6 +509,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
                         src={driverProfile?.avatar_url || '/images/driver-johan.jpg'}
                         alt={driverProfile?.full_name || 'Driver'}
                         fill
+                        sizes="80px"
                         className="object-cover"
                       />
                       <div className="absolute bottom-1 right-1 bg-emerald-600 text-white rounded-full p-0.5 shadow-xs">

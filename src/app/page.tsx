@@ -97,6 +97,7 @@ export default function HomePage() {
                   src="/images/toyota-hiace-van.jpg"
                   alt="Toyota HiAce Commuter Van"
                   fill
+                  sizes="(max-width: 1024px) 100vw, 42vw"
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                   priority
                 />
@@ -127,6 +128,7 @@ export default function HomePage() {
                       src={driverAvatar}
                       alt={driverName}
                       fill
+                      sizes="56px"
                       className="object-cover"
                     />
                     <div className="absolute bottom-0.5 right-0.5 bg-emerald-600 text-white rounded-full p-0.5 shadow-xs">

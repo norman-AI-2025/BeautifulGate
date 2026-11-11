@@ -185,6 +185,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
                 src={imageUrl || '/images/toyota-hiace-van.jpg'}
                 alt={plate}
                 fill
+                sizes="176px"
                 className="object-cover"
                 unoptimized={imageUrl.startsWith('data:')}
               />

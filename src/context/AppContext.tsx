@@ -130,6 +130,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Initialize and Sync (Supabase or LocalStorage)
   useEffect(() => {
     let isSubscribed = true;
+    let activeChannel: any = null;
 
     async function initializeData() {
       const live = isSupabaseConfigured();
@@ -141,6 +142,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.removeItem('bg_work_logs');
         localStorage.removeItem('bg_profiles');
       } catch {}
+
+      let loadedFromSupabase = false;
 
       if (live && supabase) {
         try {
@@ -157,103 +160,121 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (isSubscribed) {
             if (sbProfiles && sbProfiles.length > 0) {
               setProfiles(sbProfiles);
+              try { localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(sbProfiles)); } catch {}
             }
             if (sbBookings) {
               setBookings(sbBookings);
+              try { localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(sbBookings)); } catch {}
             }
             if (sbProducts && sbProducts.length > 0) {
               setProducts(sbProducts);
             }
             if (sbWorkLogs) {
               setWorkLogs(sbWorkLogs);
+              try { localStorage.setItem(STORAGE_KEYS.WORK_LOGS, JSON.stringify(sbWorkLogs)); } catch {}
             }
             if (sbVehicles && sbVehicles.length > 0) {
               setVehicles(sbVehicles);
+              try { localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(sbVehicles)); } catch {}
             }
             if (sbLeaves) {
               setDriverLeaves(sbLeaves);
+              try { localStorage.setItem(STORAGE_KEYS.DRIVER_LEAVES, JSON.stringify(sbLeaves)); } catch {}
             }
+            loadedFromSupabase = true;
           }
 
           // 2. Realtime listener for live Supabase changes across clients
-          const channel = supabase
-            .channel('bg_realtime_sync')
-            .on(
-              'postgres_changes',
-              { event: '*', schema: 'public', table: 'transit_bookings' },
-              async () => {
-                const refreshed = await dbFetchBookings();
-                if (refreshed && isSubscribed) setBookings(refreshed);
-              }
-            )
-            .on(
-              'postgres_changes',
-              { event: '*', schema: 'public', table: 'profiles' },
-              async () => {
-                const refreshed = await dbFetchProfiles();
-                if (refreshed && isSubscribed) setProfiles(refreshed);
-              }
-            )
-            .on(
-              'postgres_changes',
-              { event: '*', schema: 'public', table: 'vehicles' },
-              async () => {
-                const refreshed = await dbFetchVehicles();
-                if (refreshed && refreshed.length > 0 && isSubscribed) setVehicles(refreshed);
-              }
-            )
-            .on(
-              'postgres_changes',
-              { event: '*', schema: 'public', table: 'driver_leaves' },
-              async () => {
-                const refreshed = await dbFetchDriverLeaves();
-                if (refreshed && isSubscribed) setDriverLeaves(refreshed);
-              }
-            )
-            .subscribe();
+          // Remove any stale or already-subscribed channels with same topic to avoid duplicate callback errors
+          const existingChannels = supabase.getChannels() || [];
+          for (const ch of existingChannels) {
+            if (ch.topic.includes('bg_realtime_sync')) {
+              await supabase.removeChannel(ch);
+            }
+          }
 
-          // Cleanup realtime channel on unmount
-          return () => {
-            supabase?.removeChannel(channel);
-          };
+          if (isSubscribed) {
+            activeChannel = supabase
+              .channel(`bg_realtime_sync_${Date.now()}`)
+              .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'transit_bookings' },
+                async () => {
+                  const refreshed = await dbFetchBookings();
+                  if (refreshed && isSubscribed) setBookings(refreshed);
+                }
+              )
+              .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'profiles' },
+                async () => {
+                  const refreshed = await dbFetchProfiles();
+                  if (refreshed && isSubscribed) setProfiles(refreshed);
+                }
+              )
+              .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'vehicles' },
+                async () => {
+                  const refreshed = await dbFetchVehicles();
+                  if (refreshed && refreshed.length > 0 && isSubscribed) setVehicles(refreshed);
+                }
+              )
+              .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'driver_leaves' },
+                async () => {
+                  const refreshed = await dbFetchDriverLeaves();
+                  if (refreshed && isSubscribed) setDriverLeaves(refreshed);
+                }
+              )
+              .subscribe();
+          }
         } catch (err) {
-          console.warn('Error fetching initial Supabase data, falling back to local store', err);
+          console.warn('Error connecting to live Supabase, using local fallback:', err);
         }
       }
 
-      // Fallback / local storage hydration
+      // Hydrate from local storage if not fetched live from Supabase
+      if (!loadedFromSupabase) {
+        try {
+          const storedProfiles = localStorage.getItem(STORAGE_KEYS.PROFILES);
+          if (storedProfiles) {
+            setProfiles(JSON.parse(storedProfiles));
+          }
+
+          const storedBookings = localStorage.getItem(STORAGE_KEYS.BOOKINGS);
+          if (storedBookings) {
+            setBookings(JSON.parse(storedBookings));
+          }
+
+          const storedLogs = localStorage.getItem(STORAGE_KEYS.WORK_LOGS);
+          if (storedLogs) {
+            setWorkLogs(JSON.parse(storedLogs));
+          }
+
+          const storedVehicles = localStorage.getItem(STORAGE_KEYS.VEHICLES);
+          if (storedVehicles) {
+            setVehicles(JSON.parse(storedVehicles));
+          }
+
+          const storedLeaves = localStorage.getItem(STORAGE_KEYS.DRIVER_LEAVES);
+          if (storedLeaves) {
+            setDriverLeaves(JSON.parse(storedLeaves));
+          }
+        } catch (e) {
+          console.warn('LocalStorage error', e);
+        }
+      }
+
+      // User session restore
       try {
-        const storedProfiles = localStorage.getItem(STORAGE_KEYS.PROFILES);
-        if (storedProfiles) {
-          setProfiles(JSON.parse(storedProfiles));
-        }
-
-        const storedBookings = localStorage.getItem(STORAGE_KEYS.BOOKINGS);
-        if (storedBookings) {
-          setBookings(JSON.parse(storedBookings));
-        }
-
-        const storedLogs = localStorage.getItem(STORAGE_KEYS.WORK_LOGS);
-        if (storedLogs) {
-          setWorkLogs(JSON.parse(storedLogs));
-        }
-
-        const storedVehicles = localStorage.getItem(STORAGE_KEYS.VEHICLES);
-        if (storedVehicles) {
-          setVehicles(JSON.parse(storedVehicles));
-        }
-
-        const storedLeaves = localStorage.getItem(STORAGE_KEYS.DRIVER_LEAVES);
-        if (storedLeaves) {
-          setDriverLeaves(JSON.parse(storedLeaves));
-        }
-
         const storedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
         if (storedUser) {
           setCurrentUser(JSON.parse(storedUser));
         }
       } catch (e) {
-        console.warn('LocalStorage error', e);
+        console.warn('User restore error', e);
       }
 
       if (isSubscribed) {
@@ -265,6 +286,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     return () => {
       isSubscribed = false;
+      if (activeChannel) {
+        supabase?.removeChannel(activeChannel);
+      }
     };
   }, []);
 
