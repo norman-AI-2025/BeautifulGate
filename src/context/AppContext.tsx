@@ -73,8 +73,8 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
   CURRENT_USER: 'bg_current_user',
-  BOOKINGS: 'bg_transit_bookings',
-  WORK_LOGS: 'bg_work_logs',
+  BOOKINGS: 'bg_transit_bookings_v2',
+  WORK_LOGS: 'bg_work_logs_v2',
   PROFILES: 'bg_profiles',
 };
 
@@ -89,6 +89,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Initialize from LocalStorage or seed defaults
   useEffect(() => {
     try {
+      // Clear legacy storage keys containing old mock data
+      localStorage.removeItem('bg_transit_bookings');
+      localStorage.removeItem('bg_work_logs');
+
       const storedProfiles = localStorage.getItem(STORAGE_KEYS.PROFILES);
       if (storedProfiles) {
         setProfiles(JSON.parse(storedProfiles));
@@ -98,27 +102,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const storedBookings = localStorage.getItem(STORAGE_KEYS.BOOKINGS);
       if (storedBookings) {
-        const parsed: TransitBooking[] = JSON.parse(storedBookings);
-        // Ensure mock donations are merged if stored items don't have them
-        const merged = parsed.map(b => {
-          if (!b.donation) {
-            const initialMatch = INITIAL_TRANSIT_BOOKINGS.find(ib => ib.id === b.id);
-            if (initialMatch?.donation) {
-              return { ...b, donation: initialMatch.donation };
-            }
-          }
-          return b;
-        });
-        setBookings(merged);
+        setBookings(JSON.parse(storedBookings));
       } else {
-        localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(INITIAL_TRANSIT_BOOKINGS));
+        localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify([]));
       }
 
       const storedLogs = localStorage.getItem(STORAGE_KEYS.WORK_LOGS);
       if (storedLogs) {
         setWorkLogs(JSON.parse(storedLogs));
       } else {
-        localStorage.setItem(STORAGE_KEYS.WORK_LOGS, JSON.stringify(INITIAL_WORK_LOGS));
+        localStorage.setItem(STORAGE_KEYS.WORK_LOGS, JSON.stringify([]));
       }
 
       const storedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
