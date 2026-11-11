@@ -22,7 +22,9 @@ import {
   Plus, 
   ChevronRight, 
   Star,
-  Check
+  Check,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { TransitBooking } from '@/types';
 
@@ -47,6 +49,8 @@ export default function MobileArtisanPortalPage() {
   const [modalSlot, setModalSlot] = useState<{ day: string; slot: string } | null>(null);
   const [justBookedId, setJustBookedId] = useState<string | null>(null);
   const [selectedDonationBooking, setSelectedDonationBooking] = useState<TransitBooking | null>(null);
+  // USER SPEC: minimize completed and rated services, click to expand, default minimized
+  const [isCompletedExpanded, setIsCompletedExpanded] = useState<boolean>(false);
 
   // Workshop logging state
   const [selectedProductId, setSelectedProductId] = useState<string>(products[0]?.id || '');
@@ -367,56 +371,99 @@ export default function MobileArtisanPortalPage() {
                   </div>
                 )}
 
-                {/* 3. Completed Bookings (with Rating Component!) */}
+                {/* 3. Completed Bookings (Minimized by default, click to expand) */}
                 {completedBookings.length > 0 && (
-                  <div className="space-y-4">
-                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                      {t('portalStatus.completedTrips', 'Completed Trips')} ({completedBookings.length})
-                    </span>
-
-                    {completedBookings.map((b) => (
-                      <div
-                        key={b.id}
-                        className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-xs space-y-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="text-[10px] font-mono text-neutral-400">
-                              {t('portalStatus.completedRide', 'Completed Ride')} · {b.appointment_time}
-                            </span>
-                            <h4 className="text-base font-bold text-neutral-900">
-                              {b.hospital_name}
-                            </h4>
-                          </div>
-                          <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
-                            {t('portalStatus.arrivedSafe', 'Arrived & Safe')}
-                          </span>
+                  <div className="rounded-3xl border border-neutral-200 bg-white overflow-hidden shadow-xs transition-all">
+                    {/* Collapsible Header Accordion Toggle */}
+                    <button
+                      type="button"
+                      onClick={() => setIsCompletedExpanded(!isCompletedExpanded)}
+                      className="w-full p-4 sm:p-5 flex items-center justify-between text-left hover:bg-neutral-50/80 transition-colors tap-target gap-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 shadow-xs shrink-0">
+                          <CheckCircle2 className="h-5 w-5" />
                         </div>
-
-                        {/* Rating Component */}
-                        <ServiceRatingCard booking={b} />
-
-                        {/* Voluntary Transit Donation Button */}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedDonationBooking(b)}
-                          className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 tap-target transition-all ${
-                            b.donation
-                              ? 'border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
-                              : 'border border-neutral-200 bg-neutral-50 hover:bg-orange-50 hover:border-orange-200 text-neutral-700 hover:text-[#F37021]'
-                          }`}
-                        >
-                          <HeartHandshake className="h-4 w-4 text-[#F37021]" />
-                          {b.donation ? (
-                            <span>
-                              {t('donation.donated', 'Donation Completed')}: <span className="font-mono font-extrabold text-emerald-950">RM {b.donation.amount.toFixed(2)}</span> ({b.donation.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')})
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-xs sm:text-sm font-extrabold text-neutral-900">
+                              {t('portalStatus.completedAndRated', 'Completed & Rated Services')}
+                            </h4>
+                            <span className="font-mono text-[10px] font-black px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 border border-neutral-200">
+                              {completedBookings.length}
                             </span>
-                          ) : (
-                            <span>{t('donation.button', 'Make a Transit Donation (Cash / QR)')}</span>
-                          )}
-                        </button>
+                          </div>
+                          <p className="text-[11px] text-neutral-500 font-medium mt-0.5">
+                            {t('portalStatus.completedSummary', '{count} past service(s) safely completed').replace('{count}', String(completedBookings.length))}
+                          </p>
+                        </div>
                       </div>
-                    ))}
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] font-bold text-neutral-500 hidden sm:inline-block">
+                          {isCompletedExpanded ? t('portalStatus.clickToCollapse', 'Click to collapse') : t('portalStatus.clickToExpand', 'Click to expand')}
+                        </span>
+                        <div className="h-7 w-7 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-600 transition-transform">
+                          {isCompletedExpanded ? (
+                            <ChevronUp className="h-4 w-4 stroke-[2.5]" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4 stroke-[2.5]" />
+                          )}
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Expandable Content Body */}
+                    {isCompletedExpanded && (
+                      <div className="p-4 sm:p-5 pt-0 space-y-4 border-t border-neutral-100 bg-neutral-50/40">
+                        {completedBookings.map((b) => (
+                          <div
+                            key={b.id}
+                            className="rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5 shadow-xs space-y-3"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="text-[10px] font-mono text-neutral-400">
+                                  {t('portalStatus.completedRide', 'Completed Ride')} · {b.date || t('common.today', 'Today')} · {b.appointment_time}
+                                </span>
+                                <h4 className="text-base font-bold text-neutral-900">
+                                  {b.hospital_name}
+                                </h4>
+                                <p className="text-[11px] text-neutral-600">
+                                  {b.clinic_department}
+                                </p>
+                              </div>
+                              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-full shrink-0">
+                                {t('portalStatus.arrivedSafe', 'Arrived & Safe')}
+                              </span>
+                            </div>
+
+                            {/* Rating Component */}
+                            <ServiceRatingCard booking={b} />
+
+                            {/* Voluntary Transit Donation Button */}
+                            <button
+                              type="button"
+                              onClick={() => setSelectedDonationBooking(b)}
+                              className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 tap-target transition-all ${
+                                b.donation
+                                  ? 'border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                                  : 'border border-neutral-200 bg-neutral-50 hover:bg-orange-50 hover:border-orange-200 text-neutral-700 hover:text-[#F37021]'
+                              }`}
+                            >
+                              <HeartHandshake className="h-4 w-4 text-[#F37021]" />
+                              {b.donation ? (
+                                <span>
+                                  {t('donation.donated', 'Donation Completed')}: <span className="font-mono font-extrabold text-emerald-950">RM {b.donation.amount.toFixed(2)}</span> ({b.donation.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')})
+                                </span>
+                              ) : (
+                                <span>{t('donation.button', 'Make a Transit Donation (Cash / QR)')}</span>
+                              )}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 

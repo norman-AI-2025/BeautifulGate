@@ -301,70 +301,26 @@ export const TransitDonationModal: React.FC<TransitDonationModalProps> = ({ book
                       <span>DuitNow National QR</span>
                     </div>
 
-                    {/* QR Code Graphic with Beautiful Gate Branding */}
+                    {/* Official Beautiful Gate DuitNow QR Code Image */}
                     <div className="flex justify-center my-2">
-                      <div className="relative p-3 rounded-2xl bg-white border-2 border-neutral-900 shadow-md">
-                        {/* High Quality Stylized DuitNow QR Graphic */}
-                        <svg
-                          className="h-44 w-44 sm:h-48 sm:w-48"
-                          viewBox="0 0 100 100"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          {/* Corner Squares */}
-                          <rect x="5" y="5" width="26" height="26" rx="4" fill="#000" />
-                          <rect x="9" y="9" width="18" height="18" rx="2" fill="#fff" />
-                          <rect x="13" y="13" width="10" height="10" rx="1.5" fill="#ED1C24" />
-
-                          <rect x="69" y="5" width="26" height="26" rx="4" fill="#000" />
-                          <rect x="73" y="9" width="18" height="18" rx="2" fill="#fff" />
-                          <rect x="77" y="13" width="10" height="10" rx="1.5" fill="#ED1C24" />
-
-                          <rect x="5" y="69" width="26" height="26" rx="4" fill="#000" />
-                          <rect x="9" y="73" width="18" height="18" rx="2" fill="#fff" />
-                          <rect x="13" y="77" width="10" height="10" rx="1.5" fill="#ED1C24" />
-
-                          {/* Data Matrix Dots */}
-                          <rect x="36" y="8" width="6" height="6" rx="1" fill="#000" />
-                          <rect x="46" y="8" width="8" height="5" rx="1" fill="#000" />
-                          <rect x="58" y="8" width="5" height="6" rx="1" fill="#000" />
-                          <rect x="36" y="18" width="8" height="5" rx="1" fill="#000" />
-                          <rect x="48" y="18" width="5" height="7" rx="1" fill="#000" />
-                          <rect x="57" y="18" width="6" height="5" rx="1" fill="#000" />
-
-                          <rect x="8" y="36" width="6" height="8" rx="1" fill="#000" />
-                          <rect x="18" y="36" width="8" height="6" rx="1" fill="#000" />
-                          <rect x="8" y="48" width="8" height="6" rx="1" fill="#000" />
-                          <rect x="20" y="48" width="6" height="8" rx="1" fill="#000" />
-                          <rect x="8" y="58" width="6" height="6" rx="1" fill="#000" />
-
-                          <rect x="69" y="36" width="7" height="6" rx="1" fill="#000" />
-                          <rect x="80" y="36" width="6" height="8" rx="1" fill="#000" />
-                          <rect x="70" y="48" width="6" height="6" rx="1" fill="#000" />
-                          <rect x="82" y="48" width="8" height="6" rx="1" fill="#000" />
-                          <rect x="70" y="58" width="8" height="6" rx="1" fill="#000" />
-
-                          <rect x="36" y="70" width="6" height="8" rx="1" fill="#000" />
-                          <rect x="48" y="70" width="8" height="6" rx="1" fill="#000" />
-                          <rect x="60" y="70" width="5" height="7" rx="1" fill="#000" />
-                          <rect x="36" y="82" width="7" height="6" rx="1" fill="#000" />
-                          <rect x="48" y="82" width="6" height="8" rx="1" fill="#000" />
-                          <rect x="58" y="82" width="6" height="6" rx="1" fill="#000" />
-
-                          {/* Center DuitNow / Beautiful Gate Shield */}
-                          <rect x="34" y="34" width="32" height="32" rx="6" fill="#fff" stroke="#ED1C24" strokeWidth="2" />
-                          <circle cx="50" cy="50" r="10" fill="#F37021" />
-                          <path d="M47 47 L53 53 M53 47 L47 53" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
-                        </svg>
+                      <div className="relative p-2 rounded-2xl bg-white border-2 border-neutral-200 shadow-md max-w-[260px] overflow-hidden">
+                        <Image
+                          src="/images/beautiful-gate-duitnow-qr.png"
+                          alt="Beautiful Gate Foundation DuitNow QR Code"
+                          width={260}
+                          height={368}
+                          className="w-full h-auto object-contain rounded-xl"
+                          priority
+                        />
                       </div>
                     </div>
 
                     <div>
                       <p className="font-extrabold text-neutral-900 text-xs">
-                        BEAUTIFUL GATE FOUNDATION FOR THE DISABLED
+                        BEAUTIFUL GATE FOUNDATION
                       </p>
-                      <p className="text-[10px] text-neutral-500 font-mono mt-0.5">
-                        {t('donation.bankDetails', 'Public Bank Berhad · Acc: 3123-4567-8901')}
+                      <p className="text-[10px] text-neutral-500 font-semibold mt-0.5">
+                        {t('donation.scanDuitNowQR', 'Scan DuitNow QR with Bank or e-Wallet')}
                       </p>
                     </div>
 

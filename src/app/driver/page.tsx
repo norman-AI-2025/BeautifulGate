@@ -19,7 +19,12 @@ import {
   Clock,
   RotateCcw,
   HeartHandshake,
-  Banknote
+  Banknote,
+  Calendar,
+  CalendarDays,
+  AlertCircle,
+  Users,
+  Check
 } from 'lucide-react';
 import { TransitBooking, TransitStatus } from '@/types';
 
@@ -52,18 +57,85 @@ interface TimeSlotGroup {
   isReady: boolean;
 }
 
+interface WeekDayItem {
+  key: string;
+  dayNameEn: string;
+  dayNameZh: string;
+  dayNameMs: string;
+  dateNum: string;
+  isToday: boolean;
+}
+
+const WEEK_DAYS: WeekDayItem[] = [
+  { key: 'Monday, 9 Nov 2026', dayNameEn: 'Mon', dayNameZh: '周一', dayNameMs: 'Isn', dateNum: '9 Nov', isToday: false },
+  { key: 'Tuesday, 10 Nov 2026', dayNameEn: 'Tue', dayNameZh: '周二', dayNameMs: 'Sel', dateNum: '10 Nov', isToday: true },
+  { key: 'Wednesday, 11 Nov 2026', dayNameEn: 'Wed', dayNameZh: '周三', dayNameMs: 'Rab', dateNum: '11 Nov', isToday: false },
+  { key: 'Thursday, 12 Nov 2026', dayNameEn: 'Thu', dayNameZh: '周四', dayNameMs: 'Kha', dateNum: '12 Nov', isToday: false },
+  { key: 'Friday, 13 Nov 2026', dayNameEn: 'Fri', dayNameZh: '周五', dayNameMs: 'Jum', dateNum: '13 Nov', isToday: false },
+  { key: 'Saturday, 14 Nov 2026', dayNameEn: 'Sat', dayNameZh: '周六', dayNameMs: 'Sab', dateNum: '14 Nov', isToday: false },
+  { key: 'Sunday, 15 Nov 2026', dayNameEn: 'Sun', dayNameZh: '周日', dayNameMs: 'Ahd', dateNum: '15 Nov', isToday: false },
+];
+
+const getDayLabel = (d: WeekDayItem, lang: string): string => {
+  if (lang === 'zh') return d.dayNameZh;
+  if (lang === 'ms') return d.dayNameMs;
+  return d.dayNameEn;
+};
+
+const formatDisplayDate = (dateStr: string, lang: string): string => {
+  if (!dateStr) return '';
+  if (lang === 'zh') {
+    if (dateStr.includes('9 Nov')) return '11月9日 (周一)';
+    if (dateStr.includes('10 Nov')) return '11月10日 (周二 · 今日)';
+    if (dateStr.includes('11 Nov')) return '11月11日 (周三)';
+    if (dateStr.includes('12 Nov')) return '11月12日 (周四)';
+    if (dateStr.includes('13 Nov')) return '11月13日 (周五)';
+    if (dateStr.includes('14 Nov')) return '11月14日 (周六)';
+    if (dateStr.includes('15 Nov')) return '11月15日 (周日)';
+  }
+  if (lang === 'ms') {
+    if (dateStr.includes('9 Nov')) return 'Isn, 9 Nov 2026';
+    if (dateStr.includes('10 Nov')) return 'Sel, 10 Nov 2026 (Hari Ini)';
+    if (dateStr.includes('11 Nov')) return 'Rab, 11 Nov 2026';
+    if (dateStr.includes('12 Nov')) return 'Kha, 12 Nov 2026';
+    if (dateStr.includes('13 Nov')) return 'Jum, 13 Nov 2026';
+    if (dateStr.includes('14 Nov')) return 'Sab, 14 Nov 2026';
+    if (dateStr.includes('15 Nov')) return 'Ahd, 15 Nov 2026';
+  }
+  if (dateStr.includes('10 Nov')) return 'Tuesday, 10 Nov 2026 (Today)';
+  return dateStr;
+};
+
 export default function DriverPage() {
   const { bookings, updateBookingStatus } = useApp();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+
+  // Selected date in weekly calendar view (defaults to today)
+  const [selectedDayKey, setSelectedDayKey] = useState<string>('Tuesday, 10 Nov 2026');
 
   // USER SPEC: "for the driver , it will only receive the task list after the bookings are approved by supervisor"
-  const johanBookings = useMemo(() => {
+  const allJohanApprovedBookings = useMemo(() => {
     return bookings.filter(b => 
       b.status !== 'pending' && 
       b.status !== 'declined' && 
       (b.assigned_driver === 'Johan bin Ariffin' || !b.assigned_driver)
     );
   }, [bookings]);
+
+  // Counts of approved bookings per day in the upcoming week
+  const dayRunsCountMap = useMemo(() => {
+    const map = new Map<string, number>();
+    WEEK_DAYS.forEach((d) => {
+      const count = allJohanApprovedBookings.filter(b => (b.date || 'Tuesday, 10 Nov 2026') === d.key).length;
+      map.set(d.key, count);
+    });
+    return map;
+  }, [allJohanApprovedBookings]);
+
+  // Filter approved bookings for the selected day in the calendar
+  const johanBookings = useMemo(() => {
+    return allJohanApprovedBookings.filter(b => (b.date || 'Tuesday, 10 Nov 2026') === selectedDayKey);
+  }, [allJohanApprovedBookings, selectedDayKey]);
 
   // Group bookings by TIME SLOT (max 6 passengers per slot)
   const allTimeSlotGroups: TimeSlotGroup[] = useMemo(() => {
@@ -291,12 +363,95 @@ export default function DriverPage() {
 
       <main className="max-w-xl mx-auto px-4 pt-5 sm:px-6 space-y-5">
         {/* ============================================================== */}
+        {/* UPCOMING DAYS THIS WEEK CALENDAR                               */}
+        {/* ============================================================== */}
+        <div className="rounded-3xl border border-neutral-200 bg-white p-4 sm:p-5 shadow-xs space-y-3.5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-orange-100 text-[#F37021] shadow-xs">
+                <CalendarDays className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-neutral-900">
+                  {t('driver.upcomingWeekCalendar', 'Upcoming Days This Week')}
+                </h3>
+                <p className="text-[11px] text-neutral-500 font-medium">
+                  {t('driver.upcomingWeekDesc', 'Select a day to view approved hospital runs and passenger rosters.')}
+                </p>
+              </div>
+            </div>
+
+            <span className="font-mono text-[10px] font-black px-2.5 py-1 rounded-xl bg-neutral-900 text-white shadow-xs shrink-0">
+              {formatDisplayDate(selectedDayKey, language)}
+            </span>
+          </div>
+
+          {/* 7-Day Calendar Strip */}
+          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+            {WEEK_DAYS.map((d) => {
+              const isSelected = selectedDayKey === d.key;
+              const runCount = dayRunsCountMap.get(d.key) || 0;
+              const dayLabel = getDayLabel(d, language);
+
+              return (
+                <button
+                  key={d.key}
+                  type="button"
+                  onClick={() => setSelectedDayKey(d.key)}
+                  className={`py-2 px-1 rounded-2xl flex flex-col items-center justify-center transition-all tap-target relative ${
+                    isSelected
+                      ? 'bg-[#F37021] text-white shadow-md scale-102 font-black'
+                      : d.isToday
+                      ? 'bg-orange-50/80 hover:bg-orange-100 border border-orange-300 text-neutral-900 font-bold'
+                      : 'bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-neutral-700 font-semibold'
+                  }`}
+                >
+                  {/* Today Badge */}
+                  {d.isToday && (
+                    <span className={`text-[7px] sm:text-[8px] font-black uppercase tracking-wider px-1 rounded-full mb-0.5 leading-tight ${
+                      isSelected ? 'bg-white text-[#F37021]' : 'bg-[#F37021] text-white'
+                    }`}>
+                      {t('driver.today', 'Today')}
+                    </span>
+                  )}
+
+                  {/* Day of week */}
+                  <span className={`text-[10px] uppercase font-mono ${isSelected ? 'text-orange-100' : 'text-neutral-500'}`}>
+                    {dayLabel}
+                  </span>
+
+                  {/* Date number */}
+                  <span className="text-xs font-extrabold mt-0.5">
+                    {d.dateNum.split(' ')[0]}
+                  </span>
+
+                  {/* Run count pill or dot */}
+                  {runCount > 0 ? (
+                    <span className={`mt-1 text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold leading-none ${
+                      isSelected
+                        ? 'bg-white text-[#F37021]'
+                        : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    }`}>
+                      {runCount}
+                    </span>
+                  ) : (
+                    <span className={`mt-1.5 h-1.5 w-1.5 rounded-full ${isSelected ? 'bg-white/40' : 'bg-neutral-300'}`} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* ============================================================== */}
         {/* 1. FOCUS ON TIME: QUEUE LIST GROUPED BY TIMESLOT               */}
         {/* ============================================================== */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-extrabold text-neutral-900 tracking-tight">
-              {t('driver.todayQueue', "Today's Transit Queue")}
+            <h2 className="text-lg sm:text-xl font-extrabold text-neutral-900 tracking-tight">
+              {selectedDayKey === 'Tuesday, 10 Nov 2026' 
+                ? t('driver.todayQueue', "Today's Transit Queue") 
+                : `${formatDisplayDate(selectedDayKey, language)}`}
             </h2>
             <span className="text-xs font-bold text-orange-950 bg-orange-100 border border-orange-300 px-3 py-1 rounded-full">
               {queueTimeSlots.length} Time Slots
@@ -304,16 +459,30 @@ export default function DriverPage() {
           </div>
 
           {queueTimeSlots.length === 0 ? (
-            <div className="rounded-3xl border-2 border-emerald-400 bg-emerald-50/70 p-8 text-center space-y-3">
-              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-emerald-600 text-white mx-auto shadow-md">
-                <CheckCircle2 className="h-7 w-7" />
+            <div className="rounded-3xl border-2 border-neutral-200 bg-white p-7 text-center space-y-3.5 shadow-xs">
+              <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-neutral-100 text-neutral-400 mx-auto shadow-inner">
+                <Car className="h-8 w-8 text-neutral-400" />
               </div>
-              <h3 className="text-lg font-black text-emerald-950">
-                All Scheduled Runs Completed!
-              </h3>
-              <p className="text-xs font-medium text-emerald-800">
-                Every passenger for today has safely arrived at their medical appointments.
-              </p>
+              <div className="space-y-1">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 text-neutral-700 font-mono font-bold text-xs uppercase tracking-wider border border-neutral-200">
+                  <Clock className="h-3.5 w-3.5 text-neutral-500" />
+                  {formatDisplayDate(selectedDayKey, language)}
+                </span>
+                <h3 className="text-xl font-black text-neutral-900 tracking-tight pt-1">
+                  {t('driver.noCurrentJob', 'No Current Job')}
+                </h3>
+                <p className="text-xs font-medium text-neutral-600 max-w-sm mx-auto leading-relaxed">
+                  {allTimeSlotGroups.length > 0 
+                    ? t('driver.allTasksDone', 'All transit runs completed for this timeslot.')
+                    : t('driver.noCurrentJobDesc', 'You have no active transit runs right now. View the weekly calendar below to see upcoming assignments.')}
+                </p>
+              </div>
+
+              {/* Status helper pill */}
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-orange-50 border border-orange-200 text-orange-950 text-xs font-bold">
+                <Calendar className="h-3.5 w-3.5 text-[#F37021]" />
+                <span>{t('driver.upcomingWeekDesc', 'Select a day to view approved hospital runs and passenger rosters.')}</span>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
