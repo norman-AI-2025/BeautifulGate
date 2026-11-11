@@ -36,9 +36,56 @@ import {
   HeartHandshake,
   Banknote,
   QrCode,
-  Receipt
+  Receipt,
+  Calendar,
+  Users
 } from 'lucide-react';
 import { TransitBooking, ArtisanSummary, TransitStatus } from '@/types';
+
+// Helper to normalize and sort time slots chronologically
+const parseTimeToMinutes = (timeStr: string): number => {
+  const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
+  if (!match) return 9999;
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const period = match[3].toLowerCase();
+  if (period === 'pm' && hours < 12) hours += 12;
+  if (period === 'am' && hours === 12) hours = 0;
+  return hours * 60 + minutes;
+};
+
+const normalizeSlotTime = (rawTime: string): string => {
+  if (!rawTime) return '08:00 AM';
+  const clean = rawTime.trim().split('-')[0].trim();
+  return clean.replace(/\b(am|pm)\b/i, (m) => m.toUpperCase());
+};
+
+const parseDateToMs = (dateStr?: string): number => {
+  if (!dateStr) return 0;
+  const d = new Date(dateStr);
+  if (!isNaN(d.getTime())) return d.getTime();
+  const parts = dateStr.split(',');
+  if (parts.length > 1) {
+    const fallback = new Date(parts[1].trim());
+    if (!isNaN(fallback.getTime())) return fallback.getTime();
+  }
+  return 0;
+};
+
+interface DispatchSlotGroup {
+  groupKey: string;
+  date: string;
+  timeSlot: string;
+  sortTimestamp: number;
+  minutes: number;
+  allSlotBookings: TransitBooking[];
+  bookings: TransitBooking[];
+  totalCapacity: number;
+  occupiedCount: number;
+  assignedDriver: string;
+  vehiclePlate: string;
+  pendingCount: number;
+}
 
 export default function AdminPage() {
   const { 
@@ -219,6 +266,76 @@ export default function AdminPage() {
       return true;
     });
   }, [bookings, dispatchFilter]);
+
+  // Group bookings by Date and Timeslot so supervisor sees co-riders sharing the same slot
+  const groupedDispatchSlots = useMemo(() => {
+    const groupMap = new Map<string, {
+      date: string;
+      timeSlot: string;
+      allSlotBookings: TransitBooking[];
+      matchingBookings: TransitBooking[];
+    }>();
+
+    const filteredSet = new Set(filteredBookings.map(b => b.id));
+
+    bookings.forEach((b) => {
+      const bookingDate = b.date || 'Tuesday, 10 Nov 2026';
+      const normalizedSlot = normalizeSlotTime(b.appointment_time);
+      const groupKey = `${bookingDate}___${normalizedSlot}`;
+
+      if (!groupMap.has(groupKey)) {
+        groupMap.set(groupKey, {
+          date: bookingDate,
+          timeSlot: normalizedSlot,
+          allSlotBookings: [],
+          matchingBookings: [],
+        });
+      }
+
+      const group = groupMap.get(groupKey)!;
+      group.allSlotBookings.push(b);
+      if (filteredSet.has(b.id)) {
+        group.matchingBookings.push(b);
+      }
+    });
+
+    const groups: DispatchSlotGroup[] = [];
+
+    groupMap.forEach((g, groupKey) => {
+      // If no bookings in this timeslot match the current filter, do not render this group
+      if (g.matchingBookings.length === 0) return;
+
+      const dateMs = parseDateToMs(g.date);
+      const minutes = parseTimeToMinutes(g.timeSlot);
+      const sortTimestamp = dateMs + minutes * 60 * 1000;
+
+      const nonDeclined = g.allSlotBookings.filter(b => b.status !== 'declined');
+      const occupiedCount = nonDeclined.length;
+      const assignedDriver = g.allSlotBookings[0]?.assigned_driver || 'Johan bin Ariffin';
+      const vehiclePlate = g.allSlotBookings[0]?.assigned_vehicle?.plate || 'WVV 4108';
+      const pendingCount = g.allSlotBookings.filter(b => b.status === 'pending').length;
+
+      groups.push({
+        groupKey,
+        date: g.date,
+        timeSlot: g.timeSlot,
+        sortTimestamp,
+        minutes,
+        allSlotBookings: g.allSlotBookings,
+        bookings: g.matchingBookings,
+        totalCapacity: 6,
+        occupiedCount,
+        assignedDriver,
+        vehiclePlate,
+        pendingCount,
+      });
+    });
+
+    // Chronological order: by date and then timeslot
+    groups.sort((a, b) => a.sortTimestamp - b.sortTimestamp);
+
+    return groups;
+  }, [bookings, filteredBookings]);
 
   // Registered artisans (customers)
   const registeredArtisans = useMemo(() => {
@@ -716,303 +833,458 @@ export default function AdminPage() {
                 </div>
               </div>
 
-              {/* Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-50/80 border-b border-neutral-200 text-neutral-600 uppercase tracking-wider font-bold">
-                    <tr>
-                      <th className="py-3.5 px-4">{t('admin.timeSlot', 'Time Slot')}</th>
-                      <th className="py-3.5 px-4">{t('admin.date', 'Date')}</th>
-                      <th className="py-3.5 px-4">{t('admin.name', 'Name')}</th>
-                      <th className="py-3.5 px-4">{t('admin.timePickup', 'Time Pickup')}</th>
-                      <th className="py-3.5 px-4">{t('admin.timeDropOff', 'Time Drop Off')}</th>
-                      <th className="py-3.5 px-4 text-right">{t('admin.action', 'Approval Action')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-200 bg-white">
-                    {filteredBookings.map((b) => {
-                      const isPending = b.status === 'pending';
-                      const isExpanded = expandedBookingId === b.id;
-                      const timePickup = formatTimestampTime(b.timestamps.picked_up);
-                      const timeDropOff = formatTimestampTime(b.timestamps.dropped_off);
-                      const formattedDate = formatBookingDate(b.date);
+              {/* Table / Timeslot Groups */}
+              {groupedDispatchSlots.length === 0 ? (
+                <div className="p-12 text-center text-neutral-500 text-xs">
+                  <p className="font-bold">{t('admin.noBookingsFound', 'No transit bookings match this filter.')}</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-neutral-200">
+                  {groupedDispatchSlots.map((group) => {
+                    return (
+                      <div key={group.groupKey} className="bg-white">
+                        {/* Group Header: Date, Time Slot, Capacity & Assigned Driver */}
+                        <div className="bg-neutral-50 px-4 sm:px-6 py-3.5 border-b border-neutral-200 flex flex-wrap items-center justify-between gap-3">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Date Pill */}
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-neutral-900 text-white text-xs font-black shadow-xs">
+                              <Calendar className="h-3.5 w-3.5 text-neutral-300" />
+                              {group.date}
+                            </span>
 
-                      return (
-                        <React.Fragment key={b.id}>
-                          <tr
-                            onClick={() => setExpandedBookingId(isExpanded ? null : b.id)}
-                            className={`cursor-pointer transition-colors tap-target ${
-                              isExpanded
-                                ? 'bg-orange-50/70'
-                                : 'hover:bg-neutral-50/80'
-                            }`}
-                          >
-                            {/* 1. Time Slot */}
-                            <td className="py-4 px-4 font-mono font-bold text-neutral-950 whitespace-nowrap">
-                              <div className="flex items-center gap-2">
-                                {isExpanded ? (
-                                  <ChevronDown className="h-4 w-4 text-[#F37021] shrink-0 stroke-[2.5]" />
-                                ) : (
-                                  <ChevronRight className="h-4 w-4 text-neutral-400 shrink-0 stroke-[2.5]" />
-                                )}
-                                <span>{b.appointment_time}</span>
-                              </div>
-                            </td>
+                            {/* Time Slot Pill */}
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-orange-100 text-orange-950 border border-orange-300 text-xs font-mono font-black">
+                              <Clock className="h-3.5 w-3.5 text-[#F37021]" />
+                              {group.timeSlot}
+                            </span>
 
-                            {/* 2. Date */}
-                            <td className="py-4 px-4 font-semibold text-neutral-700 whitespace-nowrap">
-                              {formattedDate}
-                            </td>
+                            {/* Capacity Pill */}
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold ${
+                              group.occupiedCount >= group.totalCapacity
+                                ? 'bg-rose-100 text-rose-900 border border-rose-300'
+                                : group.occupiedCount >= 4
+                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                            }`}>
+                              <Users className="h-3.5 w-3.5" />
+                              <span>{group.occupiedCount} / {group.totalCapacity} {t('admin.seatsOccupied', 'seats occupied')}</span>
+                            </span>
 
-                            {/* 3. Name */}
-                            <td className="py-4 px-4 whitespace-nowrap">
-                              <div className="flex items-center gap-2">
-                                <span className="font-extrabold text-neutral-900">{b.passenger_name}</span>
-                                {b.donation && (
-                                  <span
-                                    title={`Donation: RM ${b.donation.amount.toFixed(2)} via ${b.donation.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')}`}
-                                    className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
-                                      b.donation.status === 'paid'
-                                        ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                                        : 'bg-amber-50 text-amber-800 border border-amber-200'
-                                    }`}
-                                  >
-                                    <HeartHandshake className="h-3 w-3 text-[#F37021]" />
-                                    RM {b.donation.amount.toFixed(0)}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
+                            {/* Pending Count Alert */}
+                            {group.pendingCount > 0 && (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-yellow-400 text-yellow-950 font-black text-xs shadow-xs">
+                                <AlertCircle className="h-3.5 w-3.5" />
+                                {group.pendingCount} {t('adminTable.pending', 'Pending')}
+                              </span>
+                            )}
+                          </div>
 
-                            {/* 4. Time Pickup */}
-                            <td className="py-4 px-4 font-mono font-semibold text-neutral-700 whitespace-nowrap">
-                              {timePickup}
-                            </td>
+                          {/* Driver & Van Info */}
+                          <div className="flex items-center gap-2 text-xs text-neutral-600 font-medium">
+                            <Car className="h-3.5 w-3.5 text-[#F37021]" />
+                            <span className="font-bold text-neutral-800">{group.assignedDriver}</span>
+                            <span className="text-neutral-300">·</span>
+                            <span className="font-mono font-black bg-neutral-200/80 px-2 py-0.5 rounded text-neutral-900">
+                              {group.vehiclePlate}
+                            </span>
+                          </div>
+                        </div>
 
-                            {/* 5. Time Drop Off */}
-                            <td className="py-4 px-4 font-mono font-semibold text-neutral-700 whitespace-nowrap">
-                              {timeDropOff}
-                            </td>
-
-                            {/* 6. Approval Action */}
-                            <td className="py-4 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                              {isPending ? (
-                                <div className="flex items-center justify-end gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => approveBooking(b.id)}
-                                    className="px-3.5 py-1.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white font-black text-xs flex items-center gap-1 shadow-sm tap-target transition-all active:scale-95"
-                                  >
-                                    <Check className="h-3.5 w-3.5" />
-                                    {t('admin.approve', 'Approve')}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => declineBooking(b.id)}
-                                    className="px-2.5 py-1.5 rounded-xl border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-100 font-bold text-xs tap-target transition-all active:scale-95"
-                                    title={t('admin.decline', 'Decline')}
-                                  >
-                                    <X className="h-3.5 w-3.5" />
-                                  </button>
-                                </div>
-                              ) : (
-                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                  b.status === 'approved'
-                                    ? 'bg-orange-100 text-orange-950 border border-orange-300'
-                                    : b.status === 'en_route_pickup' || b.status === 'picked_up' || b.status === 'en_route_hospital'
-                                    ? 'bg-[#F37021] text-white'
-                                    : b.status === 'dropped_off' || b.status === 'en_route_next'
-                                    ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                                    : 'bg-red-100 text-red-900'
-                                }`}>
-                                  {b.status.replace(/_/g, ' ')}
+                        {/* Co-riders summary bar: shows who else is sharing this slot run */}
+                        {group.allSlotBookings.length > 1 && (
+                          <div className="bg-amber-50/70 px-4 sm:px-6 py-2.5 border-b border-amber-200/60 text-xs flex flex-wrap items-center gap-2">
+                            <span className="font-black text-amber-950 flex items-center gap-1.5 shrink-0">
+                              <Users className="h-3.5 w-3.5 text-[#F37021]" />
+                              {t('admin.sharingSlotWith', 'Sharing this timeslot with {count} other customer(s):').replace('{count}', String(group.allSlotBookings.length - 1))}
+                            </span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              {group.allSlotBookings.map((co) => (
+                                <span
+                                  key={co.id}
+                                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold ${
+                                    co.status === 'pending'
+                                      ? 'bg-yellow-200 text-yellow-950 border border-yellow-400 font-black ring-1 ring-yellow-400'
+                                      : 'bg-white text-neutral-800 border border-amber-200'
+                                  }`}
+                                >
+                                  <span>{co.passenger_name}</span>
+                                  <span className="text-[10px] text-neutral-500 font-mono">({co.assigned_space.split(':')[0]})</span>
+                                  {co.status === 'pending' && (
+                                    <span className="bg-yellow-400 text-yellow-950 px-1 rounded text-[9px] font-black uppercase">
+                                      {t('adminTable.pending', 'Pending')}
+                                    </span>
+                                  )}
                                 </span>
-                              )}
-                            </td>
-                          </tr>
+                              ))}
+                            </div>
+                          </div>
+                        )}
 
-                          {/* EXPANDED RECORD DETAILS */}
-                          {isExpanded && (
-                            <tr className="bg-neutral-50/80">
-                              <td colSpan={6} className="p-4 sm:p-5 border-t border-neutral-200">
-                                <div className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-3.5 shadow-xs">
-                                  <div className="flex items-center justify-between pb-2.5 border-b border-neutral-100">
-                                    <span className="text-xs font-black uppercase tracking-wider text-neutral-900">
-                                      {t('adminTable.bookingManifestDetails', 'Booking Manifest Details')} · {b.id}
-                                    </span>
-                                    <span className="font-mono text-xs font-bold text-neutral-500">
-                                      OKU: {b.oku_id}
-                                    </span>
-                                  </div>
+                        {/* Table for bookings in this timeslot group */}
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left text-xs">
+                            <thead className="bg-neutral-50/60 border-b border-neutral-200 text-neutral-600 uppercase tracking-wider font-bold">
+                              <tr>
+                                <th className="py-3 px-4">{t('admin.timeSlot', 'Time Slot')}</th>
+                                <th className="py-3 px-4">{t('admin.date', 'Date')}</th>
+                                <th className="py-3 px-4">{t('admin.name', 'Name')}</th>
+                                <th className="py-3 px-4">{t('admin.timePickup', 'Time Pickup')}</th>
+                                <th className="py-3 px-4">{t('admin.timeDropOff', 'Time Drop Off')}</th>
+                                <th className="py-3 px-4 text-right">{t('admin.action', 'Approval Action')}</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-neutral-200 bg-white">
+                              {group.bookings.map((b) => {
+                                const isPending = b.status === 'pending';
+                                const isExpanded = expandedBookingId === b.id;
+                                const timePickup = formatTimestampTime(b.timestamps.picked_up);
+                                const timeDropOff = formatTimestampTime(b.timestamps.dropped_off);
+                                const formattedDate = formatBookingDate(b.date);
 
-                                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
-                                    {/* Pickup & Destination */}
-                                    <div className="space-y-2.5">
-                                      <div>
-                                        <span className="text-[10px] font-extrabold uppercase text-emerald-800 tracking-wider flex items-center gap-1">
-                                          <MapPin className="h-3.5 w-3.5" />
-                                          {t('adminTable.pickupAddress', 'Pickup Address')}
-                                        </span>
-                                        <p className="font-bold text-neutral-900 mt-0.5 leading-snug">
-                                          {b.pickup_address}
-                                        </p>
-                                      </div>
+                                return (
+                                  <React.Fragment key={b.id}>
+                                    <tr
+                                      onClick={() => setExpandedBookingId(isExpanded ? null : b.id)}
+                                      className={`cursor-pointer transition-colors tap-target ${
+                                        isExpanded
+                                          ? 'bg-orange-50/70'
+                                          : 'hover:bg-neutral-50/80'
+                                      }`}
+                                    >
+                                      {/* 1. Time Slot */}
+                                      <td className="py-3.5 px-4 font-mono font-bold text-neutral-950 whitespace-nowrap">
+                                        <div className="flex items-center gap-2">
+                                          {isExpanded ? (
+                                            <ChevronDown className="h-4 w-4 text-[#F37021] shrink-0 stroke-[2.5]" />
+                                          ) : (
+                                            <ChevronRight className="h-4 w-4 text-neutral-400 shrink-0 stroke-[2.5]" />
+                                          )}
+                                          <span>{b.appointment_time}</span>
+                                        </div>
+                                      </td>
 
-                                      <div className="pt-2 border-t border-neutral-100">
-                                        <span className="text-[10px] font-extrabold uppercase text-orange-950 tracking-wider flex items-center gap-1">
-                                          <Building2 className="h-3.5 w-3.5 text-[#F37021]" />
-                                          {t('adminTable.destination', 'Destination')}
-                                        </span>
-                                        <p className="font-bold text-neutral-900 mt-0.5 leading-snug">
-                                          {b.hospital_name}
-                                        </p>
-                                      </div>
-                                    </div>
+                                      {/* 2. Date */}
+                                      <td className="py-3.5 px-4 font-semibold text-neutral-700 whitespace-nowrap">
+                                        {formattedDate}
+                                      </td>
 
-                                    {/* Contact & Seats */}
-                                    <div className="space-y-2.5">
-                                      <div>
-                                        <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
-                                          {t('adminTable.contactPhone', 'Contact Phone')}
-                                        </span>
-                                        <p className="font-mono font-bold text-neutral-900 mt-0.5">
-                                          {b.phone}
-                                        </p>
-                                      </div>
-
-                                      <div className="pt-2 border-t border-neutral-100">
-                                        <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
-                                          {t('adminTable.allocatedSpace', 'Allocated Seat(s)')}
-                                        </span>
-                                        <p className="font-mono font-bold text-orange-950 mt-0.5 bg-orange-50 px-2 py-0.5 rounded border border-orange-200 inline-block">
-                                          {b.assigned_space}
-                                        </p>
-                                      </div>
-
-                                      <div className="pt-2 border-t border-neutral-100">
-                                        <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
-                                          {t('adminTable.mobilityProfile', 'Mobility Profile')}
-                                        </span>
-                                        <p className="font-bold text-neutral-800 mt-0.5">
-                                          {b.mobility_type}
-                                        </p>
-                                      </div>
-                                    </div>
-
-                                    {/* Timestamps, Operator & Rating */}
-                                    <div className="space-y-2.5">
-                                      <div>
-                                        <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
-                                          {t('pass.assignedVehicle', 'Assigned Operator & Van')}
-                                        </span>
-                                        <p className="font-bold text-neutral-900 mt-0.5">
-                                          {b.assigned_driver} · <span className="font-mono font-bold">{b.assigned_vehicle.plate}</span>
-                                        </p>
-                                      </div>
-
-                                      {/* Passenger Rating if available */}
-                                      {b.rating && (
-                                        <div className="pt-2 border-t border-neutral-100 space-y-1">
-                                          <span className="text-[10px] font-extrabold uppercase text-amber-700 tracking-wider block">
-                                            {t('adminTable.beneficiaryRating', 'Beneficiary Service Rating')}
-                                          </span>
-                                          <div className="flex items-center gap-1 text-amber-500">
-                                            {[1, 2, 3, 4, 5].map((s) => (
-                                              <Star
-                                                key={s}
-                                                className={`h-3 w-3 ${
-                                                  s <= b.rating! ? 'fill-amber-400 text-amber-500' : 'text-neutral-300'
-                                                }`}
-                                              />
-                                            ))}
-                                            <span className="text-xs font-black text-neutral-900 ml-1">
-                                              {b.rating}/5
+                                      {/* 3. Name */}
+                                      <td className="py-3.5 px-4 whitespace-nowrap">
+                                        <div className="flex items-center gap-2">
+                                          <span className="font-extrabold text-neutral-900">{b.passenger_name}</span>
+                                          {b.donation && (
+                                            <span
+                                              title={`Donation: RM ${b.donation.amount.toFixed(2)} via ${b.donation.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')}`}
+                                              className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+                                                b.donation.status === 'paid'
+                                                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                                                  : 'bg-amber-50 text-amber-800 border border-amber-200'
+                                              }`}
+                                            >
+                                              <HeartHandshake className="h-3 w-3 text-[#F37021]" />
+                                              RM {b.donation.amount.toFixed(0)}
                                             </span>
-                                          </div>
-                                          {b.feedback && (
-                                            <p className="text-[11px] text-neutral-600 italic leading-snug">
-                                              &quot;{b.feedback}&quot;
-                                            </p>
                                           )}
                                         </div>
-                                      )}
-                                    </div>
+                                      </td>
 
-                                    {/* Voluntary Transit Donation Tracking & Cash Reconciliation */}
-                                    <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-3 space-y-2.5">
-                                      <div className="flex items-center justify-between pb-1.5 border-b border-neutral-200">
-                                        <span className="text-[10px] font-extrabold uppercase text-neutral-600 tracking-wider flex items-center gap-1">
-                                          <HeartHandshake className="h-3.5 w-3.5 text-[#F37021]" />
-                                          {t('admin.transitDonation', 'Transit Donation')}
-                                        </span>
-                                        {b.donation ? (
-                                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                                            b.donation.status === 'paid'
-                                              ? 'bg-emerald-100 text-emerald-800'
-                                              : 'bg-amber-100 text-amber-800'
-                                          }`}>
-                                            {b.donation.status === 'paid'
-                                              ? (b.donation.method === 'cash' ? t('admin.cashReconciled', 'Cash Reconciled') : t('donation.donated', 'Paid'))
-                                              : t('admin.awaitingCashHandover', 'Pending Remittance')}
-                                          </span>
-                                        ) : (
-                                          <span className="text-[10px] text-neutral-400">
-                                            {t('admin.noDonation', 'No Donation')}
-                                          </span>
-                                        )}
-                                      </div>
+                                      {/* 4. Time Pickup */}
+                                      <td className="py-3.5 px-4 font-mono font-semibold text-neutral-700 whitespace-nowrap">
+                                        {timePickup}
+                                      </td>
 
-                                      {b.donation ? (
-                                        <div className="space-y-2">
-                                          <div className="flex items-baseline justify-between">
-                                            <span className="font-mono text-base font-black text-neutral-900">
-                                              RM {b.donation.amount.toFixed(2)}
-                                            </span>
-                                            <span className="text-[11px] font-bold text-neutral-600">
-                                              {b.donation.method === 'cash' ? t('donation.cashOption', 'Pay Cash to Driver') : t('donation.qrOption', 'DuitNow QR')}
-                                            </span>
-                                          </div>
-                                          <p className="text-[10px] text-neutral-500">
-                                            Ref: <span className="font-mono font-bold">BG-TR-{b.id.toUpperCase()}</span>
-                                          </p>
+                                      {/* 5. Time Drop Off */}
+                                      <td className="py-3.5 px-4 font-mono font-semibold text-neutral-700 whitespace-nowrap">
+                                        {timeDropOff}
+                                      </td>
 
-                                          {/* Supervisor Action to Reconcile Driver Cash Remittance */}
-                                          {b.donation.method === 'cash' && b.donation.status === 'pledged' ? (
+                                      {/* 6. Approval Action */}
+                                      <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                                        {isPending ? (
+                                          <div className="flex items-center justify-end gap-1.5">
                                             <button
                                               type="button"
-                                              onClick={(e) => {
-                                                e.stopPropagation();
-                                                verifyDonation(b.id);
-                                              }}
-                                              className="w-full mt-1.5 py-1.5 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
+                                              onClick={() => approveBooking(b.id)}
+                                              className="px-3.5 py-1.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white font-black text-xs flex items-center gap-1 shadow-sm tap-target transition-all active:scale-95"
                                             >
-                                              <CheckCircle2 className="h-3.5 w-3.5" />
-                                              {t('admin.verifyCashHandover', 'Verify Cash Reconciled')}
+                                              <Check className="h-3.5 w-3.5" />
+                                              {t('admin.approve', 'Approve')}
                                             </button>
-                                          ) : (
-                                            <div className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold pt-1">
-                                              <Check className="h-3.5 w-3.5 text-emerald-600" />
-                                              <span>{b.donation.method === 'cash' ? t('admin.cashReconciled', 'Cash Reconciled') : t('donation.donated', 'Paid via DuitNow QR')}</span>
+                                            <button
+                                              type="button"
+                                              onClick={() => declineBooking(b.id)}
+                                              className="px-2.5 py-1.5 rounded-xl border border-neutral-300 bg-white text-neutral-600 hover:bg-neutral-100 font-bold text-xs tap-target transition-all active:scale-95"
+                                              title={t('admin.decline', 'Decline')}
+                                            >
+                                              <X className="h-3.5 w-3.5" />
+                                            </button>
+                                          </div>
+                                        ) : (
+                                          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                            b.status === 'approved'
+                                              ? 'bg-orange-100 text-orange-950 border border-orange-300'
+                                              : b.status === 'en_route_pickup' || b.status === 'picked_up' || b.status === 'en_route_hospital'
+                                              ? 'bg-[#F37021] text-white'
+                                              : b.status === 'dropped_off' || b.status === 'en_route_next'
+                                              ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                              : 'bg-red-100 text-red-900'
+                                          }`}>
+                                            {b.status.replace(/_/g, ' ')}
+                                          </span>
+                                        )}
+                                      </td>
+                                    </tr>
+
+                                    {/* EXPANDED RECORD DETAILS */}
+                                    {isExpanded && (
+                                      <tr className="bg-neutral-50/80">
+                                        <td colSpan={6} className="p-4 sm:p-5 border-t border-neutral-200">
+                                          <div className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4 shadow-xs">
+                                            <div className="flex items-center justify-between pb-2.5 border-b border-neutral-100">
+                                              <span className="text-xs font-black uppercase tracking-wider text-neutral-900">
+                                                {t('adminTable.bookingManifestDetails', 'Booking Manifest Details')} · {b.id}
+                                              </span>
+                                              <span className="font-mono text-xs font-bold text-neutral-500">
+                                                OKU: {b.oku_id}
+                                              </span>
                                             </div>
-                                          )}
-                                        </div>
-                                      ) : (
-                                        <p className="text-[11px] text-neutral-500 italic">
-                                          {t('admin.noDonationPledged', 'Passenger did not submit a voluntary donation for this trip.')}
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              </td>
-                            </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                                              {/* Pickup & Destination */}
+                                              <div className="space-y-2.5">
+                                                <div>
+                                                  <span className="text-[10px] font-extrabold uppercase text-emerald-800 tracking-wider flex items-center gap-1">
+                                                    <MapPin className="h-3.5 w-3.5" />
+                                                    {t('adminTable.pickupAddress', 'Pickup Address')}
+                                                  </span>
+                                                  <p className="font-bold text-neutral-900 mt-0.5 leading-snug">
+                                                    {b.pickup_address}
+                                                  </p>
+                                                </div>
+
+                                                <div className="pt-2 border-t border-neutral-100">
+                                                  <span className="text-[10px] font-extrabold uppercase text-orange-950 tracking-wider flex items-center gap-1">
+                                                    <Building2 className="h-3.5 w-3.5 text-[#F37021]" />
+                                                    {t('adminTable.destination', 'Destination')}
+                                                  </span>
+                                                  <p className="font-bold text-neutral-900 mt-0.5 leading-snug">
+                                                    {b.hospital_name}
+                                                  </p>
+                                                </div>
+                                              </div>
+
+                                              {/* Contact & Seats */}
+                                              <div className="space-y-2.5">
+                                                <div>
+                                                  <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
+                                                    {t('adminTable.contactPhone', 'Contact Phone')}
+                                                  </span>
+                                                  <p className="font-mono font-bold text-neutral-900 mt-0.5">
+                                                    {b.phone}
+                                                  </p>
+                                                </div>
+
+                                                <div className="pt-2 border-t border-neutral-100">
+                                                  <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
+                                                    {t('adminTable.allocatedSpace', 'Allocated Seat(s)')}
+                                                  </span>
+                                                  <p className="font-mono font-bold text-orange-950 mt-0.5 bg-orange-50 px-2 py-0.5 rounded border border-orange-200 inline-block">
+                                                    {b.assigned_space}
+                                                  </p>
+                                                </div>
+
+                                                <div className="pt-2 border-t border-neutral-100">
+                                                  <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
+                                                    {t('adminTable.mobilityProfile', 'Mobility Profile')}
+                                                  </span>
+                                                  <p className="font-bold text-neutral-800 mt-0.5">
+                                                    {b.mobility_type}
+                                                  </p>
+                                                </div>
+                                              </div>
+
+                                              {/* Timestamps, Operator & Rating */}
+                                              <div className="space-y-2.5">
+                                                <div>
+                                                  <span className="text-[10px] font-extrabold uppercase text-neutral-500 tracking-wider">
+                                                    {t('pass.assignedVehicle', 'Assigned Operator & Van')}
+                                                  </span>
+                                                  <p className="font-bold text-neutral-900 mt-0.5">
+                                                    {b.assigned_driver} · <span className="font-mono font-bold">{b.assigned_vehicle.plate}</span>
+                                                  </p>
+                                                </div>
+
+                                                {/* Passenger Rating if available */}
+                                                {b.rating && (
+                                                  <div className="pt-2 border-t border-neutral-100 space-y-1">
+                                                    <span className="text-[10px] font-extrabold uppercase text-amber-700 tracking-wider block">
+                                                      {t('adminTable.beneficiaryRating', 'Beneficiary Service Rating')}
+                                                    </span>
+                                                    <div className="flex items-center gap-1 text-amber-500">
+                                                      {[1, 2, 3, 4, 5].map((s) => (
+                                                        <Star
+                                                          key={s}
+                                                          className={`h-3 w-3 ${
+                                                            s <= b.rating! ? 'fill-amber-400 text-amber-500' : 'text-neutral-300'
+                                                          }`}
+                                                        />
+                                                      ))}
+                                                      <span className="text-xs font-black text-neutral-900 ml-1">
+                                                        {b.rating}/5
+                                                      </span>
+                                                    </div>
+                                                    {b.feedback && (
+                                                      <p className="text-[11px] text-neutral-600 italic leading-snug">
+                                                        &quot;{b.feedback}&quot;
+                                                      </p>
+                                                    )}
+                                                  </div>
+                                                )}
+                                              </div>
+
+                                              {/* Voluntary Transit Donation Tracking & Cash Reconciliation */}
+                                              <div className="rounded-xl border border-neutral-200 bg-neutral-50/80 p-3 space-y-2.5">
+                                                <div className="flex items-center justify-between pb-1.5 border-b border-neutral-200">
+                                                  <span className="text-[10px] font-extrabold uppercase text-neutral-600 tracking-wider flex items-center gap-1">
+                                                    <HeartHandshake className="h-3.5 w-3.5 text-[#F37021]" />
+                                                    {t('admin.transitDonation', 'Transit Donation')}
+                                                  </span>
+                                                  {b.donation ? (
+                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                                      b.donation.status === 'paid'
+                                                        ? 'bg-emerald-100 text-emerald-800'
+                                                        : 'bg-amber-100 text-amber-800'
+                                                    }`}>
+                                                      {b.donation.status === 'paid'
+                                                        ? (b.donation.method === 'cash' ? t('admin.cashReconciled', 'Cash Reconciled') : t('donation.donated', 'Paid'))
+                                                        : t('admin.awaitingCashHandover', 'Pending Remittance')}
+                                                    </span>
+                                                  ) : (
+                                                    <span className="text-[10px] text-neutral-400">
+                                                      {t('admin.noDonation', 'No Donation')}
+                                                    </span>
+                                                  )}
+                                                </div>
+
+                                                {b.donation ? (
+                                                  <div className="space-y-2">
+                                                    <div className="flex items-baseline justify-between">
+                                                      <span className="font-mono text-base font-black text-neutral-900">
+                                                        RM {b.donation.amount.toFixed(2)}
+                                                      </span>
+                                                      <span className="text-[11px] font-bold text-neutral-600">
+                                                        {b.donation.method === 'cash' ? t('donation.cashOption', 'Pay Cash to Driver') : t('donation.qrOption', 'DuitNow QR')}
+                                                      </span>
+                                                    </div>
+                                                    <p className="text-[10px] text-neutral-500">
+                                                      Ref: <span className="font-mono font-bold">BG-TR-{b.id.toUpperCase()}</span>
+                                                    </p>
+
+                                                    {/* Supervisor Action to Reconcile Driver Cash Remittance */}
+                                                    {b.donation.method === 'cash' && b.donation.status === 'pledged' ? (
+                                                      <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          verifyDonation(b.id);
+                                                        }}
+                                                        className="w-full mt-1.5 py-1.5 px-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] flex items-center justify-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
+                                                      >
+                                                        <CheckCircle2 className="h-3.5 w-3.5" />
+                                                        {t('admin.verifyCashHandover', 'Verify Cash Reconciled')}
+                                                      </button>
+                                                    ) : (
+                                                      <div className="flex items-center gap-1 text-[11px] text-emerald-700 font-semibold pt-1">
+                                                        <Check className="h-3.5 w-3.5 text-emerald-600" />
+                                                        <span>{b.donation.method === 'cash' ? t('admin.cashReconciled', 'Cash Reconciled') : t('donation.donated', 'Paid via DuitNow QR')}</span>
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                ) : (
+                                                  <p className="text-[11px] text-neutral-500 italic">
+                                                    {t('admin.noDonationPledged', 'Passenger did not submit a voluntary donation for this trip.')}
+                                                  </p>
+                                                )}
+                                              </div>
+                                            </div>
+
+                                            {/* Co-Riders in this Timeslot Breakdown */}
+                                            <div className="pt-3 border-t border-neutral-200">
+                                              <div className="flex items-center justify-between mb-2">
+                                                <span className="text-[11px] font-black uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
+                                                  <Users className="h-4 w-4 text-[#F37021]" />
+                                                  {t('admin.coRidersInSlot', 'Co-Riders in this Slot')} ({group.allSlotBookings.length})
+                                                </span>
+                                                <span className="text-[11px] font-bold text-neutral-500">
+                                                  {group.timeSlot} · {group.vehiclePlate} ({group.assignedDriver})
+                                                </span>
+                                              </div>
+
+                                              {group.allSlotBookings.length > 1 ? (
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                                                  {group.allSlotBookings.map((co) => {
+                                                    const isCurrent = co.id === b.id;
+                                                    return (
+                                                      <div
+                                                        key={co.id}
+                                                        className={`p-2.5 rounded-xl border text-xs transition-all ${
+                                                          isCurrent
+                                                            ? 'bg-orange-50/80 border-orange-300 ring-1 ring-orange-300'
+                                                            : 'bg-neutral-50 border-neutral-200'
+                                                        }`}
+                                                      >
+                                                        <div className="flex items-start justify-between gap-1">
+                                                          <div>
+                                                            <span className={`font-extrabold ${isCurrent ? 'text-orange-950 font-black' : 'text-neutral-900'}`}>
+                                                              {co.passenger_name} {isCurrent && '(This Passenger)'}
+                                                            </span>
+                                                            <p className="text-[10px] text-neutral-500 font-mono">OKU: {co.oku_id}</p>
+                                                          </div>
+                                                          <span className={`text-[10px] px-1.5 py-0.5 rounded font-black uppercase tracking-wider ${
+                                                            co.status === 'pending'
+                                                              ? 'bg-yellow-400 text-yellow-950'
+                                                              : co.status === 'approved'
+                                                              ? 'bg-orange-100 text-orange-950 border border-orange-300'
+                                                              : co.status.includes('en_route') || co.status === 'picked_up'
+                                                              ? 'bg-[#F37021] text-white'
+                                                              : 'bg-emerald-100 text-emerald-900'
+                                                          }`}>
+                                                            {co.status.replace(/_/g, ' ')}
+                                                          </span>
+                                                        </div>
+                                                        <div className="mt-1.5 text-[11px] space-y-0.5 text-neutral-700">
+                                                          <p className="font-mono text-[10px] text-[#F37021] font-bold">
+                                                            {co.assigned_space}
+                                                          </p>
+                                                          <p className="truncate text-[10px] text-neutral-600" title={co.hospital_name}>
+                                                            🏥 {co.hospital_name}
+                                                          </p>
+                                                        </div>
+                                                      </div>
+                                                    );
+                                                  })}
+                                                </div>
+                                              ) : (
+                                                <p className="text-xs text-neutral-500 italic bg-neutral-50 p-2.5 rounded-xl border border-neutral-200">
+                                                  {t('admin.soloCustomerInSlot', 'Only customer currently in this timeslot.')}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    )}
+                                  </React.Fragment>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}
