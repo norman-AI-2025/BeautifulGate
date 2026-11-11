@@ -19,6 +19,7 @@ create table if not exists public.profiles (
   driver_license text,
   assigned_vehicle_plate text,
   driver_status text default 'active' check (driver_status in ('active', 'on_leave', 'standby')),
+  is_approved boolean default true,
   notes text,
   created_at timestamptz default timezone('utc'::text, now()) not null,
   updated_at timestamptz default timezone('utc'::text, now()) not null

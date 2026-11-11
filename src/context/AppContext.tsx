@@ -82,6 +82,8 @@ interface AppContextType {
   exportPayrollCSV: () => void;
   // Profile management
   updateProfile: (profileId: string, updates: Partial<Profile>) => void;
+  approveDriverAccount: (profileId: string) => void;
+  rejectDriverAccount: (profileId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -331,9 +333,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     role: UserRole;
     mobility_type: MobilityType;
   }): Promise<Profile> => {
+    // If staff/driver signs up, they require administrator approval before active duty
+    const isStaffOrDriver = userData.role === 'driver' || userData.role === 'admin';
     const newProfile: Profile = {
       id: `user-${Date.now()}`,
       ...userData,
+      is_approved: isStaffOrDriver ? false : true,
+      driver_status: userData.role === 'driver' ? 'standby' : undefined,
       bank_name: userData.role === 'customer' ? 'Maybank' : undefined,
       bank_account_number: userData.role === 'customer' ? '1140 0000 0000' : undefined,
     };
@@ -386,6 +392,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, []);
 
+  // Administrator approves staff/driver account
+  const approveDriverAccount = useCallback((profileId: string) => {
+    updateProfile(profileId, { 
+      is_approved: true, 
+      driver_status: 'active' 
+    });
+  }, [updateProfile]);
+
+  // Administrator rejects / revokes staff/driver account
+  const rejectDriverAccount = useCallback((profileId: string) => {
+    updateProfile(profileId, { 
+      is_approved: false, 
+      driver_status: 'standby' 
+    });
+  }, [updateProfile]);
+
   const logout = useCallback(() => {
     saveCurrentUser(null);
   }, [saveCurrentUser]);
@@ -405,8 +427,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     oku_id?: string;
     phone?: string;
   }): Promise<TransitBooking> => {
-    // Find active driver if one exists in the roster
-    const activeDriver = profiles.find(p => p.role === 'driver');
+    // Find active AND approved driver if one exists in the roster
+    const activeDriver = profiles.find(p => p.role === 'driver' && p.is_approved !== false && p.driver_status !== 'on_leave');
 
     const newBooking: TransitBooking = {
       id: `bk-${Date.now()}`,
@@ -469,7 +491,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const approveBooking = useCallback((bookingId: string) => {
     const nowIso = new Date().toISOString();
-    const activeDriver = profiles.find(p => p.role === 'driver');
+    const activeDriver = profiles.find(p => p.role === 'driver' && p.is_approved !== false && p.driver_status !== 'on_leave');
     const updated = bookings.map(b => {
       if (b.id === bookingId) {
         return {
@@ -859,6 +881,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     getArtisanStats,
     exportPayrollCSV,
     updateProfile,
+    approveDriverAccount,
+    rejectDriverAccount,
   }), [
     currentUser,
     profiles,
@@ -884,6 +908,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     getArtisanStats,
     exportPayrollCSV,
     updateProfile,
+    approveDriverAccount,
+    rejectDriverAccount,
   ]);
 
   return (

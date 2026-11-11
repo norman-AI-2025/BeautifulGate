@@ -71,6 +71,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [driverLicense, setDriverLicense] = useState('');
   const [vehiclePlate, setVehiclePlate] = useState('');
   const [driverStatus, setDriverStatus] = useState<'active' | 'on_leave' | 'standby'>('active');
+  const [isApproved, setIsApproved] = useState(true);
   const [notes, setNotes] = useState('');
 
   const [isSuccess, setIsSuccess] = useState(false);
@@ -96,6 +97,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setDriverLicense(profile.driver_license || '');
       setVehiclePlate(profile.assigned_vehicle_plate || '');
       setDriverStatus(profile.driver_status || 'active');
+      setIsApproved(profile.is_approved !== false);
       setNotes(profile.notes || '');
       setErrorMsg('');
       setIsSuccess(false);
@@ -169,6 +171,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       updates.driver_license = driverLicense.trim();
       updates.assigned_vehicle_plate = vehiclePlate.trim();
       updates.driver_status = driverStatus;
+      updates.is_approved = isApproved;
       updates.notes = notes.trim();
     }
 
@@ -556,6 +559,25 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     <option value="standby">{t('profile.statusStandby', 'Standby Reserve')}</option>
                   </select>
                 </div>
+
+                {mode === 'admin_manage_driver' && (
+                  <div>
+                    <label className="block text-xs font-bold text-neutral-700 mb-1">
+                      {t('profile.adminApprovalStatus', 'Administrator Account Clearance')}
+                    </label>
+                    <div className="flex items-center gap-3 p-3 rounded-xl border border-neutral-200 bg-neutral-50">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-neutral-800">
+                        <input
+                          type="checkbox"
+                          checked={isApproved}
+                          onChange={(e) => setIsApproved(e.target.checked)}
+                          className="h-4 w-4 rounded text-[#F37021] focus:ring-orange-400"
+                        />
+                        <span>{t('profile.accountApprovedCheck', 'Account Approved by Administrator for Duty')}</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-xs font-bold text-neutral-700 mb-1">

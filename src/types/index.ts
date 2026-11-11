@@ -51,6 +51,7 @@ export interface Profile {
   driver_license?: string;
   assigned_vehicle_plate?: string;
   driver_status?: 'active' | 'on_leave' | 'standby';
+  is_approved?: boolean;
   notes?: string;
 }
 

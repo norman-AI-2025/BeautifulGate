@@ -445,6 +445,19 @@ export default function DriverPage() {
       </div>
 
       <main className="max-w-xl mx-auto px-4 pt-5 sm:px-6 space-y-5">
+        {/* PENDING APPROVAL WARNING NOTICE */}
+        {driverProfile && driverProfile.is_approved === false && (
+          <div className="rounded-3xl border-2 border-amber-300 bg-amber-50 p-5 shadow-sm space-y-2">
+            <div className="flex items-center gap-2.5 text-amber-900 font-extrabold text-sm">
+              <Clock className="h-5 w-5 text-amber-600 shrink-0 animate-pulse" />
+              <span>{t('driver.accountPendingTitle', 'Staff Account Awaiting Administrator Approval')}</span>
+            </div>
+            <p className="text-xs text-amber-800 leading-relaxed font-medium">
+              {t('driver.accountPendingDesc', 'Your staff / driver credentials have been submitted and are pending verification and approval by a Beautiful Gate administrator before active dispatch missions are scheduled.')}
+            </p>
+          </div>
+        )}
+
         {/* ============================================================== */}
         {/* UPCOMING DAYS THIS WEEK CALENDAR                               */}
         {/* ============================================================== */}

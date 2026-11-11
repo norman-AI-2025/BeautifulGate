@@ -41,10 +41,8 @@ export default function SignUpPage() {
 
       if (role === 'customer') {
         router.push('/portal');
-      } else if (role === 'driver') {
-        router.push('/driver');
       } else {
-        router.push('/admin');
+        router.push('/driver');
       }
     } catch {
       setErrorMsg('Failed to create account. Please try again.');
@@ -116,6 +114,11 @@ export default function SignUpPage() {
               {t('auth.driverStaffRole', 'Staff / Driver')}
             </button>
           </div>
+          {role === 'driver' && (
+            <p className="mt-2 text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-2.5 font-medium leading-relaxed">
+              {t('auth.driverRequiresAdminApproval', 'Notice: New Staff & Driver registrations require administrator approval before operational dispatch.')}
+            </p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -107,7 +107,9 @@ export default function AdminPage() {
     getArtisanStats, 
     exportPayrollCSV,
     verifyDonation,
-    exportDonationsCSV
+    exportDonationsCSV,
+    approveDriverAccount,
+    rejectDriverAccount
   } = useApp();
   const { t } = useLanguage();
 
@@ -117,7 +119,7 @@ export default function AdminPage() {
 
   // User Directory & Driver Management states
   const [directorySearchQuery, setDirectorySearchQuery] = useState('');
-  const [directoryRoleFilter, setDirectoryRoleFilter] = useState<'all' | 'customer' | 'driver' | 'admin'>('all');
+  const [directoryRoleFilter, setDirectoryRoleFilter] = useState<'all' | 'customer' | 'driver' | 'admin' | 'pending_approval'>('all');
   const [selectedProfileForModal, setSelectedProfileForModal] = useState<Profile | null>(null);
   const [profileModalMode, setProfileModalMode] = useState<'admin_manage_driver' | 'admin_view'>('admin_view');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -201,8 +203,15 @@ export default function AdminPage() {
   }, [donatedBookings, donationTimeRange, donationMethodFilter]);
 
   // User Directory filtering
+  const pendingStaffCount = useMemo(() => {
+    return profiles.filter(p => (p.role === 'driver' || p.role === 'admin') && p.is_approved === false).length;
+  }, [profiles]);
+
   const filteredProfiles = useMemo(() => {
     return profiles.filter(p => {
+      if (directoryRoleFilter === 'pending_approval') {
+        return (p.role === 'driver' || p.role === 'admin') && p.is_approved === false;
+      }
       if (directoryRoleFilter !== 'all' && p.role !== directoryRoleFilter) return false;
       if (!directorySearchQuery.trim()) return true;
       const q = directorySearchQuery.toLowerCase();
@@ -1914,6 +1923,26 @@ export default function AdminPage() {
                   >
                     {t('admin.filterAdmins', 'Administrators')} ({profiles.filter(p => p.role === 'admin').length})
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setDirectoryRoleFilter('pending_approval')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all tap-target flex items-center gap-1.5 ${
+                      directoryRoleFilter === 'pending_approval'
+                        ? 'bg-amber-500 text-white shadow-xs font-black'
+                        : pendingStaffCount > 0
+                        ? 'bg-amber-100 text-amber-900 font-extrabold hover:bg-amber-200'
+                        : 'text-neutral-600 hover:text-black'
+                    }`}
+                  >
+                    <span>{t('admin.pendingApprovalTab', 'Pending Staff Approval')}</span>
+                    {pendingStaffCount > 0 && (
+                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-black ${
+                        directoryRoleFilter === 'pending_approval' ? 'bg-white text-amber-900' : 'bg-amber-500 text-white'
+                      }`}>
+                        {pendingStaffCount}
+                      </span>
+                    )}
+                  </button>
                 </div>
 
                 {/* Search Input */}
@@ -1992,20 +2021,35 @@ export default function AdminPage() {
                           {/* Role & ID */}
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <div className="space-y-1">
-                              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                isDriver
-                                  ? 'bg-[#F37021] text-white'
-                                  : p.role === 'admin'
-                                  ? 'bg-purple-100 text-purple-900 border border-purple-300'
-                                  : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                              }`}>
-                                {isDriver ? <Car className="h-3 w-3" /> : <User className="h-3 w-3" />}
-                                {p.role === 'customer' 
-                                  ? t('auth.beneficiaryRole', 'Beneficiary')
-                                  : isDriver 
-                                  ? t('auth.driverStaffRole', 'Driver')
-                                  : t('nav.supervisorRole', 'Supervisor')}
-                              </span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                  isDriver
+                                    ? 'bg-[#F37021] text-white'
+                                    : p.role === 'admin'
+                                    ? 'bg-purple-100 text-purple-900 border border-purple-300'
+                                    : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                }`}>
+                                  {isDriver ? <Car className="h-3 w-3" /> : <User className="h-3 w-3" />}
+                                  {p.role === 'customer' 
+                                    ? t('auth.beneficiaryRole', 'Beneficiary')
+                                    : isDriver 
+                                    ? t('auth.driverStaffRole', 'Driver')
+                                    : t('nav.supervisorRole', 'Supervisor')}
+                                </span>
+                                {(isDriver || p.role === 'admin') && (
+                                  p.is_approved === false ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
+                                      <Clock className="h-2.5 w-2.5 text-amber-700" />
+                                      {t('admin.pendingApprovalBadge', 'Pending Admin Approval')}
+                                    </span>
+                                  ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                      <CheckCircle2 className="h-2.5 w-2.5 text-emerald-700" />
+                                      {t('admin.approvedBadge', 'Approved')}
+                                    </span>
+                                  )
+                                )}
+                              </div>
                               <p className="font-mono text-xs text-neutral-700 font-semibold">
                                 {p.ic_or_oku_number}
                               </p>
@@ -2074,18 +2118,61 @@ export default function AdminPage() {
                           {/* Action Column: Manage Driver (editable) vs View Profile (read-only) */}
                           <td className="py-3.5 px-4 text-right whitespace-nowrap">
                             {isDriver ? (
-                              <div className="flex flex-col items-end gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => handleManageDriver(p)}
-                                  className="px-3.5 py-1.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white font-black text-xs flex items-center gap-1.5 shadow-sm tap-target transition-all active:scale-95"
-                                >
-                                  <Edit3 className="h-3.5 w-3.5" />
-                                  <span>{t('admin.manageDriver', 'Manage Driver')}</span>
-                                </button>
+                              <div className="flex flex-col items-end gap-1.5">
+                                {p.is_approved === false ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <button
+                                      type="button"
+                                      onClick={() => approveDriverAccount(p.id)}
+                                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1 shadow-sm tap-target transition-all active:scale-95"
+                                      title={t('admin.approveStaffDriverTooltip', 'Approve driver for dispatch assignment')}
+                                    >
+                                      <Check className="h-3.5 w-3.5" />
+                                      <span>{t('admin.approveStaff', 'Approve Driver')}</span>
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleManageDriver(p)}
+                                      className="px-2.5 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1 tap-target"
+                                    >
+                                      <Edit3 className="h-3 w-3" />
+                                      <span>{t('common.edit', 'Review')}</span>
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleManageDriver(p)}
+                                    className="px-3.5 py-1.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white font-black text-xs flex items-center gap-1.5 shadow-sm tap-target transition-all active:scale-95"
+                                  >
+                                    <Edit3 className="h-3.5 w-3.5" />
+                                    <span>{t('admin.manageDriver', 'Manage Driver')}</span>
+                                  </button>
+                                )}
                                 <span className="text-[9px] font-bold text-orange-700 bg-orange-50 px-1.5 py-0.2 rounded">
                                   {t('admin.manageableBadge', 'Administrator Managed')}
                                 </span>
+                              </div>
+                            ) : p.role === 'admin' ? (
+                              <div className="flex flex-col items-end gap-1.5">
+                                {p.is_approved === false && (
+                                  <button
+                                    type="button"
+                                    onClick={() => approveDriverAccount(p.id)}
+                                    className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1 shadow-sm tap-target transition-all active:scale-95"
+                                  >
+                                    <Check className="h-3.5 w-3.5" />
+                                    <span>{t('admin.approveSupervisor', 'Approve Admin')}</span>
+                                  </button>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleViewProfile(p)}
+                                  className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
+                                >
+                                  <Eye className="h-3.5 w-3.5 text-neutral-500" />
+                                  <span>{t('admin.viewProfile', 'View Profile')}</span>
+                                </button>
                               </div>
                             ) : (
                               <div className="flex flex-col items-end gap-1">

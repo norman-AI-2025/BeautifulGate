@@ -237,6 +237,8 @@ export const translations = {
       activeSlot: 'Active Slot',
       completedSlot: 'Completed',
       upcomingSlot: 'Upcoming',
+      accountPendingTitle: 'Staff Account Awaiting Administrator Approval',
+      accountPendingDesc: 'Your staff / driver credentials have been submitted and are pending verification and approval by a Beautiful Gate administrator before active dispatch missions are scheduled.',
     },
     // Driver Manifest & Stages
     driverManifest: {
@@ -387,6 +389,12 @@ export const translations = {
       totalDrivers: 'Active Drivers',
       readOnlyBadge: 'Read-Only · User Managed',
       manageableBadge: 'Administrator Managed',
+      pendingApprovalTab: 'Pending Approval',
+      pendingApprovalBadge: 'Pending Admin Approval',
+      approvedBadge: 'Approved',
+      approveStaff: 'Approve Driver',
+      approveSupervisor: 'Approve Admin',
+      approveStaffDriverTooltip: 'Approve staff/driver account for operations',
     },
     // Rating Component
     rating: {
@@ -526,6 +534,7 @@ export const translations = {
       doorToDoorDesc: 'Register for door-to-door accessible hospital transit & artisan workshop craft opportunities.',
       customerOkuLabel: 'Malaysian IC / OKU Card No.',
       driverStaffLabel: 'Staff ID / Malaysian IC',
+      driverRequiresAdminApproval: 'Notice: New Staff & Driver registrations require administrator approval before operational dispatch.',
     },
     // User & Driver Profile
     profile: {
@@ -564,6 +573,8 @@ export const translations = {
       statusOnLeave: 'On Scheduled Leave',
       statusStandby: 'Standby Reserve',
       adminNotes: 'Certifications & Medical Safety Notes',
+      adminApprovalStatus: 'Administrator Account Clearance',
+      accountApprovedCheck: 'Account Approved by Administrator for Duty',
       emergencyContactHeading: 'Emergency Next-of-Kin Contact',
       emergencyName: 'Contact Name / Relationship',
       emergencyPhone: 'Emergency Phone Number',
@@ -813,6 +824,8 @@ export const translations = {
       activeSlot: '执行中时段',
       completedSlot: '已完成',
       upcomingSlot: '待执行',
+      accountPendingTitle: '员工/司机账号正等待管理员审批',
+      accountPendingDesc: '您的员工/司机注册凭证已提交，正等待美门残障关怀基金会管理员审核通过，方可安排调度任务。',
     },
     // Driver Manifest & Stages
     driverManifest: {
@@ -963,6 +976,12 @@ export const translations = {
       totalDrivers: '专职司机',
       readOnlyBadge: '只读 · 受益人自主维护',
       manageableBadge: '管理员统一调度管理',
+      pendingApprovalTab: '待审批员工',
+      pendingApprovalBadge: '待管理员审批',
+      approvedBadge: '已批准',
+      approveStaff: '批准司机账号',
+      approveSupervisor: '批准管理员',
+      approveStaffDriverTooltip: '批准此员工/司机账号加入营运调度',
     },
     // Rating Component
     rating: {
@@ -1102,6 +1121,7 @@ export const translations = {
       doorToDoorDesc: '注册门到门无障碍医院接送及手工艺制作增收机会。',
       customerOkuLabel: '马来西亚身份证 / OKU 卡号',
       driverStaffLabel: '职员编号 / 马来西亚身份证',
+      driverRequiresAdminApproval: '注意：新注册的职员与司机需经管理员审批通过后方可执行营运调度。',
     },
     // User & Driver Profile
     profile: {
@@ -1140,6 +1160,8 @@ export const translations = {
       statusOnLeave: '请假休假中',
       statusStandby: '待命备勤中',
       adminNotes: '安全培训与急救资质备注',
+      adminApprovalStatus: '管理员账号审批状态',
+      accountApprovedCheck: '已通过管理员出勤营运审批',
       emergencyContactHeading: '紧急联络人与亲友信息',
       emergencyName: '联系人姓名 / 亲属关系',
       emergencyPhone: '紧急联络电话',
@@ -1389,6 +1411,8 @@ export const translations = {
       activeSlot: 'Slot Aktif',
       completedSlot: 'Selesai',
       upcomingSlot: 'Akan Datang',
+      accountPendingTitle: 'Akaun Staf Menunggu Kelulusan Pentadbir',
+      accountPendingDesc: 'Kelayakan staf / pemandu anda telah dihantar dan sedang menunggu pengesahan dan kelulusan oleh pentadbir Beautiful Gate sebelum misi aktif dijadualkan.',
     },
     // Driver Manifest & Stages
     driverManifest: {
@@ -1539,6 +1563,12 @@ export const translations = {
       totalDrivers: 'Pemandu Aktif',
       readOnlyBadge: 'Baca Sahaja · Diurus Pengguna',
       manageableBadge: 'Diuruskan oleh Pentadbir',
+      pendingApprovalTab: 'Menunggu Kelulusan',
+      pendingApprovalBadge: 'Menunggu Kelulusan Pentadbir',
+      approvedBadge: 'Diluluskan',
+      approveStaff: 'Luluskan Pemandu',
+      approveSupervisor: 'Luluskan Pentadbir',
+      approveStaffDriverTooltip: 'Luluskan akaun staf/pemandu untuk operasi',
     },
     // Rating Component
     rating: {
@@ -1678,6 +1708,7 @@ export const translations = {
       doorToDoorDesc: 'Daftar untuk transit hospital boleh diakses dari pintu ke pintu & peluang kraf bengkel artisan.',
       customerOkuLabel: 'No. Kad Pengenalan / Kad OKU',
       driverStaffLabel: 'ID Kakitangan / No. Kad Pengenalan',
+      driverRequiresAdminApproval: 'Notis: Pendaftaran kakitangan & pemandu baharu memerlukan kelulusan pentadbir sebelum boleh ditugaskan.',
     },
     // User & Driver Profile
     profile: {
@@ -1716,6 +1747,8 @@ export const translations = {
       statusOnLeave: 'Bercuti Berjadual',
       statusStandby: 'Bersedia (Standby)',
       adminNotes: 'Nota Pensijilan & Keselamatan Perubatan',
+      adminApprovalStatus: 'Kelulusan Akaun Pentadbir',
+      accountApprovedCheck: 'Akaun Diluluskan oleh Pentadbir untuk Bertugas',
       emergencyContactHeading: 'Kenalan Kecemasan Waris',
       emergencyName: 'Nama Kenalan / Hubungan',
       emergencyPhone: 'No. Telefon Kecemasan',
