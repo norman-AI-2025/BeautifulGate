@@ -13,16 +13,9 @@ import { ProfileModal } from '@/components/ProfileModal';
 export const Header: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const { currentUser, switchRole, logout } = useApp();
+  const { currentUser, logout } = useApp();
   const { t } = useLanguage();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-
-  const handleRoleSwitch = (role: UserRole) => {
-    switchRole(role);
-    if (role === 'customer') router.push('/portal');
-    else if (role === 'driver') router.push('/driver');
-    else if (role === 'admin') router.push('/admin');
-  };
 
   const handleLogout = () => {
     logout();
@@ -95,44 +88,8 @@ export const Header: React.FC = () => {
           </nav>
         </div>
 
-        {/* Right Section: Quick Switcher & User Profile */}
+        {/* Right Section: User Profile & Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Quick Demo Switcher Pill */}
-          <div className="hidden lg:flex items-center rounded-full bg-neutral-100 p-1 border border-neutral-200 text-xs">
-            <button
-              onClick={() => handleRoleSwitch('customer')}
-              className={`rounded-full px-3 py-1 font-medium transition-all tap-target flex items-center ${
-                currentUser?.role === 'customer'
-                  ? 'bg-white text-black shadow-xs font-semibold'
-                  : 'text-neutral-600 hover:text-black'
-              }`}
-              title="Test as Siti Nurhaliza"
-            >
-              {t('nav.artisanRole', 'Artisan')}
-            </button>
-            <button
-              onClick={() => handleRoleSwitch('driver')}
-              className={`rounded-full px-3 py-1 font-medium transition-all tap-target flex items-center ${
-                currentUser?.role === 'driver'
-                  ? 'bg-white text-black shadow-xs font-semibold'
-                  : 'text-neutral-600 hover:text-black'
-              }`}
-              title="Test as Johan bin Ariffin"
-            >
-              {t('nav.driverRole', 'Driver')}
-            </button>
-            <button
-              onClick={() => handleRoleSwitch('admin')}
-              className={`rounded-full px-3 py-1 font-medium transition-all tap-target flex items-center ${
-                currentUser?.role === 'admin'
-                  ? 'bg-white text-black shadow-xs font-semibold'
-                  : 'text-neutral-600 hover:text-black'
-              }`}
-              title="Test as Faridah binti Hashim"
-            >
-              {t('nav.supervisorRole', 'Supervisor')}
-            </button>
-          </div>
 
           {/* User Session Info */}
           {currentUser ? (

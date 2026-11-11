@@ -22,26 +22,32 @@ export default function SignUpPage() {
   const [mobilityProfile, setMobilityProfile] = useState<MobilityType>('Manual Wheelchair');
   const [errorMsg, setErrorMsg] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim() || !email.trim() || !icOrOku.trim()) {
       setErrorMsg('Please complete all required fields.');
       return;
     }
 
-    signup({
-      full_name: fullName,
-      ic_or_oku_number: icOrOku,
-      phone: phone,
-      email: email,
-      role: role,
-      mobility_type: role === 'driver' ? 'None' : mobilityProfile,
-    });
+    try {
+      await Promise.resolve(signup({
+        full_name: fullName,
+        ic_or_oku_number: icOrOku,
+        phone: phone,
+        email: email,
+        role: role,
+        mobility_type: role === 'driver' ? 'None' : mobilityProfile,
+      }));
 
-    if (role === 'customer') {
-      router.push('/portal');
-    } else {
-      router.push('/driver');
+      if (role === 'customer') {
+        router.push('/portal');
+      } else if (role === 'driver') {
+        router.push('/driver');
+      } else {
+        router.push('/admin');
+      }
+    } catch {
+      setErrorMsg('Failed to create account. Please try again.');
     }
   };
 

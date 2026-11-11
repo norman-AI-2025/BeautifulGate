@@ -60,13 +60,49 @@ A production-grade web application built with **Next.js (App Router)**, **TypeSc
 
 ---
 
-### 4. Supabase Database Schema
-PostgreSQL schema with Row Level Security (RLS) policies is located at:
-[`supabase/migrations/20261110_init_beautiful_gate.sql`](file:///Users/normanlee/Documents/GitHub/BeautifulGate/supabase/migrations/20261110_init_beautiful_gate.sql)
+### 4. Zero Mock Data & Production-Ready State
+- **Clean Architecture**: All mock datasets (beneficiary profiles, craft products, seeded transit bookings, dummy drivers) have been removed.
+- **Dynamic User Flow**:
+  - New users register via `/signup` with role options (`Beneficiary / Caregiver`, `Driver`, or `Administrator`).
+  - Drivers and beneficiaries manage their own profiles, photos, and emergency contacts via the interactive Profile Modal.
+  - Supervisors maintain administrative oversight over the driver roster and vehicle assignments.
 
 ---
 
-## Running the Application
+### 5. Supabase Database Integration & Deployment Guide
+
+#### A. Set Up Database Schema in Supabase
+1. Create a project at [supabase.com](https://supabase.com).
+2. Open your project's **SQL Editor**.
+3. Copy the entire contents of [`supabase/schema.sql`](file:///Users/normanlee/Documents/GitHub/BeautifulGate/supabase/schema.sql) and paste it into the editor.
+4. Click **Run**. This creates:
+   - `profiles` table (with avatars, driver certifications, vehicle plate assignments, and emergency contacts).
+   - `transit_bookings` table (with wheelchair allocations, donation audit fields, ratings, and coordinates).
+   - `card_products` and `card_work_logs` tables.
+   - Row Level Security (RLS) policies.
+   - Supabase Realtime publication for instant cross-device updates.
+
+#### B. Configure Environment Variables
+Copy `.env.example` to `.env.local` or configure in your deployment dashboard (e.g., Vercel, Netlify):
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+*(Note: The platform features a resilient local reactive storage fallback. If Supabase credentials are not supplied, the platform operates in full local mode without crashing.)*
+
+#### C. Deploy to Vercel
+
+```bash
+# Deploy with Vercel CLI
+vercel --prod
+```
+Or import the Git repository into Vercel/Netlify, adding `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` to the project's Environment Variables settings.
+
+---
+
+## Running the Application Locally
 
 ```bash
 # Install dependencies

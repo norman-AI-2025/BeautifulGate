@@ -112,10 +112,9 @@ export default function HomePage() {
             <div className="pt-6 mt-6 border-t border-neutral-100">
               <Link
                 href="/portal"
-                onClick={() => handleLaunchRole('customer')}
                 className="w-full py-3 px-4 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-bold flex items-center justify-between shadow-xs tap-target"
               >
-                <span>{t('home.enterAsSiti', 'Enter as Siti Nurhaliza')}</span>
+                <span>{t('home.launchPortal', 'Launch Beneficiary Portal')}</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -135,10 +134,9 @@ export default function HomePage() {
             <div className="pt-6 mt-6 border-t border-neutral-100">
               <Link
                 href="/driver"
-                onClick={() => handleLaunchRole('driver')}
                 className="w-full py-3 px-4 rounded-xl bg-[#18181B] hover:bg-black text-white text-xs font-bold flex items-center justify-between shadow-xs tap-target"
               >
-                <span>{t('home.enterAsJohan', 'Enter as Johan bin Ariffin')}</span>
+                <span>{t('home.launchDriver', 'Driver Console')}</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>
@@ -158,10 +156,9 @@ export default function HomePage() {
             <div className="pt-6 mt-6 border-t border-neutral-100">
               <Link
                 href="/admin"
-                onClick={() => handleLaunchRole('admin')}
                 className="w-full py-3 px-4 rounded-xl bg-white hover:bg-neutral-100 text-neutral-900 border border-neutral-300 text-xs font-bold flex items-center justify-between shadow-xs tap-target"
               >
-                <span>{t('home.enterAsFaridah', 'Enter as Faridah Hashim')}</span>
+                <span>{t('home.launchAdmin', 'Supervisor Control Tower')}</span>
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </div>

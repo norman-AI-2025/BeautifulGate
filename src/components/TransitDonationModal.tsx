@@ -248,7 +248,7 @@ export const TransitDonationModal: React.FC<TransitDonationModalProps> = ({ book
                         {t('donation.cashOption', 'Pay Cash to Driver')}
                       </span>
                       <span className="text-[10px] text-neutral-500 font-medium block mt-0.5">
-                        Driver Johan (HiAce WVV 4108)
+                        {booking.assigned_driver ? `${booking.assigned_driver} (${booking.assigned_vehicle?.plate || 'Van'})` : t('nav.driverRole', 'Driver')}
                       </span>
                     </div>
                   </button>
@@ -281,13 +281,13 @@ export const TransitDonationModal: React.FC<TransitDonationModalProps> = ({ book
                 <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-4 space-y-2.5 text-xs">
                   <div className="flex items-center gap-2 text-orange-950 font-bold">
                     <Car className="h-4 w-4 text-[#F37021]" />
-                    <span>Driver Johan bin Ariffin · Plate WVV 4108</span>
+                    <span>{booking.assigned_driver || t('nav.driverRole', 'Assigned Driver')} · {booking.assigned_vehicle?.plate || 'Plate WVV 4108'}</span>
                   </div>
                   <p className="text-neutral-700 leading-relaxed text-[11px]">
-                    {t('donation.cashDesc', 'Hand cash directly to Driver Johan upon pickup or drop-off.')}
+                    {t('donation.cashDesc', 'Hand cash directly to driver upon pickup or drop-off.')}
                   </p>
                   <p className="text-[10px] text-orange-900 font-semibold bg-white p-2 rounded-xl border border-orange-200">
-                    {t('donation.driverWillReceipt', 'Driver Johan will collect the donation and log it into the official foundation manifest.')}
+                    {t('donation.driverWillReceipt', 'Driver will collect the donation and log it into the official foundation manifest.')}
                   </p>
                 </div>
               ) : (

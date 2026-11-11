@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { useLanguage } from '@/context/LanguageContext';
+import { useApp } from '@/context/AppContext';
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -72,6 +73,8 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
   onSelectSlot,
 }) => {
   const { t, language } = useLanguage();
+  const { profiles } = useApp();
+  const driverProfile = profiles.find(p => p.role === 'driver');
   const [selectedIsoDate, setSelectedIsoDate] = useState<string>('2026-11-10');
   const [selectedDayObj, setSelectedDayObj] = useState<DaySchedule>(DEFAULT_DAYS[1]);
 
@@ -477,8 +480,8 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
                   <div className="flex items-center gap-3.5">
                     <div className="relative h-18 w-18 sm:h-20 sm:w-20 rounded-2xl overflow-hidden border-2 border-orange-400 shadow-md shrink-0">
                       <Image
-                        src="/images/driver-johan.jpg"
-                        alt="Driver Johan bin Ariffin"
+                        src={driverProfile?.avatar_url || '/images/driver-johan.jpg'}
+                        alt={driverProfile?.full_name || 'Driver'}
                         fill
                         className="object-cover"
                       />
@@ -492,7 +495,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
                         Verified Operator
                       </span>
                       <h5 className="text-base font-black text-neutral-900 leading-tight truncate">
-                        {t('vanInfo.driverName', 'Johan bin Ariffin')}
+                        {driverProfile?.full_name || t('nav.driverRole', 'Driver')}
                       </h5>
                       <p className="text-[11px] text-neutral-500 font-medium mt-0.5">
                         {t('vanInfo.driverTitle', 'Dedicated NGO Assisted Transit Driver')}

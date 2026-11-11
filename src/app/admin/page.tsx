@@ -354,8 +354,9 @@ export default function AdminPage() {
 
       const nonDeclined = g.allSlotBookings.filter(b => b.status !== 'declined');
       const occupiedCount = nonDeclined.length;
-      const assignedDriver = g.allSlotBookings[0]?.assigned_driver || 'Johan bin Ariffin';
-      const vehiclePlate = g.allSlotBookings[0]?.assigned_vehicle?.plate || 'WVV 4108';
+      const activeDriverInProfiles = profiles.find(p => p.role === 'driver');
+      const assignedDriver = g.allSlotBookings[0]?.assigned_driver || activeDriverInProfiles?.full_name || 'Unassigned Driver';
+      const vehiclePlate = g.allSlotBookings[0]?.assigned_vehicle?.plate || activeDriverInProfiles?.assigned_vehicle_plate || 'WVV 4108';
       const pendingCount = g.allSlotBookings.filter(b => b.status === 'pending').length;
 
       groups.push({
@@ -2031,7 +2032,7 @@ export default function AdminPage() {
                               <div className="space-y-1 text-xs">
                                 <div className="flex items-center gap-1.5">
                                   <span className="font-mono font-black text-xs px-2 py-0.5 rounded bg-orange-100 text-orange-950 border border-orange-200">
-                                    {p.assigned_vehicle_plate || 'WVV 4108'}
+                                    {p.assigned_vehicle_plate || t('common.unassigned', 'Unassigned')}
                                   </span>
                                   <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
                                     p.driver_status === 'on_leave'

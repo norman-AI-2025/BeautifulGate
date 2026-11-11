@@ -146,7 +146,7 @@ export default function MobileArtisanPortalPage() {
                   </span>
                 </div>
                 <h1 className="text-base sm:text-lg font-extrabold tracking-tight group-hover:text-orange-200 transition-colors">
-                  {currentUser?.full_name || 'Siti Nurhaliza'}
+                  {currentUser?.full_name || t('common.user', 'Beneficiary')}
                 </h1>
                 <p className="text-xs text-orange-200 flex items-center gap-1.5 mt-0.5">
                   <span className="inline-block h-2 w-2 rounded-full bg-[#F37021]" />

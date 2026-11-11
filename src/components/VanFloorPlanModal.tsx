@@ -176,23 +176,23 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
   const [selectedSeats, setSelectedSeats] = useState<AssignedSpace[]>([]);
 
   // USER SPEC: Pickup address automatically filled with account information
-  const defaultAccountPickup = currentUser?.address || 'No. 18, Jalan SS 2/19, 47300 Petaling Jaya, Selangor';
+  const defaultAccountPickup = currentUser?.address || '';
   const [pickupAddress, setPickupAddress] = useState(defaultAccountPickup);
   const [isEditingPickup, setIsEditingPickup] = useState(false);
 
-  // Destination search & suggestions
-  const [destQuery, setDestQuery] = useState("Hospital Tuanku Ja'afar (HTJ)");
+  // Destination search & suggestions - starts clean
+  const [destQuery, setDestQuery] = useState('');
   const [destSuggestions, setDestSuggestions] = useState<GeocodeItem[]>(CURATED_MALAYSIAN_DESTINATIONS);
   const [isLoadingGeo, setIsLoadingGeo] = useState(false);
   const [showDestDropdown, setShowDestDropdown] = useState(false);
-  const [selectedDestinationItem, setSelectedDestinationItem] = useState<GeocodeItem | null>(CURATED_MALAYSIAN_DESTINATIONS[0]);
+  const [selectedDestinationItem, setSelectedDestinationItem] = useState<GeocodeItem | null>(null);
 
   const [errorMsg, setErrorMsg] = useState('');
 
   // Auto-filled account info from logged-in user
-  const passengerName = currentUser?.full_name || 'Siti Nurhaliza binti Mansor';
-  const okuId = currentUser?.ic_or_oku_number || 'DE0502198901';
-  const phone = currentUser?.phone || '+60 12-491 8832';
+  const passengerName = currentUser?.full_name || '';
+  const okuId = currentUser?.ic_or_oku_number || '';
+  const phone = currentUser?.phone || '';
   const mobilityType = currentUser?.mobility_type || 'Manual Wheelchair';
 
   // Synchronize when current user changes
@@ -307,8 +307,8 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
 
     const assignedSpaceString = selectedSeats.join(' + ') as AssignedSpace;
 
-    const newBooking = createBooking({
-      passenger_name: passengerName,
+    Promise.resolve(createBooking({
+      passenger_name: passengerName || 'Passenger',
       oku_id: okuId,
       phone: phone,
       hospital_name: selectedDestinationItem ? selectedDestinationItem.name : destQuery,
@@ -318,9 +318,12 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
       assigned_space: assignedSpaceString,
       pickup_address: pickupAddress,
       mobility_type: (mobilityType as MobilityType) || 'Manual Wheelchair',
+    })).then((newBooking) => {
+      onBookingSuccess(newBooking.id);
+    }).catch(err => {
+      console.warn('Booking create error', err);
     });
 
-    onBookingSuccess(newBooking.id);
     onClose();
   };
 

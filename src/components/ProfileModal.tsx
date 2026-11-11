@@ -69,7 +69,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   // Driver-specific fields
   const [driverLicense, setDriverLicense] = useState('');
-  const [vehiclePlate, setVehiclePlate] = useState('WVV 4108');
+  const [vehiclePlate, setVehiclePlate] = useState('');
   const [driverStatus, setDriverStatus] = useState<'active' | 'on_leave' | 'standby'>('active');
   const [notes, setNotes] = useState('');
 
@@ -94,7 +94,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setEmergencyPhone(profile.emergency_phone || '');
       setAvatarUrl(profile.avatar_url);
       setDriverLicense(profile.driver_license || '');
-      setVehiclePlate(profile.assigned_vehicle_plate || 'WVV 4108');
+      setVehiclePlate(profile.assigned_vehicle_plate || '');
       setDriverStatus(profile.driver_status || 'active');
       setNotes(profile.notes || '');
       setErrorMsg('');
@@ -637,3 +637,4 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     </div>
   );
 };
+

@@ -20,6 +20,18 @@ import {
   DEFAULT_VEHICLE,
   getTodayDateString 
 } from '@/lib/mockData';
+import {
+  isSupabaseConfigured,
+  supabase,
+  dbFetchProfiles,
+  dbUpsertProfile,
+  dbFetchBookings,
+  dbInsertBooking,
+  dbUpdateBooking,
+  dbFetchProducts,
+  dbFetchWorkLogs,
+  dbInsertWorkLog,
+} from '@/lib/supabaseClient';
 
 interface AppContextType {
   currentUser: Profile | null;
@@ -28,8 +40,9 @@ interface AppContextType {
   bookings: TransitBooking[];
   workLogs: CardWorkLog[];
   isLoaded: boolean;
+  isSupabaseLive: boolean;
   switchRole: (role: UserRole, userId?: string) => void;
-  login: (email: string, role?: UserRole) => boolean;
+  login: (email: string, role?: UserRole) => boolean | Promise<boolean>;
   signup: (userData: {
     full_name: string;
     ic_or_oku_number: string;
@@ -37,7 +50,7 @@ interface AppContextType {
     email: string;
     role: UserRole;
     mobility_type: MobilityType;
-  }) => Profile;
+  }) => Promise<Profile> | Profile;
   logout: () => void;
   // Booking actions
   createBooking: (data: {
@@ -53,7 +66,7 @@ interface AppContextType {
     passenger_name?: string;
     oku_id?: string;
     phone?: string;
-  }) => TransitBooking;
+  }) => Promise<TransitBooking> | TransitBooking;
   updateBookingStatus: (bookingId: string, newStatus: TransitStatus) => void;
   approveBooking: (bookingId: string) => void;
   declineBooking: (bookingId: string) => void;
@@ -77,68 +90,126 @@ const STORAGE_KEYS = {
   CURRENT_USER: 'bg_current_user',
   BOOKINGS: 'bg_transit_bookings_v2',
   WORK_LOGS: 'bg_work_logs_v2',
-  PROFILES: 'bg_profiles',
+  PROFILES: 'bg_profiles_v2',
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isSupabaseLive, setIsSupabaseLive] = useState(false);
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>(INITIAL_PROFILES);
   const [bookings, setBookings] = useState<TransitBooking[]>(INITIAL_TRANSIT_BOOKINGS);
   const [workLogs, setWorkLogs] = useState<CardWorkLog[]>(INITIAL_WORK_LOGS);
-  const products = INITIAL_PRODUCTS;
+  const [products, setProducts] = useState<CardProduct[]>(INITIAL_PRODUCTS);
 
-  // Initialize from LocalStorage or seed defaults
+  // Initialize and Sync (Supabase or LocalStorage)
   useEffect(() => {
-    try {
-      // Clear legacy storage keys containing old mock data
-      localStorage.removeItem('bg_transit_bookings');
-      localStorage.removeItem('bg_work_logs');
+    let isSubscribed = true;
 
-      const storedProfiles = localStorage.getItem(STORAGE_KEYS.PROFILES);
-      if (storedProfiles) {
-        const parsed: Profile[] = JSON.parse(storedProfiles);
-        // Merge in any newly added system seed properties if missing in storage
-        const merged = parsed.map(p => {
-          const init = INITIAL_PROFILES.find(ip => ip.id === p.id);
-          return init ? { ...init, ...p } : p;
-        });
-        setProfiles(merged);
-      } else {
-        localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(INITIAL_PROFILES));
+    async function initializeData() {
+      const live = isSupabaseConfigured();
+      setIsSupabaseLive(live);
+
+      // Clean old legacy storage keys
+      try {
+        localStorage.removeItem('bg_transit_bookings');
+        localStorage.removeItem('bg_work_logs');
+        localStorage.removeItem('bg_profiles');
+      } catch {}
+
+      if (live && supabase) {
+        try {
+          // 1. Fetch live Supabase data
+          const [sbProfiles, sbBookings, sbProducts, sbWorkLogs] = await Promise.all([
+            dbFetchProfiles(),
+            dbFetchBookings(),
+            dbFetchProducts(),
+            dbFetchWorkLogs(),
+          ]);
+
+          if (isSubscribed) {
+            if (sbProfiles && sbProfiles.length > 0) {
+              setProfiles(sbProfiles);
+            }
+            if (sbBookings) {
+              setBookings(sbBookings);
+            }
+            if (sbProducts && sbProducts.length > 0) {
+              setProducts(sbProducts);
+            }
+            if (sbWorkLogs) {
+              setWorkLogs(sbWorkLogs);
+            }
+          }
+
+          // 2. Realtime listener for live Supabase changes across clients
+          const channel = supabase
+            .channel('bg_realtime_sync')
+            .on(
+              'postgres_changes',
+              { event: '*', schema: 'public', table: 'transit_bookings' },
+              async () => {
+                const refreshed = await dbFetchBookings();
+                if (refreshed && isSubscribed) setBookings(refreshed);
+              }
+            )
+            .on(
+              'postgres_changes',
+              { event: '*', schema: 'public', table: 'profiles' },
+              async () => {
+                const refreshed = await dbFetchProfiles();
+                if (refreshed && isSubscribed) setProfiles(refreshed);
+              }
+            )
+            .subscribe();
+
+          // Cleanup realtime channel on unmount
+          return () => {
+            supabase?.removeChannel(channel);
+          };
+        } catch (err) {
+          console.warn('Error fetching initial Supabase data, falling back to local store', err);
+        }
       }
 
-      const storedBookings = localStorage.getItem(STORAGE_KEYS.BOOKINGS);
-      if (storedBookings) {
-        setBookings(JSON.parse(storedBookings));
-      } else {
-        localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify([]));
+      // Fallback / local storage hydration
+      try {
+        const storedProfiles = localStorage.getItem(STORAGE_KEYS.PROFILES);
+        if (storedProfiles) {
+          setProfiles(JSON.parse(storedProfiles));
+        }
+
+        const storedBookings = localStorage.getItem(STORAGE_KEYS.BOOKINGS);
+        if (storedBookings) {
+          setBookings(JSON.parse(storedBookings));
+        }
+
+        const storedLogs = localStorage.getItem(STORAGE_KEYS.WORK_LOGS);
+        if (storedLogs) {
+          setWorkLogs(JSON.parse(storedLogs));
+        }
+
+        const storedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
+        if (storedUser) {
+          setCurrentUser(JSON.parse(storedUser));
+        }
+      } catch (e) {
+        console.warn('LocalStorage error', e);
       }
 
-      const storedLogs = localStorage.getItem(STORAGE_KEYS.WORK_LOGS);
-      if (storedLogs) {
-        setWorkLogs(JSON.parse(storedLogs));
-      } else {
-        localStorage.setItem(STORAGE_KEYS.WORK_LOGS, JSON.stringify([]));
+      if (isSubscribed) {
+        setIsLoaded(true);
       }
-
-      const storedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
-      if (storedUser) {
-        setCurrentUser(JSON.parse(storedUser));
-      } else {
-        // Default to Siti Nurhaliza as beneficiary
-        const defaultUser = INITIAL_PROFILES[0];
-        setCurrentUser(defaultUser);
-        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(defaultUser));
-      }
-    } catch (e) {
-      console.warn('LocalStorage error, using memory defaults', e);
-      setCurrentUser(INITIAL_PROFILES[0]);
     }
-    setIsLoaded(true);
+
+    initializeData();
+
+    return () => {
+      isSubscribed = false;
+    };
   }, []);
 
-  // Multi-tab storage listener for real-time synchronization
+  // Multi-tab storage listener for real-time local synchronization
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (!e.newValue) return;
@@ -205,25 +276,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [profiles, saveCurrentUser]);
 
-  const login = useCallback((email: string, role?: UserRole): boolean => {
+  const login = useCallback(async (email: string, role?: UserRole): Promise<boolean> => {
     let match = profiles.find(p => p.email.toLowerCase() === email.toLowerCase());
+    
+    // If Supabase is active and not matched locally, check Supabase profiles
+    if (!match && isSupabaseConfigured()) {
+      const liveProfiles = await dbFetchProfiles();
+      if (liveProfiles) {
+        setProfiles(liveProfiles);
+        match = liveProfiles.find(p => p.email.toLowerCase() === email.toLowerCase());
+      }
+    }
+
     if (!match && role) {
       match = profiles.find(p => p.role === role);
     }
+
     if (match) {
       saveCurrentUser(match);
       return true;
     }
-    // If not found, create a temporary profile with customer role
+
+    // If profile doesn't exist yet, create a clean profile
     const newUser: Profile = {
       id: `user-${Date.now()}`,
       full_name: email.split('@')[0],
-      ic_or_oku_number: 'OKU-NEW-01',
-      phone: '+60 12-000 0000',
+      ic_or_oku_number: 'OKU-PENDING',
+      phone: '',
       email,
       role: role || 'customer',
-      mobility_type: 'Manual Wheelchair',
+      mobility_type: 'None',
     };
+
     const updatedProfiles = [...profiles, newUser];
     setProfiles(updatedProfiles);
     try {
@@ -231,23 +315,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) {
       console.warn(e);
     }
+
+    // Persist to Supabase if live
+    dbUpsertProfile(newUser).catch(err => console.warn('Supabase profile save error:', err));
+
     saveCurrentUser(newUser);
     return true;
   }, [profiles, saveCurrentUser]);
 
-  const signup = useCallback((userData: {
+  const signup = useCallback(async (userData: {
     full_name: string;
     ic_or_oku_number: string;
     phone: string;
     email: string;
     role: UserRole;
     mobility_type: MobilityType;
-  }): Profile => {
+  }): Promise<Profile> => {
     const newProfile: Profile = {
       id: `user-${Date.now()}`,
       ...userData,
       bank_name: userData.role === 'customer' ? 'Maybank' : undefined,
-      bank_account_number: userData.role === 'customer' ? '1140 9988 7766' : undefined,
+      bank_account_number: userData.role === 'customer' ? '1140 0000 0000' : undefined,
     };
     const updated = [...profiles, newProfile];
     setProfiles(updated);
@@ -256,6 +344,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) {
       console.warn(e);
     }
+
+    // Persist to Supabase if configured
+    await dbUpsertProfile(newProfile);
+
     saveCurrentUser(newProfile);
     return newProfile;
   }, [profiles, saveCurrentUser]);
@@ -265,7 +357,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProfiles(prevProfiles => {
       const updated = prevProfiles.map(p => {
         if (p.id === profileId) {
-          return { ...p, ...updates };
+          const merged = { ...p, ...updates };
+          // Persist to Supabase asynchronously
+          dbUpsertProfile(merged).catch(err => console.warn('Supabase updateProfile error', err));
+          return merged;
         }
         return p;
       });
@@ -296,7 +391,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [saveCurrentUser]);
 
   // Create Transit Booking
-  const createBooking = useCallback((data: {
+  const createBooking = useCallback(async (data: {
     appointment_time: string;
     assigned_space: AssignedSpace | string;
     pickup_address: string;
@@ -309,36 +404,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     passenger_name?: string;
     oku_id?: string;
     phone?: string;
-  }): TransitBooking => {
-    const user = currentUser || profiles[0];
+  }): Promise<TransitBooking> => {
+    // Find active driver if one exists in the roster
+    const activeDriver = profiles.find(p => p.role === 'driver');
+
     const newBooking: TransitBooking = {
       id: `bk-${Date.now()}`,
-      passenger_id: user.id,
-      passenger_name: data.passenger_name || user.full_name,
-      oku_id: data.oku_id || user.ic_or_oku_number,
-      phone: data.phone || user.phone,
+      passenger_id: currentUser?.id || 'guest',
+      passenger_name: data.passenger_name || currentUser?.full_name || 'Passenger',
+      oku_id: data.oku_id || currentUser?.ic_or_oku_number || '',
+      phone: data.phone || currentUser?.phone || '',
       pickup_address: data.pickup_address,
       hospital_name: data.hospital_name,
-      clinic_department: data.clinic_department,
+      clinic_department: data.clinic_department || 'General Outpatient / Clinic',
       appointment_time: data.appointment_time,
-      mobility_type: data.mobility_type || user.mobility_type,
+      mobility_type: data.mobility_type || currentUser?.mobility_type || 'Manual Wheelchair',
       assigned_space: data.assigned_space,
-      assigned_driver: 'Johan bin Ariffin',
-      assigned_vehicle: DEFAULT_VEHICLE,
+      assigned_driver: activeDriver?.full_name || 'Assigned Driver',
+      assigned_vehicle: activeDriver?.assigned_vehicle_plate ? {
+        plate: activeDriver.assigned_vehicle_plate,
+        brand: 'Toyota',
+        model: 'HiAce Commuter',
+        color: 'Pearl White',
+        configuration: 'Row 1: Driver + 1 Pax | Row 2: 4 Pax | Row 3: 2 Wheelchairs',
+      } : DEFAULT_VEHICLE,
       status: 'pending',
-      date: data.date || 'Tuesday, 10 Nov 2026',
-      destination_coordinates: data.destination_coordinates || { lat: 2.7167, lon: 101.9422 },
-      destination_verified: data.destination_verified ?? true,
+      date: data.date || getTodayDateString(),
+      destination_coordinates: data.destination_coordinates,
+      destination_verified: data.destination_verified ?? Boolean(data.destination_coordinates),
       timestamps: {
         requested: new Date().toISOString(),
       },
+      created_at: new Date().toISOString(),
     };
+
     const updated = [newBooking, ...bookings];
     saveBookings(updated);
+
+    // Persist to Supabase if live
+    await dbInsertBooking(newBooking);
+
     return newBooking;
   }, [currentUser, profiles, bookings, saveBookings]);
 
-  // Update Booking Status (Driver taps, etc.)
+  // Update Booking Status
   const updateBookingStatus = useCallback((bookingId: string, newStatus: TransitStatus) => {
     const nowIso = new Date().toISOString();
     const updated = bookings.map(b => {
@@ -355,17 +464,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return b;
     });
     saveBookings(updated);
+    dbUpdateBooking(bookingId, { status: newStatus }).catch(err => console.warn(err));
   }, [bookings, saveBookings]);
 
   const approveBooking = useCallback((bookingId: string) => {
     const nowIso = new Date().toISOString();
+    const activeDriver = profiles.find(p => p.role === 'driver');
     const updated = bookings.map(b => {
       if (b.id === bookingId) {
         return {
           ...b,
           status: 'approved' as TransitStatus,
-          assigned_driver: 'Johan bin Ariffin',
-          assigned_vehicle: DEFAULT_VEHICLE,
+          assigned_driver: b.assigned_driver || activeDriver?.full_name || 'Assigned Driver',
+          assigned_vehicle: b.assigned_vehicle || DEFAULT_VEHICLE,
           timestamps: {
             ...b.timestamps,
             approved: nowIso,
@@ -375,7 +486,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return b;
     });
     saveBookings(updated);
-  }, [bookings, saveBookings]);
+    dbUpdateBooking(bookingId, { 
+      status: 'approved', 
+      assigned_driver: activeDriver?.full_name || 'Assigned Driver' 
+    }).catch(err => console.warn(err));
+  }, [bookings, profiles, saveBookings]);
 
   const declineBooking = useCallback((bookingId: string) => {
     const nowIso = new Date().toISOString();
@@ -393,6 +508,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return b;
     });
     saveBookings(updated);
+    dbUpdateBooking(bookingId, { status: 'declined' }).catch(err => console.warn(err));
   }, [bookings, saveBookings]);
 
   const rateBooking = useCallback((bookingId: string, rating: number, feedback?: string) => {
@@ -409,6 +525,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return b;
     });
     saveBookings(updated);
+    dbUpdateBooking(bookingId, { rating, rating_feedback: feedback }).catch(err => console.warn(err));
   }, [bookings, saveBookings]);
 
   const recordDonation = useCallback((bookingId: string, amount: number, method: 'cash' | 'qr') => {
@@ -428,6 +545,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return b;
     });
     saveBookings(updated);
+    dbUpdateBooking(bookingId, {
+      donation_amount: amount,
+      donation_method: method,
+      donation_status: method === 'qr' ? 'verified' : 'pending_verification',
+      donation_recorded_at: nowIso,
+    }).catch(err => console.warn(err));
   }, [bookings, saveBookings]);
 
   // Supervisor verifies cash donation handed over by driver
@@ -445,23 +568,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return b;
     });
     saveBookings(updated);
+    dbUpdateBooking(bookingId, { donation_status: 'verified' }).catch(err => console.warn(err));
   }, [bookings, saveBookings]);
 
-  // Export Donation CSV with Monthly Summary Totals (Total in a Month, Total from QR, Total from Cash to Driver)
+  // Export Donation CSV with Monthly Summary Totals
   const exportDonationsCSV = useCallback(() => {
     const donatedBookings = bookings.filter(b => Boolean(b.donation));
 
-    // Calculate monthly totals (within 30 days of simulated date 11 Nov 2026)
-    const SIMULATED_BASELINE_MS = new Date('2026-11-11T12:00:00+08:00').getTime();
-    const isWithinMonth = (dateStr?: string) => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    const isThisMonth = (dateStr?: string) => {
       if (!dateStr) return true;
       const d = new Date(dateStr);
       if (isNaN(d.getTime())) return true;
-      const diffDays = (SIMULATED_BASELINE_MS - d.getTime()) / (1000 * 60 * 60 * 24);
-      return diffDays >= -1 && diffDays <= 30;
+      return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
     };
 
-    const monthDonations = donatedBookings.filter(b => isWithinMonth(b.donation?.timestamp));
+    const monthDonations = donatedBookings.filter(b => isThisMonth(b.donation?.timestamp));
     const totalMonth = monthDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0);
     const qrMonth = monthDonations.filter(b => b.donation?.method === 'qr');
     const totalQrMonth = qrMonth.reduce((sum, b) => sum + (b.donation?.amount || 0), 0);
@@ -503,7 +628,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         `"${b.appointment_time}"`,
         `"${b.date}"`,
         `"${b.passenger_name}"`,
-        `"${b.assigned_driver} (${b.assigned_vehicle.plate})"`,
+        `"${b.assigned_driver || 'Unassigned'} (${b.assigned_vehicle?.plate || 'WVV 4108'})"`,
         `"${d.method === 'cash' ? 'Cash to Driver' : 'DuitNow QR'}"`,
         `"${d.amount.toFixed(2)}"`,
         `"${d.status === 'paid' ? 'Paid / Reconciled' : 'Pledged to Driver'}"`,
@@ -559,15 +684,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Add work log
   const addWorkLog = useCallback((units: number, cardId: string, workerId?: string): CardWorkLog => {
-    const targetWorkerId = workerId || currentUser?.id || profiles[0].id;
-    const worker = profiles.find(p => p.id === targetWorkerId) || profiles[0];
-    const product = products.find(p => p.id === cardId) || products[0];
+    const targetWorkerId = workerId || currentUser?.id || 'unknown';
+    const worker = profiles.find(p => p.id === targetWorkerId) || currentUser;
+    const product = products.find(p => p.id === cardId) || {
+      id: cardId,
+      name: 'Standard Greeting Card',
+      resort_client: 'Beautiful Gate Artisan',
+      piece_rate: 1.50,
+    };
     const earned = Number((units * product.piece_rate).toFixed(2));
     
     const newLog: CardWorkLog = {
       id: `log-${Date.now()}`,
       worker_id: targetWorkerId,
-      worker_name: worker.full_name,
+      worker_name: worker?.full_name || 'Worker',
       card_id: product.id,
       card_name: product.name,
       units_completed: units,
@@ -578,6 +708,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const updated = [newLog, ...workLogs];
     saveWorkLogs(updated);
+
+    // Persist to Supabase if live
+    dbInsertWorkLog(newLog).catch(err => console.warn(err));
+
     return newLog;
   }, [currentUser, profiles, products, workLogs, saveWorkLogs]);
 
@@ -599,13 +733,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Artisan stats calculation helper
   const getArtisanStats = useCallback((workerId: string): ArtisanSummary => {
-    const worker = profiles.find(p => p.id === workerId) || profiles[0];
+    const worker = profiles.find(p => p.id === workerId) || currentUser || {
+      id: workerId,
+      full_name: 'Worker',
+      ic_or_oku_number: '',
+      phone: '',
+      email: '',
+      role: 'customer' as UserRole,
+      mobility_type: 'None' as MobilityType,
+    };
     const logs = workLogs.filter(l => l.worker_id === workerId);
     const todayStr = getTodayDateString();
 
-    const now = new Date('2026-11-10T12:00:00Z');
+    const now = new Date();
     // Start of week (Monday)
-    const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // 0 is Monday
+    const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - dayOfWeek);
     startOfWeek.setHours(0, 0, 0, 0);
@@ -659,7 +801,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       yearUnits,
       logs,
     };
-  }, [profiles, workLogs]);
+  }, [profiles, currentUser, workLogs]);
 
   // Export Payroll CSV for direct bank disbursement
   const exportPayrollCSV = useCallback(() => {
@@ -699,6 +841,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     bookings,
     workLogs,
     isLoaded,
+    isSupabaseLive,
     switchRole,
     login,
     signup,
@@ -723,6 +866,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     bookings,
     workLogs,
     isLoaded,
+    isSupabaseLive,
     switchRole,
     login,
     signup,

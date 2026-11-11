@@ -156,14 +156,14 @@ export default function DriverPage() {
     return profiles.find(p => p.role === 'driver') || currentUser;
   }, [currentUser, profiles]);
 
-  // USER SPEC: "for the driver , it will only receive the task list after the bookings are approved by supervisor"
+  // Approved bookings assigned to driver or all unassigned/driver runs
   const allJohanApprovedBookings = useMemo(() => {
     return bookings.filter(b => 
       b.status !== 'pending' && 
       b.status !== 'declined' && 
-      (!b.assigned_driver || b.assigned_driver === 'Johan bin Ariffin' || b.assigned_driver.toLowerCase().includes('johan'))
+      (!b.assigned_driver || !driverProfile?.full_name || b.assigned_driver === driverProfile.full_name || currentUser?.role === 'admin')
     );
-  }, [bookings]);
+  }, [bookings, driverProfile, currentUser]);
 
   // Counts of approved bookings per day in the upcoming week
   const dayRunsCountMap = useMemo(() => {
@@ -432,7 +432,7 @@ export default function DriverPage() {
 
                 <div className="text-left hidden xs:block pr-1">
                   <p className="text-xs font-black text-white leading-tight group-hover:text-orange-200 transition-colors">
-                    {driverProfile?.full_name || 'Johan bin Ariffin'}
+                    {driverProfile?.full_name || t('nav.driverRole', 'Driver')}
                   </p>
                   <p className="text-[10px] text-orange-200 font-bold">
                     {t('profile.edit', 'Edit Profile')}
