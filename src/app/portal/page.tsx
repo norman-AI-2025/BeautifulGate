@@ -128,7 +128,7 @@ export default function MobileArtisanPortalPage() {
                   />
                 ) : (
                   <span className="font-black text-sm text-[#F37021]">
-                    {currentUser?.full_name ? currentUser.full_name.charAt(0).toUpperCase() : 'S'}
+                    {(currentUser?.full_name?.charAt(0) || 'U').toUpperCase()}
                   </span>
                 )}
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -398,7 +398,7 @@ export default function MobileArtisanPortalPage() {
                             {t('portalStatus.allocatedSeat', 'Allocated Seat:')} <span className="font-bold text-neutral-900">{b.assigned_space}</span>
                           </p>
                           <p className="text-[11px] text-neutral-500 mt-0.5">
-                            {t('portalStatus.pendingVerification', 'Supervisor Faridah Hashim will verify capacity and assign dispatch.')}
+                            {t('portalStatus.pendingVerification', 'Supervisor will verify capacity and assign dispatch.')}
                           </p>
                         </div>
                       </div>

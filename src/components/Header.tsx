@@ -113,7 +113,7 @@ export const Header: React.FC = () => {
                     />
                   ) : (
                     <span className="font-extrabold text-xs text-[#F37021]">
-                      {currentUser.full_name.charAt(0).toUpperCase()}
+                      {(currentUser.full_name?.charAt(0) || 'U').toUpperCase()}
                     </span>
                   )}
                 </div>
