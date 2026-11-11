@@ -715,15 +715,16 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
             <button
               type="submit"
               disabled={selectedSeats.length === 0 || !destQuery.trim() || isDateBlockedByLeave(selectedDay)}
-              className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 shadow-md tap-target transition-all active:scale-[0.99] ${
+              className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-md tap-target transition-all active:scale-[0.99] ${
                 selectedSeats.length === 0 || !destQuery.trim() || isDateBlockedByLeave(selectedDay)
                   ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed shadow-none'
                   : 'bg-[#F37021] hover:bg-[#D9530F] text-white shadow-orange-500/20'
               }`}
             >
-              <span>{isDateBlockedByLeave(selectedDay) ? 'Booking Unavailable (Driver On Leave)' : t('vanModal.confirmBooking', 'Confirm & Submit Booking')}</span>
-              <span className="font-mono bg-white/20 px-2.5 py-0.5 rounded-lg text-xs">
-                {selectedSeats.length} {selectedSeats.length === 1 ? t('vanModal.seat', 'Seat') : t('vanModal.seats', 'Seats')} · {selectedTimeSlot}
+              <span>
+                {isDateBlockedByLeave(selectedDay) 
+                  ? t('timetable.bookingUnavailableDriverLeave', 'Booking Unavailable (Driver On Leave)') 
+                  : t('portal.bookService', 'Book')}
               </span>
             </button>
           </div>

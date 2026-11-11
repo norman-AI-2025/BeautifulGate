@@ -273,15 +273,11 @@ export const TransitDonationModal: React.FC<TransitDonationModalProps> = ({ book
               {/* PAYMENT METHOD DETAILS */}
               {paymentMethod === 'cash' ? (
                 /* OPTION A: CASH TO DRIVER */
-                <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-4 space-y-2.5 text-xs">
-                  <div className="flex items-center gap-2 text-orange-950 font-bold">
-                    <Car className="h-4 w-4 text-[#F37021]" />
-                    <span>{booking.assigned_driver || t('nav.driverRole', 'Assigned Driver')} · {booking.assigned_vehicle?.plate || 'Plate NDC 9751'}</span>
-                  </div>
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-4 space-y-2 text-xs">
                   <p className="text-neutral-700 leading-relaxed text-[11px]">
                     {t('donation.cashDesc', 'Hand cash directly to driver upon pickup or drop-off.')}
                   </p>
-                  <p className="text-[10px] text-orange-900 font-semibold bg-white p-2 rounded-xl border border-orange-200">
+                  <p className="text-[10px] text-neutral-600 font-semibold bg-white p-2.5 rounded-xl border border-neutral-200">
                     {t('donation.driverWillReceipt', 'Driver will collect the donation and log it into the official foundation manifest.')}
                   </p>
                 </div>
