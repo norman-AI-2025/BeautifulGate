@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
@@ -8,12 +8,14 @@ import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { LogOut, User, Shield, Car, HeartHandshake } from 'lucide-react';
 import { UserRole } from '@/types';
+import { ProfileModal } from '@/components/ProfileModal';
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, switchRole, logout } = useApp();
   const { t } = useLanguage();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const handleRoleSwitch = (role: UserRole) => {
     switchRole(role);
@@ -135,24 +137,49 @@ export const Header: React.FC = () => {
           {/* User Session Info */}
           {currentUser ? (
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold text-neutral-900 leading-tight">
-                  {currentUser.full_name}
-                </p>
-                <div className="flex items-center justify-end gap-1.5">
-                  <span className="text-[11px] font-medium uppercase tracking-wider text-neutral-500">
-                    {currentUser.role === 'customer'
-                      ? t('auth.beneficiaryRole', 'Beneficiary')
-                      : currentUser.role === 'driver'
-                      ? t('auth.driverStaffRole', 'Driver')
-                      : t('nav.supervisorRole', 'Supervisor')}
-                  </span>
-                  <span className="text-neutral-300">•</span>
-                  <span className="text-[11px] font-mono text-neutral-500">
-                    {currentUser.ic_or_oku_number}
-                  </span>
+              {/* Profile Card Button (Click to Edit Profile) */}
+              <button
+                type="button"
+                onClick={() => setIsProfileModalOpen(true)}
+                className="flex items-center gap-2.5 p-1 rounded-2xl hover:bg-neutral-100 transition-all tap-target text-left group"
+                title={t('profile.editMyProfile', 'Click to edit your profile and photo')}
+              >
+                <div className="relative h-9 w-9 rounded-full overflow-hidden bg-orange-100 border-2 border-neutral-200 shadow-xs flex items-center justify-center shrink-0 group-hover:border-[#F37021] transition-colors">
+                  {currentUser.avatar_url ? (
+                    <Image
+                      src={currentUser.avatar_url}
+                      alt={currentUser.full_name}
+                      width={36}
+                      height={36}
+                      className="h-full w-full object-cover"
+                      unoptimized={currentUser.avatar_url.startsWith('data:')}
+                    />
+                  ) : (
+                    <span className="font-extrabold text-xs text-[#F37021]">
+                      {currentUser.full_name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
-              </div>
+
+                <div className="text-right hidden sm:block">
+                  <p className="text-xs font-black text-neutral-900 leading-tight group-hover:text-[#F37021] transition-colors">
+                    {currentUser.full_name}
+                  </p>
+                  <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+                      {currentUser.role === 'customer'
+                        ? t('auth.beneficiaryRole', 'Beneficiary')
+                        : currentUser.role === 'driver'
+                        ? t('auth.driverStaffRole', 'Driver')
+                        : t('nav.supervisorRole', 'Supervisor')}
+                    </span>
+                    <span className="text-neutral-300">•</span>
+                    <span className="text-[10px] font-mono text-neutral-500">
+                      {currentUser.ic_or_oku_number}
+                    </span>
+                  </div>
+                </div>
+              </button>
 
               {/* Sign Out Button */}
               <button
@@ -175,6 +202,15 @@ export const Header: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* User Profile Modal */}
+      {isProfileModalOpen && (
+        <ProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          mode="edit_self"
+        />
+      )}
     </header>
   );
 };

@@ -67,6 +67,8 @@ interface AppContextType {
   // Stats helpers
   getArtisanStats: (workerId: string) => ArtisanSummary;
   exportPayrollCSV: () => void;
+  // Profile management
+  updateProfile: (profileId: string, updates: Partial<Profile>) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -95,7 +97,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       const storedProfiles = localStorage.getItem(STORAGE_KEYS.PROFILES);
       if (storedProfiles) {
-        setProfiles(JSON.parse(storedProfiles));
+        const parsed: Profile[] = JSON.parse(storedProfiles);
+        // Merge in any newly added system seed properties if missing in storage
+        const merged = parsed.map(p => {
+          const init = INITIAL_PROFILES.find(ip => ip.id === p.id);
+          return init ? { ...init, ...p } : p;
+        });
+        setProfiles(merged);
       } else {
         localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(INITIAL_PROFILES));
       }
@@ -251,6 +259,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     saveCurrentUser(newProfile);
     return newProfile;
   }, [profiles, saveCurrentUser]);
+
+  // Update profile details and/or avatar photo
+  const updateProfile = useCallback((profileId: string, updates: Partial<Profile>) => {
+    setProfiles(prevProfiles => {
+      const updated = prevProfiles.map(p => {
+        if (p.id === profileId) {
+          return { ...p, ...updates };
+        }
+        return p;
+      });
+      try {
+        localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(updated));
+      } catch (err) {
+        console.warn('Storage error saving profiles', err);
+      }
+      return updated;
+    });
+
+    setCurrentUser(prevUser => {
+      if (prevUser && prevUser.id === profileId) {
+        const updatedUser = { ...prevUser, ...updates };
+        try {
+          localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(updatedUser));
+        } catch (err) {
+          console.warn('Storage error saving current user', err);
+        }
+        return updatedUser;
+      }
+      return prevUser;
+    });
+  }, []);
 
   const logout = useCallback(() => {
     saveCurrentUser(null);
@@ -676,6 +715,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     overrideWorkLog,
     getArtisanStats,
     exportPayrollCSV,
+    updateProfile,
   }), [
     currentUser,
     profiles,
@@ -699,6 +739,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     overrideWorkLog,
     getArtisanStats,
     exportPayrollCSV,
+    updateProfile,
   ]);
 
   return (

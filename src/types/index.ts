@@ -45,6 +45,13 @@ export interface Profile {
   address?: string;
   bank_name?: string;
   bank_account_number?: string;
+  avatar_url?: string;
+  emergency_contact?: string;
+  emergency_phone?: string;
+  driver_license?: string;
+  assigned_vehicle_plate?: string;
+  driver_status?: 'active' | 'on_leave' | 'standby';
+  notes?: string;
 }
 
 export interface TransitBooking {

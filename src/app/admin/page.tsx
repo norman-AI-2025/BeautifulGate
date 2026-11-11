@@ -38,9 +38,17 @@ import {
   QrCode,
   Receipt,
   Calendar,
-  Users
+  Users,
+  Eye,
+  Edit3,
+  Lock,
+  Mail,
+  Camera,
+  Accessibility
 } from 'lucide-react';
-import { TransitBooking, ArtisanSummary, TransitStatus } from '@/types';
+import Image from 'next/image';
+import { ProfileModal } from '@/components/ProfileModal';
+import { TransitBooking, ArtisanSummary, TransitStatus, Profile } from '@/types';
 
 // Helper to normalize and sort time slots chronologically
 const parseTimeToMinutes = (timeStr: string): number => {
@@ -103,9 +111,16 @@ export default function AdminPage() {
   } = useApp();
   const { t } = useLanguage();
 
-  const [activeTab, setActiveTab] = useState<'dispatch' | 'artisans' | 'analytics' | 'donations'>('dispatch');
+  const [activeTab, setActiveTab] = useState<'dispatch' | 'artisans' | 'analytics' | 'donations' | 'directory'>('dispatch');
   const [donationTimeRange, setDonationTimeRange] = useState<'1_week' | '1_month' | '1_year'>('1_month');
   const [donationMethodFilter, setDonationMethodFilter] = useState<'all' | 'qr' | 'cash'>('all');
+
+  // User Directory & Driver Management states
+  const [directorySearchQuery, setDirectorySearchQuery] = useState('');
+  const [directoryRoleFilter, setDirectoryRoleFilter] = useState<'all' | 'customer' | 'driver' | 'admin'>('all');
+  const [selectedProfileForModal, setSelectedProfileForModal] = useState<Profile | null>(null);
+  const [profileModalMode, setProfileModalMode] = useState<'admin_manage_driver' | 'admin_view'>('admin_view');
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Dispatch table filter tab
   const [dispatchFilter, setDispatchFilter] = useState<'all' | 'pending' | 'active' | 'completed'>('all');
@@ -184,6 +199,34 @@ export default function AdminPage() {
       return true;
     });
   }, [donatedBookings, donationTimeRange, donationMethodFilter]);
+
+  // User Directory filtering
+  const filteredProfiles = useMemo(() => {
+    return profiles.filter(p => {
+      if (directoryRoleFilter !== 'all' && p.role !== directoryRoleFilter) return false;
+      if (!directorySearchQuery.trim()) return true;
+      const q = directorySearchQuery.toLowerCase();
+      return (
+        p.full_name.toLowerCase().includes(q) ||
+        p.ic_or_oku_number.toLowerCase().includes(q) ||
+        p.email.toLowerCase().includes(q) ||
+        p.phone.toLowerCase().includes(q) ||
+        (p.address && p.address.toLowerCase().includes(q))
+      );
+    });
+  }, [profiles, directoryRoleFilter, directorySearchQuery]);
+
+  const handleManageDriver = (driverProf: Profile) => {
+    setSelectedProfileForModal(driverProf);
+    setProfileModalMode('admin_manage_driver');
+    setIsProfileModalOpen(true);
+  };
+
+  const handleViewProfile = (userProf: Profile) => {
+    setSelectedProfileForModal(userProf);
+    setProfileModalMode('admin_view');
+    setIsProfileModalOpen(true);
+  };
 
   // Active trips available for dispatch focus
   const activeDispatchesList = useMemo(() => {
@@ -493,6 +536,23 @@ export default function AdminPage() {
                       {donationsCount}
                     </span>
                   )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('directory')}
+                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
+                    activeTab === 'directory'
+                      ? 'bg-[#F37021] text-white font-black shadow-sm'
+                      : 'text-neutral-300 hover:text-white'
+                  }`}
+                >
+                  <Users className="h-4 w-4" />
+                  {t('admin.tabDirectory', 'User Directory & Drivers')}
+                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-black ${
+                    activeTab === 'directory' ? 'bg-white text-[#F37021]' : 'bg-white/20 text-white'
+                  }`}>
+                    {profiles.length}
+                  </span>
                 </button>
               </div>
             </div>
@@ -1732,6 +1792,337 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* ============================================================== */}
+        {/* ======== SECTION E: USER DIRECTORY & DRIVER MANAGEMENT ======== */}
+        {/* ============================================================== */}
+        {activeTab === 'directory' && (
+          <div className="space-y-6">
+            {/* Header & Policy Notice */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl bg-[#F37021] text-white flex items-center justify-center shadow-md">
+                  <Users className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
+                    {t('admin.directoryTitle', 'User Directory & Driver Management')}
+                  </h2>
+                  <p className="text-xs text-neutral-500 font-medium">
+                    {t('admin.directorySubtitle', 'Review registered beneficiary and driver profiles. Administrators can inspect all user details, and directly manage driver credentials, vehicle assignment, and duty status.')}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Policy & Permission Banner */}
+            <div className="rounded-2xl border border-orange-200 bg-orange-50/70 p-4 text-xs flex items-start gap-3 shadow-xs">
+              <ShieldCheck className="h-5 w-5 text-[#F37021] shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <span className="font-extrabold text-orange-950 block">
+                  {t('admin.policyNotice', 'Administrator Clearance: View-only access to beneficiary accounts (personal data managed by user). Full management authority over driver operations.')}
+                </span>
+                <p className="text-neutral-600 leading-relaxed">
+                  Beneficiaries manage their own profile photos, OKU details, and bank accounts. Supervisors hold exclusive authority to edit driver accreditations, vehicle assignments (e.g. Toyota HiAce WVV 4108), driver statuses, and emergency contacts.
+                </p>
+              </div>
+            </div>
+
+            {/* Metric KPI Pills */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs">
+                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">
+                  {t('admin.totalUsers', 'Total Users')}
+                </span>
+                <span className="text-2xl font-black text-neutral-900 font-mono mt-0.5 block">
+                  {profiles.length}
+                </span>
+              </div>
+              <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs">
+                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
+                  {t('admin.totalBeneficiaries', 'Beneficiaries')}
+                </span>
+                <span className="text-2xl font-black text-emerald-800 font-mono mt-0.5 block">
+                  {profiles.filter(p => p.role === 'customer').length}
+                </span>
+              </div>
+              <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs">
+                <span className="text-[10px] font-bold text-[#F37021] uppercase tracking-wider block">
+                  {t('admin.totalDrivers', 'Active Drivers')}
+                </span>
+                <span className="text-2xl font-black text-[#D9530F] font-mono mt-0.5 block">
+                  {profiles.filter(p => p.role === 'driver').length}
+                </span>
+              </div>
+              <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs">
+                <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wider block">
+                  {t('admin.filterAdmins', 'Administrators')}
+                </span>
+                <span className="text-2xl font-black text-purple-900 font-mono mt-0.5 block">
+                  {profiles.filter(p => p.role === 'admin').length}
+                </span>
+              </div>
+            </div>
+
+            {/* Filter Pills & Search Bar */}
+            <div className="rounded-3xl border border-neutral-200 bg-white p-4 sm:p-5 space-y-4 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                {/* Role Tabs */}
+                <div className="flex flex-wrap items-center gap-1.5 p-1 bg-neutral-100 rounded-2xl">
+                  <button
+                    type="button"
+                    onClick={() => setDirectoryRoleFilter('all')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all tap-target ${
+                      directoryRoleFilter === 'all'
+                        ? 'bg-[#F37021] text-white shadow-xs font-black'
+                        : 'text-neutral-600 hover:text-black'
+                    }`}
+                  >
+                    {t('admin.filterAll', 'All Profiles')} ({profiles.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDirectoryRoleFilter('customer')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all tap-target ${
+                      directoryRoleFilter === 'customer'
+                        ? 'bg-[#F37021] text-white shadow-xs font-black'
+                        : 'text-neutral-600 hover:text-black'
+                    }`}
+                  >
+                    {t('admin.filterBeneficiaries', 'Beneficiaries')} ({profiles.filter(p => p.role === 'customer').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDirectoryRoleFilter('driver')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all tap-target ${
+                      directoryRoleFilter === 'driver'
+                        ? 'bg-[#F37021] text-white shadow-xs font-black'
+                        : 'text-neutral-600 hover:text-black'
+                    }`}
+                  >
+                    {t('admin.filterDrivers', 'Drivers')} ({profiles.filter(p => p.role === 'driver').length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDirectoryRoleFilter('admin')}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all tap-target ${
+                      directoryRoleFilter === 'admin'
+                        ? 'bg-[#F37021] text-white shadow-xs font-black'
+                        : 'text-neutral-600 hover:text-black'
+                    }`}
+                  >
+                    {t('admin.filterAdmins', 'Administrators')} ({profiles.filter(p => p.role === 'admin').length})
+                  </button>
+                </div>
+
+                {/* Search Input */}
+                <div className="relative w-full sm:w-72">
+                  <Search className="h-4 w-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={directorySearchQuery}
+                    onChange={(e) => setDirectorySearchQuery(e.target.value)}
+                    placeholder={t('admin.searchDirectoryPlaceholder', 'Search by name, IC/OKU, phone...')}
+                    className="apple-input w-full pl-9 text-xs"
+                  />
+                  {directorySearchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => setDirectorySearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Profiles Table */}
+              <div className="overflow-x-auto rounded-2xl border border-neutral-200">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-neutral-50 text-neutral-500 font-bold uppercase tracking-wider text-[10px] border-b border-neutral-200">
+                    <tr>
+                      <th className="py-3 px-4">User</th>
+                      <th className="py-3 px-4">Role & ID</th>
+                      <th className="py-3 px-4">Contact</th>
+                      <th className="py-3 px-4">Details / Assignment</th>
+                      <th className="py-3 px-4 text-right">Access & Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100 bg-white">
+                    {filteredProfiles.map((p) => {
+                      const isDriver = p.role === 'driver';
+
+                      return (
+                        <tr 
+                          key={p.id}
+                          className="hover:bg-neutral-50/80 transition-colors"
+                        >
+                          {/* User Photo & Name */}
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <div className="flex items-center gap-3">
+                              <div className="h-10 w-10 rounded-2xl overflow-hidden bg-neutral-100 border border-neutral-200 flex items-center justify-center shrink-0">
+                                {p.avatar_url ? (
+                                  <Image
+                                    src={p.avatar_url}
+                                    alt={p.full_name}
+                                    width={40}
+                                    height={40}
+                                    className="h-full w-full object-cover"
+                                    unoptimized={p.avatar_url.startsWith('data:')}
+                                  />
+                                ) : (
+                                  <span className="font-extrabold text-sm text-[#F37021]">
+                                    {p.full_name.charAt(0).toUpperCase()}
+                                  </span>
+                                )}
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-neutral-900 text-sm">
+                                  {p.full_name}
+                                </p>
+                                <p className="text-[11px] text-neutral-500 font-mono">
+                                  {p.id}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Role & ID */}
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <div className="space-y-1">
+                              <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                isDriver
+                                  ? 'bg-[#F37021] text-white'
+                                  : p.role === 'admin'
+                                  ? 'bg-purple-100 text-purple-900 border border-purple-300'
+                                  : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                              }`}>
+                                {isDriver ? <Car className="h-3 w-3" /> : <User className="h-3 w-3" />}
+                                {p.role === 'customer' 
+                                  ? t('auth.beneficiaryRole', 'Beneficiary')
+                                  : isDriver 
+                                  ? t('auth.driverStaffRole', 'Driver')
+                                  : t('nav.supervisorRole', 'Supervisor')}
+                              </span>
+                              <p className="font-mono text-xs text-neutral-700 font-semibold">
+                                {p.ic_or_oku_number}
+                              </p>
+                            </div>
+                          </td>
+
+                          {/* Contact */}
+                          <td className="py-3.5 px-4 whitespace-nowrap">
+                            <div className="space-y-0.5 text-xs">
+                              <p className="font-medium text-neutral-800 flex items-center gap-1.5">
+                                <Phone className="h-3 w-3 text-neutral-400" />
+                                {p.phone}
+                              </p>
+                              <p className="text-neutral-500 font-mono text-[11px] flex items-center gap-1.5">
+                                <Mail className="h-3 w-3 text-neutral-400" />
+                                {p.email}
+                              </p>
+                            </div>
+                          </td>
+
+                          {/* Details / Assignment */}
+                          <td className="py-3.5 px-4">
+                            {isDriver ? (
+                              <div className="space-y-1 text-xs">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-mono font-black text-xs px-2 py-0.5 rounded bg-orange-100 text-orange-950 border border-orange-200">
+                                    {p.assigned_vehicle_plate || 'WVV 4108'}
+                                  </span>
+                                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                                    p.driver_status === 'on_leave'
+                                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
+                                      : p.driver_status === 'standby'
+                                      ? 'bg-blue-100 text-blue-900 border border-blue-300'
+                                      : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                  }`}>
+                                    {p.driver_status === 'on_leave' 
+                                      ? t('admin.onLeaveStatus', 'On Leave')
+                                      : p.driver_status === 'standby'
+                                      ? t('admin.standbyStatus', 'Standby')
+                                      : t('admin.activeStatus', 'Active')}
+                                  </span>
+                                </div>
+                                <p className="text-[11px] text-neutral-500 font-medium truncate max-w-xs">
+                                  {p.driver_license || 'GDL Certified'}
+                                </p>
+                              </div>
+                            ) : p.role === 'customer' ? (
+                              <div className="space-y-1 text-xs">
+                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-neutral-800 bg-neutral-100 px-2 py-0.5 rounded-md">
+                                  <Accessibility className="h-3 w-3 text-[#F37021]" />
+                                  {p.mobility_type}
+                                </span>
+                                {p.address && (
+                                  <p className="text-[11px] text-neutral-500 truncate max-w-xs">
+                                    {p.address}
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-neutral-500 text-xs font-medium">
+                                Headquarters Operations
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Action Column: Manage Driver (editable) vs View Profile (read-only) */}
+                          <td className="py-3.5 px-4 text-right whitespace-nowrap">
+                            {isDriver ? (
+                              <div className="flex flex-col items-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleManageDriver(p)}
+                                  className="px-3.5 py-1.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white font-black text-xs flex items-center gap-1.5 shadow-sm tap-target transition-all active:scale-95"
+                                >
+                                  <Edit3 className="h-3.5 w-3.5" />
+                                  <span>{t('admin.manageDriver', 'Manage Driver')}</span>
+                                </button>
+                                <span className="text-[9px] font-bold text-orange-700 bg-orange-50 px-1.5 py-0.2 rounded">
+                                  {t('admin.manageableBadge', 'Administrator Managed')}
+                                </span>
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleViewProfile(p)}
+                                  className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
+                                >
+                                  <Eye className="h-3.5 w-3.5 text-neutral-500" />
+                                  <span>{t('admin.viewProfile', 'View Profile')}</span>
+                                </button>
+                                <span className="text-[9px] font-medium text-neutral-400 flex items-center gap-0.5">
+                                  <Lock className="h-2.5 w-2.5" />
+                                  {t('admin.readOnlyBadge', 'Read-Only · User Managed')}
+                                </span>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                    {filteredProfiles.length === 0 && (
+                      <tr>
+                        <td colSpan={5} className="py-12 text-center text-neutral-400">
+                          <Users className="mx-auto h-8 w-8 text-neutral-300 mb-2" />
+                          <p className="text-sm font-bold text-neutral-700">
+                            {t('admin.noProfilesFound', 'No user profiles found matching your search.')}
+                          </p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Expandable Artisan Drawer */}
@@ -1739,6 +2130,16 @@ export default function AdminPage() {
         <ArtisanDrawer
           artisan={selectedArtisanForDrawer}
           onClose={() => setSelectedArtisanForDrawer(null)}
+        />
+      )}
+
+      {/* Profile Modal for Viewing or Managing */}
+      {isProfileModalOpen && (
+        <ProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          targetProfile={selectedProfileForModal}
+          mode={profileModalMode}
         />
       )}
     </div>

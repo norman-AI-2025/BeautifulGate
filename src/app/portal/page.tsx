@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { WeeklyTimetable } from '@/components/WeeklyTimetable';
@@ -8,6 +9,7 @@ import { VanFloorPlanModal } from '@/components/VanFloorPlanModal';
 import { LinearStageIndicator } from '@/components/LinearStageIndicator';
 import { ServiceRatingCard } from '@/components/ServiceRatingCard';
 import { TransitDonationModal } from '@/components/TransitDonationModal';
+import { ProfileModal } from '@/components/ProfileModal';
 import { 
   Car, 
   Sparkles, 
@@ -24,7 +26,8 @@ import {
   Star,
   Check,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Camera
 } from 'lucide-react';
 import { TransitBooking } from '@/types';
 
@@ -51,6 +54,7 @@ export default function MobileArtisanPortalPage() {
   const [selectedDonationBooking, setSelectedDonationBooking] = useState<TransitBooking | null>(null);
   // USER SPEC: minimize completed and rated services, click to expand, default minimized
   const [isCompletedExpanded, setIsCompletedExpanded] = useState<boolean>(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
 
   // Workshop logging state
   const [selectedProductId, setSelectedProductId] = useState<string>(products[0]?.id || '');
@@ -107,17 +111,48 @@ export default function MobileArtisanPortalPage() {
       <div className="bg-gradient-to-r from-neutral-950 via-stone-900 to-orange-950 text-white shadow-md sticky top-0 z-30">
         <div className="max-w-2xl mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2">
-            <div>
-              <span className="text-[10px] uppercase font-bold tracking-widest text-[#F37021]">
-                {t('nav.portal', 'Beneficiary Portal')}
-              </span>
-              <h1 className="text-lg font-extrabold tracking-tight">
-                {currentUser?.full_name || 'Siti Nurhaliza'}
-              </h1>
-              <p className="text-xs text-orange-200 flex items-center gap-1.5 mt-0.5">
-                <span className="inline-block h-2 w-2 rounded-full bg-[#F37021]" />
-                {currentUser?.mobility_type || 'Wheelchair Transit'} · {t('common.verified', 'OKU Verified')}
-              </p>
+            <div 
+              onClick={() => setIsProfileModalOpen(true)}
+              className="flex items-center gap-3 cursor-pointer group"
+              title={t('profile.editMyProfile', 'Click to edit your profile and photo')}
+            >
+              <div className="relative h-11 w-11 rounded-2xl overflow-hidden bg-orange-100 border-2 border-orange-400/80 shadow-xs flex items-center justify-center shrink-0 group-hover:border-white transition-colors">
+                {currentUser?.avatar_url ? (
+                  <Image
+                    src={currentUser.avatar_url}
+                    alt={currentUser.full_name}
+                    width={44}
+                    height={44}
+                    className="h-full w-full object-cover"
+                    unoptimized={currentUser.avatar_url.startsWith('data:')}
+                  />
+                ) : (
+                  <span className="font-black text-sm text-[#F37021]">
+                    {currentUser?.full_name ? currentUser.full_name.charAt(0).toUpperCase() : 'S'}
+                  </span>
+                )}
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera className="h-4 w-4 text-white" />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-[#F37021]">
+                    {t('nav.portal', 'Beneficiary Portal')}
+                  </span>
+                  <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-bold group-hover:bg-[#F37021] transition-colors">
+                    {t('profile.edit', 'Edit Profile')}
+                  </span>
+                </div>
+                <h1 className="text-base sm:text-lg font-extrabold tracking-tight group-hover:text-orange-200 transition-colors">
+                  {currentUser?.full_name || 'Siti Nurhaliza'}
+                </h1>
+                <p className="text-xs text-orange-200 flex items-center gap-1.5 mt-0.5">
+                  <span className="inline-block h-2 w-2 rounded-full bg-[#F37021]" />
+                  {currentUser?.mobility_type || 'Wheelchair Transit'} · {t('common.verified', 'OKU Verified')}
+                </p>
+              </div>
             </div>
 
             {/* Main Navigation Segmented Switcher */}
@@ -705,6 +740,15 @@ export default function MobileArtisanPortalPage() {
         <TransitDonationModal
           booking={selectedDonationBooking}
           onClose={() => setSelectedDonationBooking(null)}
+        />
+      )}
+
+      {/* User Profile Modal */}
+      {isProfileModalOpen && (
+        <ProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          mode="edit_self"
         />
       )}
     </div>

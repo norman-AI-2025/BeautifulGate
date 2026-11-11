@@ -20,6 +20,8 @@ export const INITIAL_PROFILES: Profile[] = [
     address: 'No. 18, Jalan SS 2/19, 47300 Petaling Jaya, Selangor',
     bank_name: 'Maybank',
     bank_account_number: '1140 1234 5678',
+    emergency_contact: 'Mansor bin Osman (Father)',
+    emergency_phone: '+60 12-334 1199',
   },
   {
     id: 'user-cust-2',
@@ -32,6 +34,8 @@ export const INITIAL_PROFILES: Profile[] = [
     address: 'Block C-04-12, PPR Taman Medan, 46000 Petaling Jaya, Selangor',
     bank_name: 'CIMB Bank',
     bank_account_number: '7021 9876 5432',
+    emergency_contact: 'Tan Meiling (Daughter)',
+    emergency_phone: '+60 16-554 9922',
   },
   {
     id: 'user-cust-3',
@@ -44,6 +48,8 @@ export const INITIAL_PROFILES: Profile[] = [
     address: 'No. 45, Lorong Maarof, Bangsar, 59000 Kuala Lumpur',
     bank_name: 'Public Bank',
     bank_account_number: '4488 2391 0021',
+    emergency_contact: 'Kavitha a/p Muthusamy (Spouse)',
+    emergency_phone: '+60 17-331 8840',
   },
   {
     id: 'user-cust-4',
@@ -56,6 +62,8 @@ export const INITIAL_PROFILES: Profile[] = [
     address: '22, Jalan Bukit Segambut, 51200 Kuala Lumpur',
     bank_name: 'RHB Bank',
     bank_account_number: '2120 4455 6677',
+    emergency_contact: 'Razak bin Ismail (Father)',
+    emergency_phone: '+60 13-221 0098',
   },
   {
     id: 'user-driver-1',
@@ -65,6 +73,13 @@ export const INITIAL_PROFILES: Profile[] = [
     email: 'johan.driver@beautifulgate.org.my',
     role: 'driver',
     mobility_type: 'None',
+    avatar_url: '/images/driver-johan.jpg',
+    driver_license: 'D-882910-B2 (GDL Public Service)',
+    assigned_vehicle_plate: 'WVV 4108',
+    driver_status: 'active',
+    emergency_contact: 'Noraini binti Yusof (Spouse)',
+    emergency_phone: '+60 12-998 1234',
+    notes: 'Certified in hydraulic tailgate wheelchair restraint systems and CPR/AED first aid.',
   },
   {
     id: 'user-admin-1',
@@ -74,6 +89,8 @@ export const INITIAL_PROFILES: Profile[] = [
     email: 'faridah.hashim@beautifulgate.org.my',
     role: 'admin',
     mobility_type: 'None',
+    emergency_contact: 'Hashim bin Ahmad',
+    emergency_phone: '+60 19-887 6655',
   },
 ];
 

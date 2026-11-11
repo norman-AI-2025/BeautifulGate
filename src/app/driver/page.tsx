@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { ProfileModal } from '@/components/ProfileModal';
 import { 
   Phone, 
   MessageSquare, 
@@ -24,7 +26,8 @@ import {
   CalendarDays,
   AlertCircle,
   Users,
-  Check
+  Check,
+  Camera
 } from 'lucide-react';
 import { TransitBooking, TransitStatus } from '@/types';
 
@@ -139,12 +142,19 @@ const formatDisplayDate = (dateOrYmd: string, lang: string): string => {
 };
 
 export default function DriverPage() {
-  const { bookings, updateBookingStatus } = useApp();
+  const { bookings, updateBookingStatus, currentUser, profiles } = useApp();
   const { t, language } = useLanguage();
 
   // Selected date in weekly calendar view (defaults to today '2026-11-10')
   const [selectedYmd, setSelectedYmd] = useState<string>('2026-11-10');
   const [showCompletedRuns, setShowCompletedRuns] = useState<boolean>(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
+
+  // Driver profile being viewed/edited
+  const driverProfile = useMemo(() => {
+    if (currentUser?.role === 'driver') return currentUser;
+    return profiles.find(p => p.role === 'driver') || currentUser;
+  }, [currentUser, profiles]);
 
   // USER SPEC: "for the driver , it will only receive the task list after the bookings are approved by supervisor"
   const allJohanApprovedBookings = useMemo(() => {
@@ -392,15 +402,43 @@ export default function DriverPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <div className="text-right hidden sm:block">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-orange-300 block">
-                  {t('common.status', 'Queue Status')}
-                </span>
-                <span className="text-xs font-extrabold text-white">
-                  {queueTimeSlots.length} Slots
-                </span>
-              </div>
+            <div className="flex items-center gap-2.5">
+              {/* Driver Profile Button */}
+              <button
+                type="button"
+                onClick={() => setIsProfileModalOpen(true)}
+                className="flex items-center gap-2 p-1 sm:px-2 rounded-2xl bg-white/10 hover:bg-white/20 transition-all tap-target text-left group"
+                title={t('profile.editDriverProfile', 'Edit Driver Profile & Photo')}
+              >
+                <div className="relative h-9 w-9 rounded-xl overflow-hidden bg-orange-100 border border-orange-400 shadow-xs flex items-center justify-center shrink-0">
+                  {driverProfile?.avatar_url ? (
+                    <Image
+                      src={driverProfile.avatar_url}
+                      alt={driverProfile.full_name}
+                      width={36}
+                      height={36}
+                      className="h-full w-full object-cover"
+                      unoptimized={driverProfile.avatar_url.startsWith('data:')}
+                    />
+                  ) : (
+                    <span className="font-black text-xs text-[#F37021]">
+                      {driverProfile?.full_name ? driverProfile.full_name.charAt(0) : 'J'}
+                    </span>
+                  )}
+                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Camera className="h-3.5 w-3.5 text-white" />
+                  </div>
+                </div>
+
+                <div className="text-left hidden xs:block pr-1">
+                  <p className="text-xs font-black text-white leading-tight group-hover:text-orange-200 transition-colors">
+                    {driverProfile?.full_name || 'Johan bin Ariffin'}
+                  </p>
+                  <p className="text-[10px] text-orange-200 font-bold">
+                    {t('profile.edit', 'Edit Profile')}
+                  </p>
+                </div>
+              </button>
             </div>
           </div>
         </div>
@@ -829,6 +867,16 @@ export default function DriverPage() {
           )}
         </div>
       </main>
+
+      {/* Driver Profile Modal */}
+      {isProfileModalOpen && (
+        <ProfileModal
+          isOpen={isProfileModalOpen}
+          onClose={() => setIsProfileModalOpen(false)}
+          targetProfile={driverProfile}
+          mode="edit_self"
+        />
+      )}
     </div>
   );
 }
