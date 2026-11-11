@@ -2635,19 +2635,14 @@ export default function AdminPage() {
                 <label className="block text-xs font-bold text-neutral-700 mb-1">
                   {t('adminTable.collaboratorName', 'Collaborator / Resort Client')}
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
-                    <Building2 className="h-4 w-4" />
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    value={productFormResort}
-                    onChange={(e) => setProductFormResort(e.target.value)}
-                    placeholder="e.g. Pangkor Laut Resort, The Datai Langkawi"
-                    className="apple-input w-full pl-9 text-xs"
-                  />
-                </div>
+                <input
+                  type="text"
+                  required
+                  value={productFormResort}
+                  onChange={(e) => setProductFormResort(e.target.value)}
+                  placeholder="e.g. Pangkor Laut Resort, The Datai Langkawi"
+                  className="apple-input w-full text-xs font-medium"
+                />
               </div>
 
               {/* Card Product / Series Name */}
@@ -2655,19 +2650,14 @@ export default function AdminPage() {
                 <label className="block text-xs font-bold text-neutral-700 mb-1">
                   {t('adminTable.cardSeries', 'Card Product / Series')}
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
-                    <Tag className="h-4 w-4" />
-                  </div>
-                  <input
-                    type="text"
-                    required
-                    value={productFormName}
-                    onChange={(e) => setProductFormName(e.target.value)}
-                    placeholder="e.g. Pangkor Hornbill Note Card"
-                    className="apple-input w-full pl-9 text-xs"
-                  />
-                </div>
+                <input
+                  type="text"
+                  required
+                  value={productFormName}
+                  onChange={(e) => setProductFormName(e.target.value)}
+                  placeholder="e.g. Pangkor Hornbill Note Card"
+                  className="apple-input w-full text-xs font-medium"
+                />
               </div>
 
               {/* Price / Piece (MYR) */}
@@ -2675,22 +2665,17 @@ export default function AdminPage() {
                 <label className="block text-xs font-bold text-neutral-700 mb-1">
                   {t('adminTable.pricePerPiece', 'Price / Piece')} (MYR)
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none font-bold text-neutral-500">
-                    RM
-                  </div>
-                  <input
-                    type="number"
-                    step="0.05"
-                    min="0.05"
-                    max="100.00"
-                    required
-                    value={productFormRate}
-                    onChange={(e) => setProductFormRate(e.target.value)}
-                    placeholder="1.75"
-                    className="apple-input w-full pl-10 font-mono font-bold text-xs"
-                  />
-                </div>
+                <input
+                  type="number"
+                  step="0.05"
+                  min="0.05"
+                  max="100.00"
+                  required
+                  value={productFormRate}
+                  onChange={(e) => setProductFormRate(e.target.value)}
+                  placeholder="1.75"
+                  className="apple-input w-full font-mono font-bold text-xs"
+                />
                 <p className="text-[11px] text-neutral-500 mt-1">
                   Payout credited directly to OKU artisan for each finished piece.
                 </p>
