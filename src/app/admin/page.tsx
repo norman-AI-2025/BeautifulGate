@@ -158,6 +158,61 @@ export default function AdminPage() {
     setProfileToDelete(null);
   };
 
+  // Helper to localize mobility requirement types across languages
+  const getLocalizedMobility = (mobility: string | undefined): string => {
+    switch (mobility) {
+      case 'Manual Wheelchair':
+        return t('profile.mobilityManualWheelchair', 'Manual Wheelchair');
+      case 'Motorized Wheelchair':
+        return t('profile.mobilityMotorizedWheelchair', 'Motorized Wheelchair');
+      case 'Assisted Walk':
+        return t('profile.mobilityAssistedWalk', 'Assisted Walk');
+      case 'None':
+        return t('profile.mobilityNone', 'None');
+      case 'None / Escort':
+        return t('profile.mobilityNoneEscort', 'None / Escort');
+      default:
+        return mobility || t('profile.mobilityNone', 'None');
+    }
+  };
+
+  // Helper to localize driver leave reasons across languages
+  const getLocalizedLeaveReason = (reason: string | undefined): string => {
+    if (!reason) return '';
+    const r = reason.toLowerCase();
+    if (r.includes('annual')) return t('admin.leaveAnnual', 'Annual Leave');
+    if (r.includes('medical') || r.includes('mc') || r.includes('sick')) return t('admin.leaveMedical', 'Medical Leave (MC)');
+    if (r.includes('emergency')) return t('admin.leaveEmergency', 'Personal Emergency');
+    if (r.includes('hospital')) return t('admin.leaveHospital', 'Hospital Follow-up');
+    return reason;
+  };
+
+  // Helper to localize vehicle color across languages
+  const getLocalizedVehicleColor = (color: string | undefined): string => {
+    if (!color) return '';
+    if (color.toLowerCase().includes('pearl white')) return t('admin.colorPearlWhite', 'Pearl White');
+    if (color.toLowerCase().includes('white')) return t('admin.colorWhite', 'White');
+    return color;
+  };
+
+  // Helper to localize vehicle seating description across languages
+  const getLocalizedVehicleSeats = (seats: string | undefined): string => {
+    if (!seats) return '';
+    if (seats.includes('7 Passengers') || seats.includes('Wheelchair Bays')) {
+      return t('admin.vehicleSeatsDesc', '7 Passengers (Row 1: Driver + 1 Pax | Row 2: 4 Regular Seats | Row 3: 2 Wheelchair Bays)');
+    }
+    return seats;
+  };
+
+  // Helper to localize vehicle notes across languages
+  const getLocalizedVehicleNotes = (notes: string | undefined): string => {
+    if (!notes) return t('admin.fleetAssetNotes', 'Fleet vehicle managed by Beautiful Gate Foundation');
+    if (notes.includes('hydraulic boarding lift') || notes.includes('rear hydraulic')) {
+      return t('admin.vehicleNotesDesc', 'Fitted with rear hydraulic boarding lift and floor clamps');
+    }
+    return notes;
+  };
+
 
 
   // Dispatch table filter tab
@@ -1966,7 +2021,7 @@ export default function AdminPage() {
                           {activeVehicle.brand} {activeVehicle.model}
                         </h3>
                         <p className="text-xs text-neutral-500 font-medium">
-                          {activeVehicle.notes || t('admin.fleetAssetNotes', 'Fleet vehicle managed by Beautiful Gate Foundation')}
+                          {getLocalizedVehicleNotes(activeVehicle.notes)}
                         </p>
                       </div>
                     </div>
@@ -2034,7 +2089,7 @@ export default function AdminPage() {
                         <div className="flex items-center gap-2 mt-1">
                           <span className="h-3.5 w-3.5 rounded-full bg-white border-2 border-neutral-400 shadow-xs shrink-0" />
                           <span className="font-bold text-sm text-neutral-900 truncate">
-                            {activeVehicle.color}
+                            {getLocalizedVehicleColor(activeVehicle.color)}
                           </span>
                         </div>
                         <span className="text-[10px] text-neutral-500 font-medium block mt-1.5 truncate">
@@ -2050,7 +2105,7 @@ export default function AdminPage() {
                           {t('admin.accessibleLayout', 'Accessible Layout')}
                         </span>
                         <p className="text-[10px] text-neutral-600 mt-1 font-medium leading-relaxed line-clamp-3">
-                          {activeVehicle.seats}
+                          {getLocalizedVehicleSeats(activeVehicle.seats)}
                         </p>
                       </div>
                     </div>
@@ -2106,7 +2161,7 @@ export default function AdminPage() {
                         </div>
                         {leave.reason && (
                           <p className="text-xs text-neutral-600 font-medium">
-                            {t('admin.leaveReasonLabel', 'Reason')}: {leave.reason}
+                            {t('admin.leaveReasonLabel', 'Reason')}: {getLocalizedLeaveReason(leave.reason)}
                           </p>
                         )}
                         {leave.approved_by && (
@@ -2414,7 +2469,7 @@ export default function AdminPage() {
                                 <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="inline-flex items-center gap-1 text-[11px] font-bold text-neutral-800 bg-neutral-100 px-2 py-0.5 rounded-md">
                                     <Accessibility className="h-3 w-3 text-[#F37021]" />
-                                    {p.mobility_type}
+                                    {getLocalizedMobility(p.mobility_type)}
                                   </span>
                                   <span className="text-[10px] font-bold text-neutral-500">
                                     {p.beneficiary_type === 'non_resident'
@@ -2457,7 +2512,7 @@ export default function AdminPage() {
                                         className="px-2.5 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1 tap-target"
                                       >
                                         <Edit3 className="h-3 w-3" />
-                                        <span>{t('common.edit', 'Review')}</span>
+                                        <span>{t('admin.reviewStaff', 'Review')}</span>
                                       </button>
                                     </>
                                   ) : (

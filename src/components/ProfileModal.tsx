@@ -132,6 +132,23 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     onClose();
   };
 
+  const getLocalizedMobilityOption = (m: MobilityType): string => {
+    switch (m) {
+      case 'Manual Wheelchair':
+        return t('profile.mobilityManualWheelchair', 'Manual Wheelchair');
+      case 'Motorized Wheelchair':
+        return t('profile.mobilityMotorizedWheelchair', 'Motorized Wheelchair');
+      case 'Assisted Walk':
+        return t('profile.mobilityAssistedWalk', 'Assisted Walk');
+      case 'None':
+        return t('profile.mobilityNone', 'None');
+      case 'None / Escort':
+        return t('profile.mobilityNoneEscort', 'None / Escort');
+      default:
+        return m;
+    }
+  };
+
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -496,7 +513,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   className="apple-input w-full font-bold disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
                 >
                   {MOBILITY_OPTIONS.map((m) => (
-                    <option key={m} value={m}>{m}</option>
+                    <option key={m} value={m}>{getLocalizedMobilityOption(m)}</option>
                   ))}
                 </select>
               </div>
