@@ -148,16 +148,6 @@ export const generateCurrentWeekDays = (): WeekDayItem[] => {
   return days;
 };
 
-const WEEK_DAYS: WeekDayItem[] = [
-  { ymd: '2026-11-09', key: 'Monday, 9 Nov 2026', dayNameEn: 'Mon', dayNameZh: '周一', dayNameMs: 'Isn', dateNum: '9 Nov', isToday: false },
-  { ymd: '2026-11-10', key: 'Tuesday, 10 Nov 2026', dayNameEn: 'Tue', dayNameZh: '周二', dayNameMs: 'Sel', dateNum: '10 Nov', isToday: false },
-  { ymd: '2026-11-11', key: 'Wednesday, 11 Nov 2026', dayNameEn: 'Wed', dayNameZh: '周三', dayNameMs: 'Rab', dateNum: '11 Nov', isToday: false },
-  { ymd: '2026-11-12', key: 'Thursday, 12 Nov 2026', dayNameEn: 'Thu', dayNameZh: '周四', dayNameMs: 'Kha', dateNum: '12 Nov', isToday: true },
-  { ymd: '2026-11-13', key: 'Friday, 13 Nov 2026', dayNameEn: 'Fri', dayNameZh: '周五', dayNameMs: 'Jum', dateNum: '13 Nov', isToday: false },
-  { ymd: '2026-11-14', key: 'Saturday, 14 Nov 2026', dayNameEn: 'Sat', dayNameZh: '周六', dayNameMs: 'Sab', dateNum: '14 Nov', isToday: false },
-  { ymd: '2026-11-15', key: 'Sunday, 15 Nov 2026', dayNameEn: 'Sun', dayNameZh: '周日', dayNameMs: 'Ahd', dateNum: '15 Nov', isToday: false },
-];
-
 const getDayLabel = (d: WeekDayItem, lang: string): string => {
   if (lang === 'zh') return d.dayNameZh;
   if (lang === 'ms') return d.dayNameMs;
@@ -166,30 +156,18 @@ const getDayLabel = (d: WeekDayItem, lang: string): string => {
 
 const formatDisplayDate = (dateOrYmd: string, lang: string): string => {
   const ymd = normalizeDateToYMD(dateOrYmd);
-  const now = new Date();
-  const todayYmd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const [y, m, d] = ymd.split('-').map(Number);
+  const dateObj = new Date(y, (m || 1) - 1, d || 1);
 
-  if (lang === 'zh') {
-    if (ymd === todayYmd) return '今天 (Today)';
-    if (ymd === '2026-11-10') return '11月10日 (周二)';
-    if (ymd === '2026-11-11') return '11月11日 (周三)';
-    if (ymd === '2026-11-12') return '11月12日 (周四)';
-    if (ymd === '2026-11-13') return '11月13日 (周五)';
-    if (ymd === '2026-11-14') return '11月14日 (周六)';
-    if (ymd === '2026-11-15') return '11月15日 (周日)';
-  }
-  if (lang === 'ms') {
-    if (ymd === todayYmd) return 'Hari Ini (Today)';
-    if (ymd === '2026-11-10') return 'Sel, 10 Nov 2026';
-    if (ymd === '2026-11-11') return 'Rab, 11 Nov 2026';
-    if (ymd === '2026-11-12') return 'Kha, 12 Nov 2026';
-    if (ymd === '2026-11-13') return 'Jum, 13 Nov 2026';
-    if (ymd === '2026-11-14') return 'Sab, 14 Nov 2026';
-    if (ymd === '2026-11-15') return 'Ahd, 15 Nov 2026';
-  }
-  if (ymd === todayYmd) return `Today · ${dateOrYmd.replace(/,?\s*\d{4}$/, '')}`;
-  const day = WEEK_DAYS.find(d => d.ymd === ymd);
-  return day ? day.key : dateOrYmd;
+  if (isNaN(dateObj.getTime())) return dateOrYmd;
+
+  const locale = lang === 'zh' ? 'zh-CN' : lang === 'ms' ? 'ms-MY' : 'en-GB';
+  return dateObj.toLocaleDateString(locale, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric'
+  });
 };
 
 export default function DriverPage() {
@@ -218,8 +196,9 @@ export default function DriverPage() {
     }
   }, [isLoaded, currentUser, router]);
 
-  const [weekDaysList, setWeekDaysList] = useState<WeekDayItem[]>(WEEK_DAYS);
-  const [selectedYmd, setSelectedYmd] = useState<string>('2026-11-12');
+  const [weekDaysList, setWeekDaysList] = useState<WeekDayItem[]>([]);
+  const [selectedYmd, setSelectedYmd] = useState<string>('');
+  const [leaveDate, setLeaveDate] = useState<string>('');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState<boolean>(false);
   const [cashDonationModalBooking, setCashDonationModalBooking] = useState<TransitBooking | null>(null);
@@ -231,6 +210,7 @@ export default function DriverPage() {
     const todayItem = liveWeek.find(d => d.isToday) || liveWeek[0];
     if (todayItem) {
       setSelectedYmd(todayItem.ymd);
+      setLeaveDate(todayItem.ymd);
     }
   }, []);
 
@@ -255,8 +235,6 @@ export default function DriverPage() {
       setCashDonationModalBooking(pendingCashDonationBooking);
     }
   }, [pendingCashDonationBooking, cashDonationModalBooking]);
-
-  const [leaveDate, setLeaveDate] = useState<string>('2026-11-12');
   const [leaveReason, setLeaveReason] = useState<string>('');
   const [leaveSubmitted, setLeaveSubmitted] = useState<boolean>(false);
   const [leaveError, setLeaveError] = useState<string>('');

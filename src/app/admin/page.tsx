@@ -259,15 +259,13 @@ export default function AdminPage() {
   const totalDonationsAmount = useMemo(() => donatedBookings.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [donatedBookings]);
   const donationsCount = donatedBookings.length;
 
-  // Simulated base date (11 Nov 2026) for deterministic hydration and prerendering
-  const SIMULATED_BASELINE_MS = new Date('2026-11-11T12:00:00+08:00').getTime();
-
   // Helper to test if a donation falls within the time range: 1 week (7d), 1 month (30d), 1 year (365d)
   const isWithinTimeRange = (dateStr?: string, range: '1_week' | '1_month' | '1_year' = '1_month') => {
     if (!dateStr) return true;
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return true;
-    const diffDays = (SIMULATED_BASELINE_MS - d.getTime()) / (1000 * 60 * 60 * 24);
+    const nowMs = Date.now();
+    const diffDays = Math.abs(nowMs - d.getTime()) / (1000 * 60 * 60 * 24);
 
     if (range === '1_week') return diffDays <= 7;
     if (range === '1_month') return diffDays <= 30;
@@ -524,8 +522,13 @@ export default function AdminPage() {
   }, [registeredArtisans, searchQuery]);
 
   // KPI Summary for Analytics
+  const [currentYearMonth, setCurrentYearMonth] = useState<string>('');
+  useEffect(() => {
+    setCurrentYearMonth(new Date().toISOString().slice(0, 7));
+  }, []);
+
   const totalCardsMonth = workLogs
-    .filter(l => l.logged_date.startsWith('2026-11'))
+    .filter(l => currentYearMonth ? l.logged_date.startsWith(currentYearMonth) : true)
     .reduce((sum, l) => sum + l.units_completed, 0);
 
   const totalCardsYear = workLogs

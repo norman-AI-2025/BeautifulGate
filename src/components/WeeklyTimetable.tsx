@@ -198,16 +198,16 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
     
     const dayName = dayNames[d.getDay()];
     const dateFormatted = `${day} ${shortMonths[month]}, ${year}`;
-    const isHoliday = isoDate === '2026-11-09';
+    const now = new Date();
+    const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
     const customDay: DaySchedule = {
       key: `cal-${isoDate}`,
       name: dayName,
       dateStr: dateFormatted,
       isoDate,
-      isHoliday,
-      holidayReason: isHoliday ? 'HARI DEEPAVALI' : undefined,
-      isToday: isoDate === '2026-11-10',
+      isHoliday: false,
+      isToday: isoDate === todayIso,
     };
 
     setSelectedDayObj(customDay);
@@ -382,7 +382,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
                 const activeNow = nowDate || new Date(2026, 10, 10);
                 const todayYmd = `${activeNow.getFullYear()}-${String(activeNow.getMonth() + 1).padStart(2, '0')}-${String(activeNow.getDate()).padStart(2, '0')}`;
                 const isToday = dayIso === todayYmd;
-                const isHoliday = dayIso === '2026-11-09';
+                const isHoliday = false;
                 const isUpcoming = dayIso >= todayYmd;
 
                 return (
