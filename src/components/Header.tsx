@@ -99,6 +99,17 @@ export const Header: React.FC = () => {
                 </div>
               </button>
 
+              {/* Explicit Edit Profile Button */}
+              <button
+                type="button"
+                onClick={() => setIsProfileModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-[#F37021] text-[#F37021] hover:text-white border border-orange-200 text-xs font-bold transition-all tap-target shadow-xs"
+                title={t('profile.editMyProfile', 'Click to edit your profile and photo')}
+              >
+                <User className="h-3.5 w-3.5" />
+                <span>{t('profile.edit', 'Edit Profile')}</span>
+              </button>
+
               {/* Sign Out Button */}
               <button
                 onClick={handleLogout}

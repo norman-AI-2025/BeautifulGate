@@ -46,13 +46,22 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   targetProfile,
   mode = 'edit_self',
 }) => {
-  const { currentUser, updateProfile } = useApp();
+  const { currentUser, profiles, updateProfile } = useApp();
   const { t } = useLanguage();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Active profile being edited or viewed
-  const profile = targetProfile || currentUser;
+  // Active profile being edited or viewed (with fallback so modal always pops up)
+  const profile = targetProfile || currentUser || profiles[0] || {
+    id: 'user-default',
+    full_name: 'Beneficiary User',
+    ic_or_oku_number: 'OKU-PENDING',
+    phone: '',
+    email: 'user@beautifulgate.org.my',
+    role: 'customer' as UserRole,
+    mobility_type: 'Manual Wheelchair' as MobilityType,
+    is_approved: true,
+  };
 
   // Form states
   const [fullName, setFullName] = useState('');

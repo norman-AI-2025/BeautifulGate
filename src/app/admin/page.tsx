@@ -97,6 +97,7 @@ interface DispatchSlotGroup {
 
 export default function AdminPage() {
   const { 
+    currentUser,
     bookings, 
     profiles, 
     products, 
@@ -121,7 +122,7 @@ export default function AdminPage() {
   const [directorySearchQuery, setDirectorySearchQuery] = useState('');
   const [directoryRoleFilter, setDirectoryRoleFilter] = useState<'all' | 'customer' | 'driver' | 'admin' | 'pending_approval'>('all');
   const [selectedProfileForModal, setSelectedProfileForModal] = useState<Profile | null>(null);
-  const [profileModalMode, setProfileModalMode] = useState<'admin_manage_driver' | 'admin_view'>('admin_view');
+  const [profileModalMode, setProfileModalMode] = useState<'admin_manage_driver' | 'admin_view' | 'edit_self'>('admin_view');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Dispatch table filter tab
@@ -486,9 +487,37 @@ export default function AdminPage() {
                   {t('common.verified', 'Admin Dispatch Active')}
                 </span>
               </div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-1">
-                Beautiful Gate Operations
-              </h1>
+              <div className="flex items-center justify-between sm:justify-start gap-4 mt-1">
+                <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
+                  Beautiful Gate Operations
+                </h1>
+                {currentUser && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedProfileForModal(currentUser);
+                      setProfileModalMode('edit_self');
+                      setIsProfileModalOpen(true);
+                    }}
+                    className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white transition-all tap-target group"
+                    title={t('profile.editMyProfile', 'Click to edit your profile and photo')}
+                  >
+                    <div className="relative h-6 w-6 rounded-full overflow-hidden bg-orange-100 border border-orange-400 flex items-center justify-center shrink-0">
+                      {currentUser.avatar_url ? (
+                        <Image src={currentUser.avatar_url} alt={currentUser.full_name} width={24} height={24} className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="font-extrabold text-[10px] text-[#F37021]">
+                          {currentUser.full_name?.charAt(0) || 'A'}
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-orange-200 font-bold group-hover:text-white flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      {t('profile.edit', 'Edit Profile')}
+                    </span>
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Top-Level Navigation Bar */}
@@ -2172,25 +2201,55 @@ export default function AdminPage() {
                                     <span>{t('admin.approveSupervisor', 'Approve Admin')}</span>
                                   </button>
                                 )}
-                                <button
-                                  type="button"
-                                  onClick={() => handleViewProfile(p)}
-                                  className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
-                                >
-                                  <Eye className="h-3.5 w-3.5 text-neutral-500" />
-                                  <span>{t('admin.viewProfile', 'View Profile')}</span>
-                                </button>
+                                {p.id === currentUser?.id ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedProfileForModal(p);
+                                      setProfileModalMode('edit_self');
+                                      setIsProfileModalOpen(true);
+                                    }}
+                                    className="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-[#F37021] text-[#F37021] hover:text-white border border-orange-200 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
+                                  >
+                                    <User className="h-3.5 w-3.5" />
+                                    <span>{t('profile.edit', 'Edit Profile')}</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleViewProfile(p)}
+                                    className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
+                                  >
+                                    <Eye className="h-3.5 w-3.5 text-neutral-500" />
+                                    <span>{t('admin.viewProfile', 'View Profile')}</span>
+                                  </button>
+                                )}
                               </div>
                             ) : (
                               <div className="flex flex-col items-end gap-1">
-                                <button
-                                  type="button"
-                                  onClick={() => handleViewProfile(p)}
-                                  className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
-                                >
-                                  <Eye className="h-3.5 w-3.5 text-neutral-500" />
-                                  <span>{t('admin.viewProfile', 'View Profile')}</span>
-                                </button>
+                                {p.id === currentUser?.id ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setSelectedProfileForModal(p);
+                                      setProfileModalMode('edit_self');
+                                      setIsProfileModalOpen(true);
+                                    }}
+                                    className="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-[#F37021] text-[#F37021] hover:text-white border border-orange-200 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
+                                  >
+                                    <User className="h-3.5 w-3.5" />
+                                    <span>{t('profile.edit', 'Edit Profile')}</span>
+                                  </button>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleViewProfile(p)}
+                                    className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
+                                  >
+                                    <Eye className="h-3.5 w-3.5 text-neutral-500" />
+                                    <span>{t('admin.viewProfile', 'View Profile')}</span>
+                                  </button>
+                                )}
                                 <span className="text-[9px] font-medium text-neutral-400 flex items-center gap-0.5">
                                   <Lock className="h-2.5 w-2.5" />
                                   {t('admin.readOnlyBadge', 'Read-Only · User Managed')}
