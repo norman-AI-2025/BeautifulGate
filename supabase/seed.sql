@@ -6,12 +6,36 @@
 -- Execute in Supabase SQL Editor (Dashboard -> SQL Editor -> New Query -> Run)
 -- ==============================================================================
 
--- Ensure extended staff profile columns exist
+-- 1. Ensure all required columns exist on the profiles table (idempotent migrations)
+alter table public.profiles add column if not exists is_approved boolean default true;
+alter table public.profiles add column if not exists driver_status text default 'active';
+alter table public.profiles add column if not exists driver_license text;
+alter table public.profiles add column if not exists assigned_vehicle_plate text;
+alter table public.profiles add column if not exists notes text;
 alter table public.profiles add column if not exists chinese_name text;
 alter table public.profiles add column if not exists epf_number text;
+alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists bank_name text;
+alter table public.profiles add column if not exists bank_account_number text;
+alter table public.profiles add column if not exists address text;
+alter table public.profiles add column if not exists emergency_contact text;
+alter table public.profiles add column if not exists emergency_phone text;
+alter table public.profiles add column if not exists mobility_type text default 'None';
+
+-- Ensure all required columns exist on transit_bookings
+alter table public.transit_bookings add column if not exists is_approved boolean default true;
+alter table public.transit_bookings add column if not exists destination_lat double precision;
+alter table public.transit_bookings add column if not exists destination_lon double precision;
+alter table public.transit_bookings add column if not exists destination_verified boolean default false;
+alter table public.transit_bookings add column if not exists rating integer;
+alter table public.transit_bookings add column if not exists feedback text;
+alter table public.transit_bookings add column if not exists donation_amount numeric(10,2);
+alter table public.transit_bookings add column if not exists donation_method text;
+alter table public.transit_bookings add column if not exists donation_verified boolean default false;
+alter table public.transit_bookings add column if not exists donation_verified_at timestamptz;
 
 -- ==============================================================================
--- 1. ADMINISTRATOR ACCOUNT: Tan Bee Chian (陳美珍)
+-- 2. ADMINISTRATOR ACCOUNT: Tan Bee Chian (陳美珍)
 -- Role: Administrator with permissions across Van Transit, Workshop, & Directory
 -- ==============================================================================
 insert into public.profiles (
@@ -75,7 +99,7 @@ insert into public.profiles (
   updated_at = timezone('utc'::text, now());
 
 -- ==============================================================================
--- 2. VAN DRIVER ACCOUNT: Wong Kok Fu
+-- 3. VAN DRIVER ACCOUNT: Wong Kok Fu
 -- Role: Van Driver (Standby / Pending Administrator Onboarding)
 -- ==============================================================================
 insert into public.profiles (
@@ -131,4 +155,5 @@ insert into public.profiles (
   email = excluded.email,
   address = excluded.address,
   notes = excluded.notes,
+  is_approved = excluded.is_approved,
   updated_at = timezone('utc'::text, now());
