@@ -27,7 +27,38 @@ export const INITIAL_DRIVER_LEAVES: DriverLeave[] = [];
 // Clean production state - zero mock data
 export const INITIAL_PROFILES: Profile[] = [];
 
-export const INITIAL_PRODUCTS: CardProduct[] = [];
+export const INITIAL_PRODUCTS: CardProduct[] = [
+  {
+    id: 'prod-pangkor-hornbill',
+    name: 'Pangkor Hornbill Note Card',
+    resort_client: 'Pangkor Laut Resort',
+    piece_rate: 1.75,
+  },
+  {
+    id: 'prod-datai-botanical',
+    name: 'Botanical Welcome Card',
+    resort_client: 'The Datai Langkawi',
+    piece_rate: 1.50,
+  },
+  {
+    id: 'prod-eo-batik',
+    name: 'Heritage Batik Greeting Card',
+    resort_client: 'Eastern & Oriental Penang',
+    piece_rate: 1.80,
+  },
+  {
+    id: 'prod-banjaran-rainforest',
+    name: 'Rainforest Thank You Card',
+    resort_client: 'The Banjaran Hotsprings',
+    piece_rate: 2.00,
+  },
+  {
+    id: 'prod-oneonly-orchid',
+    name: 'Coastal Orchid Gift Card',
+    resort_client: 'One&Only Desaru Coast',
+    piece_rate: 2.20,
+  },
+];
 
 // Today's date reference helper
 export const getTodayDateString = (): string => {

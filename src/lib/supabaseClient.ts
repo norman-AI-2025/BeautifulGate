@@ -194,6 +194,39 @@ export async function dbFetchProducts(): Promise<CardProduct[] | null> {
   }));
 }
 
+export async function dbUpsertProduct(product: CardProduct): Promise<boolean> {
+  if (!supabase) return false;
+  const payload = {
+    id: product.id,
+    name: product.name,
+    resort_client: product.resort_client,
+    piece_rate: Number(product.piece_rate),
+  };
+  const { error } = await supabase
+    .from('card_products')
+    .upsert(payload, { onConflict: 'id' });
+
+  if (error) {
+    console.error('Supabase upsertProduct error:', error);
+    return false;
+  }
+  return true;
+}
+
+export async function dbDeleteProduct(productId: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase
+    .from('card_products')
+    .delete()
+    .eq('id', productId);
+
+  if (error) {
+    console.error('Supabase deleteProduct error:', error);
+    return false;
+  }
+  return true;
+}
+
 export async function dbFetchWorkLogs(): Promise<CardWorkLog[] | null> {
   if (!supabase) return null;
   const { data, error } = await supabase

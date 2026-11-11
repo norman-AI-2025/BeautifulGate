@@ -34,6 +34,8 @@ import {
   dbInsertBooking,
   dbUpdateBooking,
   dbFetchProducts,
+  dbUpsertProduct,
+  dbDeleteProduct,
   dbFetchWorkLogs,
   dbInsertWorkLog,
   dbFetchVehicles,
@@ -97,6 +99,10 @@ interface AppContextType {
   // Vehicle management
   vehicles: Vehicle[];
   updateVehicle: (vehicleId: string, updates: Partial<Vehicle>) => Promise<boolean> | boolean;
+  // Workshop Collaborator & Product management
+  updateProduct: (productId: string, updates: Partial<CardProduct>) => Promise<boolean>;
+  addProduct: (newProduct: Omit<CardProduct, 'id'>) => Promise<CardProduct>;
+  deleteProduct: (productId: string) => Promise<boolean>;
   // Driver Leave management
   driverLeaves: DriverLeave[];
   requestDriverLeave: (data: { date: string; reason?: string }) => Promise<DriverLeave> | DriverLeave;
@@ -114,6 +120,7 @@ const STORAGE_KEYS = {
   PROFILES: 'bg_profiles_v2',
   VEHICLES: 'bg_vehicles_v2',
   DRIVER_LEAVES: 'bg_driver_leaves_v2',
+  PRODUCTS: 'bg_card_products_v2',
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -168,6 +175,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
             if (sbProducts && sbProducts.length > 0) {
               setProducts(sbProducts);
+              try { localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(sbProducts)); } catch {}
             }
             if (sbWorkLogs) {
               setWorkLogs(sbWorkLogs);
@@ -228,6 +236,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
                   if (refreshed && isSubscribed) setDriverLeaves(refreshed);
                 }
               )
+              .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'card_products' },
+                async () => {
+                  const refreshed = await dbFetchProducts();
+                  if (refreshed && refreshed.length > 0 && isSubscribed) setProducts(refreshed);
+                }
+              )
               .subscribe();
           }
         } catch (err) {
@@ -261,6 +277,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const storedLeaves = localStorage.getItem(STORAGE_KEYS.DRIVER_LEAVES);
           if (storedLeaves) {
             setDriverLeaves(JSON.parse(storedLeaves));
+          }
+
+          const storedProducts = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+          if (storedProducts) {
+            setProducts(JSON.parse(storedProducts));
           }
         } catch (e) {
           console.warn('LocalStorage error', e);
@@ -513,6 +534,69 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return true;
     }
     return false;
+  }, []);
+
+  // Workshop Collaborator & Product management
+  const updateProduct = useCallback(async (productId: string, updates: Partial<CardProduct>): Promise<boolean> => {
+    let targetUpdated: CardProduct | null = null;
+    setProducts(prev => {
+      const updatedList = prev.map(p => {
+        if (p.id === productId) {
+          targetUpdated = { ...p, ...updates };
+          return targetUpdated;
+        }
+        return p;
+      });
+      try {
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updatedList));
+      } catch (e) {
+        console.warn(e);
+      }
+      return updatedList;
+    });
+
+    if (targetUpdated) {
+      await dbUpsertProduct(targetUpdated);
+      return true;
+    }
+    return false;
+  }, []);
+
+  const addProduct = useCallback(async (newProductData: Omit<CardProduct, 'id'>): Promise<CardProduct> => {
+    const newProduct: CardProduct = {
+      id: `prod-${Date.now()}`,
+      name: newProductData.name,
+      resort_client: newProductData.resort_client,
+      piece_rate: Number(newProductData.piece_rate) || 1.50,
+    };
+
+    setProducts(prev => {
+      const updatedList = [newProduct, ...prev];
+      try {
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updatedList));
+      } catch (e) {
+        console.warn(e);
+      }
+      return updatedList;
+    });
+
+    await dbUpsertProduct(newProduct);
+    return newProduct;
+  }, []);
+
+  const deleteProduct = useCallback(async (productId: string): Promise<boolean> => {
+    setProducts(prev => {
+      const updatedList = prev.filter(p => p.id !== productId);
+      try {
+        localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(updatedList));
+      } catch (e) {
+        console.warn(e);
+      }
+      return updatedList;
+    });
+
+    await dbDeleteProduct(productId);
+    return true;
   }, []);
 
   // Driver leave requests
@@ -1092,6 +1176,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     rejectDriverAccount,
     vehicles,
     updateVehicle,
+    updateProduct,
+    addProduct,
+    deleteProduct,
     driverLeaves,
     requestDriverLeave,
     approveDriverLeave,
@@ -1126,6 +1213,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     rejectDriverAccount,
     vehicles,
     updateVehicle,
+    updateProduct,
+    addProduct,
+    deleteProduct,
     driverLeaves,
     requestDriverLeave,
     approveDriverLeave,

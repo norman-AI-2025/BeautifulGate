@@ -44,7 +44,10 @@ import {
   Lock,
   Mail,
   Camera,
-  Accessibility
+  Accessibility,
+  Plus,
+  Trash2,
+  Tag
 } from 'lucide-react';
 import Image from 'next/image';
 import { ProfileModal } from '@/components/ProfileModal';
@@ -117,12 +120,24 @@ export default function AdminPage() {
     driverLeaves,
     approveDriverLeave,
     rejectDriverLeave,
+    updateProduct,
+    addProduct,
+    deleteProduct,
   } = useApp();
   const { t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<'dispatch' | 'artisans' | 'analytics' | 'donations' | 'directory'>('dispatch');
   const [donationTimeRange, setDonationTimeRange] = useState<'1_week' | '1_month' | '1_year'>('1_month');
   const [donationMethodFilter, setDonationMethodFilter] = useState<'all' | 'qr' | 'cash'>('all');
+
+  // Workshop Collaborator & Product management states
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+  const [selectedProductForEdit, setSelectedProductForEdit] = useState<any | null>(null);
+  const [productFormName, setProductFormName] = useState('');
+  const [productFormResort, setProductFormResort] = useState('');
+  const [productFormRate, setProductFormRate] = useState('');
+  const [productSaveFeedback, setProductSaveFeedback] = useState<string | null>(null);
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
 
   // User Directory & Driver Management states
   const [directorySearchQuery, setDirectorySearchQuery] = useState('');
@@ -1361,7 +1376,87 @@ export default function AdminPage() {
         {/* ============================================================== */}
         {activeTab === 'artisans' && (
           <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            {/* WORKSHOP COLLABORATORS & PIECE-RATE CATALOG */}
+            <div className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-100">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="h-2 w-2 rounded-full bg-[#F37021]" />
+                    <h2 className="text-lg sm:text-xl font-black tracking-tight text-neutral-900">
+                      {t('adminTable.workshopCatalogTitle', 'Workshop Collaborators & Piece-Rate Catalog')}
+                    </h2>
+                  </div>
+                  <p className="text-xs text-neutral-500 mt-1">
+                    {t('adminTable.workshopCatalogDesc', 'Manage corporate & resort partners, craft card series, and piece-rate payouts per card.')}
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedProductForEdit(null);
+                    setProductFormName('');
+                    setProductFormResort('');
+                    setProductFormRate('1.75');
+                    setProductSaveFeedback(null);
+                    setIsProductModalOpen(true);
+                  }}
+                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-bold shadow-xs tap-target transition-all active:scale-95 shrink-0 self-start sm:self-auto"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>{t('adminTable.addCollaborator', 'Add Collaborator / Card')}</span>
+                </button>
+              </div>
+
+              {/* Grid of Partner Products */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
+                {products.map((p) => (
+                  <div
+                    key={p.id}
+                    className="group rounded-2xl border border-neutral-200 hover:border-orange-300 bg-neutral-50/60 hover:bg-orange-50/30 p-4 transition-all duration-200 shadow-2xs hover:shadow-xs flex flex-col justify-between space-y-3"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-100/80 text-orange-950 font-bold text-[11px] border border-orange-200">
+                          <Building2 className="h-3 w-3 text-[#F37021]" />
+                          <span className="truncate max-w-[160px]">{p.resort_client}</span>
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedProductForEdit(p);
+                            setProductFormName(p.name);
+                            setProductFormResort(p.resort_client);
+                            setProductFormRate(p.piece_rate.toString());
+                            setProductSaveFeedback(null);
+                            setIsProductModalOpen(true);
+                          }}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-[#F37021] hover:text-[#D9530F] px-2 py-1 rounded-lg hover:bg-orange-100/60 transition-colors"
+                        >
+                          <Edit3 className="h-3.5 w-3.5" />
+                          <span>{t('common.edit', 'Edit')}</span>
+                        </button>
+                      </div>
+
+                      <h4 className="font-black text-neutral-900 text-sm tracking-tight leading-snug">
+                        {p.name}
+                      </h4>
+                    </div>
+
+                    <div className="pt-2.5 border-t border-neutral-200/70 flex items-center justify-between">
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-500">
+                        {t('adminTable.pricePerPiece', 'Price / Piece')}
+                      </span>
+                      <span className="font-mono font-black text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl shadow-2xs">
+                        RM {p.piece_rate.toFixed(2)} <span className="text-[10px] font-medium text-emerald-700">/ piece</span>
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
               <div>
                 <h2 className="text-xl font-black tracking-tight text-neutral-900">
                   {t('adminTable.registeredArtisans', 'Registered OKU Artisans')}
@@ -2458,6 +2553,187 @@ export default function AdminPage() {
           onClose={() => setIsVehicleModalOpen(false)}
           targetVehicle={vehicles?.[0]}
         />
+      )}
+
+      {/* EDIT / ADD WORKSHOP COLLABORATOR & PIECE-RATE MODAL */}
+      {isProductModalOpen && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in-50"
+          onClick={() => setIsProductModalOpen(false)}
+        >
+          <div 
+            className="relative w-full max-w-lg rounded-3xl bg-white border border-neutral-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-neutral-950 via-stone-900 to-orange-950 text-white p-5 sm:p-6 relative">
+              <button
+                type="button"
+                onClick={() => setIsProductModalOpen(false)}
+                className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <div className="flex items-center gap-2 mb-1">
+                <span className="h-2 w-2 rounded-full bg-[#F37021]" />
+                <span className="font-extrabold text-[11px] uppercase tracking-wider text-orange-200">
+                  {selectedProductForEdit ? t('adminTable.editCollaborator', 'Edit Collaborator & Piece Rate') : t('adminTable.addCollaborator', 'Add Collaborator / Card')}
+                </span>
+              </div>
+              <h3 className="text-lg sm:text-xl font-black tracking-tight text-white">
+                {selectedProductForEdit ? selectedProductForEdit.resort_client : t('adminTable.addCollaborator', 'Add Collaborator / Card')}
+              </h3>
+            </div>
+
+            {/* Modal Body */}
+            <form 
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!productFormName.trim() || !productFormResort.trim() || !productFormRate.trim()) {
+                  setProductSaveFeedback(t('common.requiredFields', 'Please fill in all fields.'));
+                  return;
+                }
+                const rateNum = parseFloat(productFormRate);
+                if (isNaN(rateNum) || rateNum <= 0) {
+                  setProductSaveFeedback('Invalid piece rate amount.');
+                  return;
+                }
+
+                setIsSavingProduct(true);
+                try {
+                  if (selectedProductForEdit) {
+                    await updateProduct(selectedProductForEdit.id, {
+                      name: productFormName.trim(),
+                      resort_client: productFormResort.trim(),
+                      piece_rate: rateNum,
+                    });
+                  } else {
+                    await addProduct({
+                      name: productFormName.trim(),
+                      resort_client: productFormResort.trim(),
+                      piece_rate: rateNum,
+                    });
+                  }
+                  setIsProductModalOpen(false);
+                } catch (err: any) {
+                  setProductSaveFeedback(err?.message || 'Error saving changes');
+                } finally {
+                  setIsSavingProduct(false);
+                }
+              }}
+              className="p-5 sm:p-6 space-y-4 text-xs text-neutral-800"
+            >
+              {productSaveFeedback && (
+                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
+                  {productSaveFeedback}
+                </div>
+              )}
+
+              {/* Collaborator / Resort Client */}
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">
+                  {t('adminTable.collaboratorName', 'Collaborator / Resort Client')}
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                    <Building2 className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={productFormResort}
+                    onChange={(e) => setProductFormResort(e.target.value)}
+                    placeholder="e.g. Pangkor Laut Resort, The Datai Langkawi"
+                    className="apple-input w-full pl-9 text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Card Product / Series Name */}
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">
+                  {t('adminTable.cardSeries', 'Card Product / Series')}
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                    <Tag className="h-4 w-4" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={productFormName}
+                    onChange={(e) => setProductFormName(e.target.value)}
+                    placeholder="e.g. Pangkor Hornbill Note Card"
+                    className="apple-input w-full pl-9 text-xs"
+                  />
+                </div>
+              </div>
+
+              {/* Price / Piece (MYR) */}
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">
+                  {t('adminTable.pricePerPiece', 'Price / Piece')} (MYR)
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none font-bold text-neutral-500">
+                    RM
+                  </div>
+                  <input
+                    type="number"
+                    step="0.05"
+                    min="0.05"
+                    max="100.00"
+                    required
+                    value={productFormRate}
+                    onChange={(e) => setProductFormRate(e.target.value)}
+                    placeholder="1.75"
+                    className="apple-input w-full pl-10 font-mono font-bold text-xs"
+                  />
+                </div>
+                <p className="text-[11px] text-neutral-500 mt-1">
+                  Payout credited directly to OKU artisan for each finished piece.
+                </p>
+              </div>
+
+              {/* Modal Actions */}
+              <div className="pt-4 border-t border-neutral-100 flex items-center justify-between gap-2">
+                {selectedProductForEdit ? (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (window.confirm(t('adminTable.confirmDeleteProduct', 'Are you sure you want to delete this product collaboration?'))) {
+                        await deleteProduct(selectedProductForEdit.id);
+                        setIsProductModalOpen(false);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold text-xs transition-colors"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>{t('adminTable.deleteProduct', 'Delete Collaborator')}</span>
+                  </button>
+                ) : <div />}
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsProductModalOpen(false)}
+                    className="px-4 py-2 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 font-bold text-xs"
+                  >
+                    {t('common.cancel', 'Cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingProduct}
+                    className="px-4 py-2 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white font-bold text-xs shadow-xs tap-target transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {isSavingProduct ? 'Saving...' : t('adminTable.saveProduct', 'Save Changes')}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
