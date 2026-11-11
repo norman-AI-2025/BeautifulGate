@@ -164,46 +164,62 @@ export async function dbFetchBookings(): Promise<TransitBooking[] | null> {
   }
 
   // Parse fields back into domain TransitBooking format
-  return (data || []).map((row: any): TransitBooking => ({
-    id: row.id,
-    passenger_id: row.passenger_id || row.id,
-    passenger_name: row.passenger_name,
-    oku_id: row.oku_id,
-    phone: row.phone,
-    mobility_type: row.mobility_type,
-    pickup_address: row.pickup_address,
-    hospital_name: row.hospital_name,
-    clinic_department: row.clinic_department || 'General Outpatient / Clinic',
-    date: row.date,
-    appointment_time: row.appointment_time,
-    status: row.status,
-    assigned_space: row.assigned_space,
-    assigned_driver: row.assigned_driver || 'Assigned Driver',
-    assigned_vehicle: {
-      plate: row.vehicle_plate || 'NDC 9751',
-      brand: row.vehicle_brand || 'Toyota',
-      model: row.vehicle_model || 'HiAce Commuter',
-      color: row.vehicle_color || 'Pearl White',
-      configuration: 'Row 1: Driver + 1 Pax | Row 2: 4 Pax | Row 3: 2 Wheelchairs',
-    },
-    rating: row.rating ?? undefined,
-    feedback: row.rating_feedback ?? undefined,
-    donation: row.donation_amount ? {
-      amount: Number(row.donation_amount),
-      method: (row.donation_method as 'cash' | 'qr') || 'cash',
-      status: row.donation_status === 'verified' ? 'paid' : 'pledged',
-      timestamp: row.donation_recorded_at || row.created_at || new Date().toISOString(),
-    } : undefined,
-    destination_coordinates: (row.destination_lat && row.destination_lon) ? {
-      lat: Number(row.destination_lat),
-      lon: Number(row.destination_lon),
-    } : undefined,
-    destination_verified: Boolean(row.destination_verified),
-    timestamps: {
+  return (data || []).map((row: any): TransitBooking => {
+    let parsedTimestamps: any = {
       requested: row.created_at || new Date().toISOString(),
-      approved: row.status === 'approved' ? row.updated_at : undefined,
-    },
-  }));
+      approved: (row.status === 'approved' || row.status === 'in_progress' || row.status === 'completed' || row.status === 'dropped_off') ? row.updated_at : undefined,
+    };
+
+    let cleanFeedback = row.rating_feedback || undefined;
+    if (row.rating_feedback && row.rating_feedback.includes('[ts:')) {
+      const match = row.rating_feedback.match(/\[ts:(.+?)\]/);
+      if (match) {
+        try {
+          const extra = JSON.parse(match[1]);
+          parsedTimestamps = { ...parsedTimestamps, ...extra };
+        } catch {}
+        cleanFeedback = row.rating_feedback.replace(/\[ts:.+?\]\s?/, '').trim() || undefined;
+      }
+    }
+
+    return {
+      id: row.id,
+      passenger_id: row.passenger_id || row.id,
+      passenger_name: row.passenger_name,
+      oku_id: row.oku_id,
+      phone: row.phone,
+      mobility_type: row.mobility_type,
+      pickup_address: row.pickup_address,
+      hospital_name: row.hospital_name,
+      clinic_department: row.clinic_department || 'General Outpatient / Clinic',
+      date: row.date,
+      appointment_time: row.appointment_time,
+      status: row.status,
+      assigned_space: row.assigned_space,
+      assigned_driver: row.assigned_driver || 'Assigned Driver',
+      assigned_vehicle: {
+        plate: row.vehicle_plate || 'NDC 9751',
+        brand: row.vehicle_brand || 'Toyota',
+        model: row.vehicle_model || 'HiAce Commuter',
+        color: row.vehicle_color || 'Pearl White',
+        configuration: 'Row 1: Driver + 1 Pax | Row 2: 4 Pax | Row 3: 2 Wheelchairs',
+      },
+      rating: row.rating ?? undefined,
+      feedback: cleanFeedback,
+      donation: row.donation_amount ? {
+        amount: Number(row.donation_amount),
+        method: (row.donation_method as 'cash' | 'qr') || 'cash',
+        status: row.donation_status === 'verified' ? 'paid' : 'pledged',
+        timestamp: row.donation_recorded_at || row.created_at || new Date().toISOString(),
+      } : undefined,
+      destination_coordinates: (row.destination_lat && row.destination_lon) ? {
+        lat: Number(row.destination_lat),
+        lon: Number(row.destination_lon),
+      } : undefined,
+      destination_verified: Boolean(row.destination_verified),
+      timestamps: parsedTimestamps,
+    };
+  });
 }
 
 export async function dbInsertBooking(booking: TransitBooking): Promise<boolean> {
@@ -259,6 +275,11 @@ export async function dbUpdateBooking(id: string, updates: Record<string, any>):
   if (updates.driver_avatar !== undefined) payload.driver_avatar = updates.driver_avatar;
   if (updates.rating !== undefined) payload.rating = updates.rating;
   if (updates.rating_feedback !== undefined) payload.rating_feedback = updates.rating_feedback;
+  if (updates.timestamps !== undefined) {
+    // Safely embed timestamps in rating_feedback as [ts:JSON]
+    const cleanFeedback = (updates.rating_feedback || '').replace(/\[ts:.+?\]\s?/, '').trim();
+    payload.rating_feedback = `[ts:${JSON.stringify(updates.timestamps)}] ${cleanFeedback}`.trim();
+  }
   if (updates.donation_amount !== undefined) payload.donation_amount = updates.donation_amount;
   if (updates.donation_method !== undefined) payload.donation_method = updates.donation_method;
   if (updates.donation_status !== undefined) payload.donation_status = updates.donation_status;

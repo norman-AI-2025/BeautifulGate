@@ -153,7 +153,8 @@ export default function DriverPage() {
     vehicles,
     driverLeaves, 
     requestDriverLeave, 
-    isDateBlockedByLeave 
+    isDateBlockedByLeave,
+    verifyDonation 
   } = useApp();
   const { t, language } = useLanguage();
 
@@ -162,6 +163,7 @@ export default function DriverPage() {
   const [showCompletedRuns, setShowCompletedRuns] = useState<boolean>(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState<boolean>(false);
+  const [cashDonationModalBooking, setCashDonationModalBooking] = useState<TransitBooking | null>(null);
 
   // Leave Form states
   const [leaveDate, setLeaveDate] = useState<string>('2026-11-12');
@@ -751,23 +753,27 @@ export default function DriverPage() {
                                       </span>
 
                                       {booking.donation && (
-                                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md ${
-                                          booking.donation.method === 'cash'
-                                            ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                                            : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                                        }`}>
-                                          {booking.donation.method === 'cash' ? (
-                                            <>
-                                              <Banknote className="h-3.5 w-3.5 text-amber-700" />
-                                              <span>{t('driver.collectCashDonation', 'Collect Cash: RM {amount}').replace('{amount}', booking.donation.amount.toFixed(2))}</span>
-                                            </>
-                                          ) : (
-                                            <>
-                                              <HeartHandshake className="h-3.5 w-3.5 text-emerald-700" />
-                                              <span>{t('driver.qrDonated', 'QR Donated: RM {amount}').replace('{amount}', booking.donation.amount.toFixed(2))}</span>
-                                            </>
-                                          )}
-                                        </span>
+                                        booking.donation.method === 'cash' ? (
+                                          <button
+                                            type="button"
+                                            onClick={() => setCashDonationModalBooking(booking)}
+                                            className={`inline-flex items-center gap-1.5 text-[11px] font-extrabold px-2.5 py-1 rounded-lg border transition-all tap-target cursor-pointer ${
+                                              booking.donation.status === 'paid'
+                                                ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                                : 'bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-300 shadow-2xs active:scale-95'
+                                            }`}
+                                          >
+                                            <Banknote className="h-3.5 w-3.5 text-amber-700" />
+                                            <span>
+                                              RM {booking.donation.amount.toFixed(2)} ({booking.donation.status === 'paid' ? t('donation.received', 'Received') : t('driver.collectCash', 'Collect Cash')})
+                                            </span>
+                                          </button>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                            <HeartHandshake className="h-3.5 w-3.5 text-emerald-700" />
+                                            <span>{t('driver.qrDonated', 'QR Donated: RM {amount}').replace('{amount}', booking.donation.amount.toFixed(2))}</span>
+                                          </span>
+                                        )
                                       )}
                                     </div>
                                   </div>
@@ -1046,6 +1052,90 @@ export default function DriverPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Clean Modal for Cash Donation Collection */}
+      {cashDonationModalBooking && typeof document !== 'undefined' && createPortal(
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in-50 duration-200"
+          onClick={() => setCashDonationModalBooking(null)}
+        >
+          <div 
+            className="w-full max-w-sm rounded-3xl bg-white border border-neutral-200 p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center">
+                  <Banknote className="h-4 w-4 text-amber-700" />
+                </div>
+                <h3 className="font-extrabold text-sm text-neutral-900">
+                  {t('donation.cashHandoverTitle', 'Cash Collection')}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCashDonationModalBooking(null)}
+                className="h-8 w-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Clean Data Fields (Zero description) */}
+            <div className="space-y-3 bg-neutral-50 rounded-2xl p-4 border border-neutral-200/80 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-neutral-500">{t('admin.date', 'Date')}</span>
+                <span className="font-bold text-neutral-900">
+                  {cashDonationModalBooking.date || t('common.today', 'Today')}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-neutral-500">{t('admin.timeSlot', 'Time Slot')}</span>
+                <span className="font-mono font-extrabold text-neutral-900">
+                  {cashDonationModalBooking.appointment_time}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-neutral-500">{t('admin.name', 'Username')}</span>
+                <span className="font-extrabold text-neutral-900">
+                  {cashDonationModalBooking.passenger_name}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-neutral-200/60">
+                <span className="font-semibold text-neutral-500">{t('admin.amountCol', 'Amount')}</span>
+                <span className="font-mono text-base font-black text-[#F37021]">
+                  RM {cashDonationModalBooking.donation?.amount.toFixed(2)}
+                </span>
+              </div>
+            </div>
+
+            {/* Action Button: Received */}
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  verifyDonation(cashDonationModalBooking.id);
+                  setCashDonationModalBooking(null);
+                }}
+                className={`w-full py-3 rounded-2xl text-xs font-black shadow-md transition-all tap-target flex items-center justify-center gap-2 ${
+                  cashDonationModalBooking.donation?.status === 'paid'
+                    ? 'bg-emerald-600 text-white cursor-default'
+                    : 'bg-[#F37021] hover:bg-[#D9530F] text-white active:scale-95'
+                }`}
+              >
+                <Check className="h-4 w-4 stroke-[3]" />
+                <span>
+                  {cashDonationModalBooking.donation?.status === 'paid'
+                    ? t('donation.received', 'Received')
+                    : t('donation.btnReceived', 'Received')}
+                </span>
+              </button>
+            </div>
           </div>
         </div>,
         document.body

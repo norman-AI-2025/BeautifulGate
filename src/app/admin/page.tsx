@@ -330,11 +330,6 @@ export default function AdminPage() {
     setIsProfileModalOpen(true);
   };
 
-  // Active trips available for dispatch focus
-  const activeDispatchesList = useMemo(() => {
-    return bookings.filter(b => b.status !== 'declined');
-  }, [bookings]);
-
   // PRIORITY CURRENT DISPATCH:
   // Find selected active dispatch or currently on road or highest priority approved ride
   const currentActiveDispatch = useMemo(() => {
@@ -346,6 +341,19 @@ export default function AdminPage() {
       ['en_route_pickup', 'picked_up', 'en_route_hospital'].includes(b.status)
     ) || bookings.find(b => b.status === 'approved') || bookings[0];
   }, [bookings, selectedActiveDispatchId]);
+
+  // Active trips available for dispatch focus (same date and timeslot as current dispatch)
+  const activeDispatchesList = useMemo(() => {
+    if (!currentActiveDispatch) return [];
+    const curDate = (currentActiveDispatch.date || '').toLowerCase();
+    const curSlot = (currentActiveDispatch.appointment_time || '').toLowerCase();
+    
+    return bookings.filter(b => 
+      b.status !== 'declined' &&
+      (b.date || '').toLowerCase() === curDate &&
+      (b.appointment_time || '').toLowerCase() === curSlot
+    );
+  }, [bookings, currentActiveDispatch]);
 
   // Handler to switch status with soundless tactile visual animation
   const handleUpdateActiveDispatchStatus = (bookingId: string, newStatus: TransitStatus) => {
@@ -1923,12 +1931,12 @@ export default function AdminPage() {
                               {d.status === 'paid' ? (
                                 <>
                                   <Check className="h-3 w-3 text-emerald-600" />
-                                  <span>{d.method === 'cash' ? t('admin.cashReconciled', 'Cash Reconciled') : t('donation.donated', 'Paid')}</span>
+                                  <span>{t('donation.received', 'Received')}</span>
                                 </>
                               ) : (
                                 <>
                                   <Clock className="h-3 w-3 text-amber-600" />
-                                  <span>{t('admin.awaitingCashHandover', 'Pending Remittance')}</span>
+                                  <span>{t('donation.pending', 'Pending')}</span>
                                 </>
                               )}
                             </span>

@@ -92,8 +92,15 @@ export default function LoginPage() {
         </p>
 
         {errorMsg && (
-          <div className="mb-4 rounded-xl border border-neutral-300 bg-neutral-50 p-3 text-xs font-semibold text-neutral-900">
-            {errorMsg}
+          <div className="mb-5 rounded-2xl border border-red-200 bg-red-50/90 p-4 shadow-sm flex items-start gap-3 animate-in fade-in-50 duration-200">
+            <div className="h-6 w-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 mt-0.5">
+              <span className="font-black text-xs">!</span>
+            </div>
+            <div className="flex-1">
+              <p className="text-xs font-bold text-red-950 leading-snug">
+                {errorMsg}
+              </p>
+            </div>
           </div>
         )}
 

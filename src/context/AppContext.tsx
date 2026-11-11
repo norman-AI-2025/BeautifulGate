@@ -816,21 +816,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Update Booking Status
   const updateBookingStatus = useCallback((bookingId: string, newStatus: TransitStatus) => {
     const nowIso = new Date().toISOString();
+    let updatedTimestamps: any = {};
     const updated = bookings.map(b => {
       if (b.id === bookingId) {
+        updatedTimestamps = {
+          ...b.timestamps,
+          [newStatus]: nowIso,
+        };
         return {
           ...b,
           status: newStatus,
-          timestamps: {
-            ...b.timestamps,
-            [newStatus]: nowIso,
-          },
+          timestamps: updatedTimestamps,
         };
       }
       return b;
     });
     saveBookings(updated);
-    dbUpdateBooking(bookingId, { status: newStatus }).catch(err => console.warn(err));
+    dbUpdateBooking(bookingId, { 
+      status: newStatus,
+      timestamps: updatedTimestamps 
+    }).catch(err => console.warn(err));
   }, [bookings, saveBookings]);
 
   const approveBooking = useCallback((bookingId: string) => {
