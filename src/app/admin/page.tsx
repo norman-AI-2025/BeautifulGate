@@ -132,6 +132,12 @@ export default function AdminPage() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
 
+  // Bank Inward Email Automated Verification Modal
+  const [isBankEmailModalOpen, setIsBankEmailModalOpen] = useState(false);
+  const [testEmailText, setTestEmailText] = useState('');
+  const [testResult, setTestResult] = useState<any>(null);
+  const [isTestingEmail, setIsTestingEmail] = useState(false);
+
   // Dispatch table filter tab
   const [dispatchFilter, setDispatchFilter] = useState<'all' | 'pending' | 'active' | 'completed'>('all');
 
@@ -1536,14 +1542,29 @@ export default function AdminPage() {
                 </h2>
               </div>
 
-              <button
-                type="button"
-                onClick={exportDonationsCSV}
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-bold shadow-sm tap-target transition-all active:scale-95"
-              >
-                <Download className="h-4 w-4" />
-                <span>{t('admin.exportDonationReport', 'Export Donation Ledger (CSV)')}</span>
-              </button>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsBankEmailModalOpen(true);
+                    setTestResult(null);
+                  }}
+                  className="inline-flex items-center gap-2 px-3.5 py-2.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-800 text-xs font-bold shadow-xs tap-target transition-all"
+                  title="Automated Bank Inward Email Webhook Setup & Test"
+                >
+                  <Mail className="h-4 w-4 text-[#F37021]" />
+                  <span>Auto-Verify Bank Alerts</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={exportDonationsCSV}
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-bold shadow-sm tap-target transition-all active:scale-95"
+                >
+                  <Download className="h-4 w-4" />
+                  <span>{t('admin.exportDonationReport', 'Export Donation Ledger (CSV)')}</span>
+                </button>
+              </div>
             </div>
 
             {/* 3 Prioritized Metric Cards: Donation in a Month, Donation via QR, Donation via Driver */}
@@ -2453,6 +2474,192 @@ export default function AdminPage() {
           onClose={() => setIsVehicleModalOpen(false)}
           targetVehicle={vehicles?.[0]}
         />
+      )}
+
+      {/* Automated Inward Bank Email Webhook & Simulator Modal */}
+      {isBankEmailModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in-50">
+          <div className="relative w-full max-w-2xl rounded-3xl bg-white border border-neutral-200 shadow-2xl overflow-hidden my-6 max-h-[92vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-neutral-950 via-stone-900 to-orange-950 text-white p-5 sm:p-6 relative">
+              <button
+                type="button"
+                onClick={() => setIsBankEmailModalOpen(false)}
+                className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white transition-colors tap-target"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              <div className="flex items-center gap-2 mb-1.5">
+                <span className="h-2 w-2 rounded-full bg-[#F37021]" />
+                <span className="font-extrabold text-xs uppercase tracking-wider text-orange-200">
+                  Method 1 · Automated Bank Inward Parser
+                </span>
+              </div>
+              <h3 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+                Auto-Verify Bank Inward DuitNow Alerts
+              </h3>
+              <p className="text-xs text-neutral-300 mt-1 leading-relaxed">
+                Automatically verify QR donations the moment funds reach Beautiful Gate&apos;s bank account via incoming transaction emails.
+              </p>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto space-y-5 text-xs text-neutral-800">
+              {/* Webhook Configuration Card */}
+              <div className="p-4 rounded-2xl bg-orange-50/70 border border-orange-200 space-y-2">
+                <span className="font-black text-orange-950 uppercase tracking-wider text-[10px] block">
+                  1. Your Inbound Webhook Endpoint
+                </span>
+                <div className="p-2.5 rounded-xl bg-white border border-orange-200 font-mono text-[11px] text-neutral-800 flex items-center justify-between gap-2 overflow-x-auto">
+                  <span className="truncate select-all">
+                    {typeof window !== 'undefined' ? `${window.location.origin}/api/webhooks/bank-email` : '/api/webhooks/bank-email'}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (typeof window !== 'undefined') {
+                        navigator.clipboard.writeText(`${window.location.origin}/api/webhooks/bank-email`);
+                      }
+                    }}
+                    className="px-2.5 py-1 rounded-lg bg-[#F37021] text-white font-bold text-[10px] shrink-0 hover:bg-[#D9530F] transition-colors"
+                  >
+                    Copy URL
+                  </button>
+                </div>
+                <p className="text-[11px] text-neutral-600 leading-relaxed">
+                  Route your bank&apos;s transaction alert emails (Maybank2u Biz, Public Bank PBe, CIMB Clicks) to this endpoint using Cloudflare Email Workers, Mailgun, or SendGrid.
+                </p>
+              </div>
+
+              {/* How Matching Works */}
+              <div className="space-y-2">
+                <span className="font-black text-neutral-900 uppercase tracking-wider text-[10px] block">
+                  2. How The System Reconciles Automatically
+                </span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 text-center">
+                  <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-200">
+                    <span className="font-bold text-neutral-700 block">Unique Ref Code</span>
+                    <span className="text-[10px] text-neutral-500 mt-0.5 block">
+                      Passenger transfers with reference code <code className="text-[#F37021] font-bold">BG-TR-XXXX</code>
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-200">
+                    <span className="font-bold text-neutral-700 block">Bank Email Alert</span>
+                    <span className="text-[10px] text-neutral-500 mt-0.5 block">
+                      Bank notifies your server with amount &amp; reference memo
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-2xl bg-neutral-50 border border-neutral-200">
+                    <span className="font-bold text-neutral-700 block">Instant Status Flip</span>
+                    <span className="text-[10px] text-neutral-500 mt-0.5 block">
+                      Booking donation marked as <span className="text-emerald-600 font-bold">Verified &amp; Paid</span> in 1 sec
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Interactive Test / Simulator Box */}
+              <div className="p-4 rounded-2xl bg-neutral-50 border border-neutral-200 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="font-black text-neutral-900 uppercase tracking-wider text-[10px]">
+                    3. Test or Manually Parse Bank Notification Email
+                  </span>
+                  {bookings.some(b => b.donation) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = bookings.find(b => b.donation) || bookings[0];
+                        const refCode = `BG-TR-${target.id.slice(0, 8).toUpperCase()}`;
+                        setTestEmailText(
+                          `Maybank Alert: You have received RM ${target.donation?.amount || '10.00'} via DuitNow Transfer from ${target.passenger_name} on ${new Date().toLocaleDateString('en-GB')}. Recipient Reference: ${refCode}. Status: Successful.`
+                        );
+                      }}
+                      className="text-[10px] font-bold text-[#F37021] hover:underline"
+                    >
+                      Fill Sample Alert
+                    </button>
+                  )}
+                </div>
+
+                <textarea
+                  value={testEmailText}
+                  onChange={(e) => setTestEmailText(e.target.value)}
+                  placeholder="Paste bank email alert snippet here (e.g. You have received RM 10.00 via DuitNow. Ref: BG-TR-8812)..."
+                  rows={4}
+                  className="w-full p-3 rounded-xl border border-neutral-300 bg-white font-mono text-[11px] focus:outline-none focus:ring-2 focus:ring-[#F37021]"
+                />
+
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-neutral-500">
+                    Extracts amount, bank &amp; ref code to auto-reconcile in Supabase
+                  </span>
+                  <button
+                    type="button"
+                    disabled={isTestingEmail || !testEmailText.trim()}
+                    onClick={async () => {
+                      setIsTestingEmail(true);
+                      setTestResult(null);
+                      try {
+                        const res = await fetch('/api/webhooks/bank-email', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ text: testEmailText }),
+                        });
+                        const data = await res.json();
+                        setTestResult(data);
+                      } catch (err: any) {
+                        setTestResult({ success: false, error: err?.message || 'Connection failed' });
+                      } finally {
+                        setIsTestingEmail(false);
+                      }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white font-bold text-xs shadow-xs tap-target transition-all disabled:opacity-50"
+                  >
+                    {isTestingEmail ? 'Verifying...' : 'Run Auto-Verification'}
+                  </button>
+                </div>
+
+                {/* Test Result Feedback */}
+                {testResult && (
+                  <div className={`p-3 rounded-xl border text-[11px] ${
+                    testResult.success 
+                      ? 'bg-emerald-50 border-emerald-300 text-emerald-900' 
+                      : 'bg-rose-50 border-rose-300 text-rose-900'
+                  }`}>
+                    {testResult.success ? (
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 font-bold">
+                          <Check className="h-4 w-4 text-emerald-600" />
+                          <span>{testResult.message}</span>
+                        </div>
+                        <p className="font-mono text-[10px] text-emerald-800">
+                          Passenger: <strong>{testResult.passengerName}</strong> · Amount: <strong>RM {testResult.amount}</strong> · Ref: <strong>{testResult.referenceCode}</strong> · Bank: <strong>{testResult.bank}</strong>
+                        </p>
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="font-bold block">Verification Error:</span>
+                        <span>{testResult.error || 'Failed to match or update booking'}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 sm:p-5 border-t border-neutral-200 bg-neutral-50 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => setIsBankEmailModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 font-bold text-xs text-neutral-700"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
