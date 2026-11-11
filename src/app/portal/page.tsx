@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { LanguageSelector } from '@/components/LanguageSelector';
 import { WeeklyTimetable } from '@/components/WeeklyTimetable';
 import { VanFloorPlanModal } from '@/components/VanFloorPlanModal';
 import { LinearStageIndicator } from '@/components/LinearStageIndicator';
@@ -117,9 +116,8 @@ export default function MobileArtisanPortalPage() {
               </p>
             </div>
 
-            {/* Language Selector & Main Navigation Segmented Switcher */}
+            {/* Main Navigation Segmented Switcher */}
             <div className="flex items-center gap-2">
-              <LanguageSelector compact />
               <div className="flex rounded-full bg-white/10 p-1 border border-white/10">
                 <button
                   type="button"

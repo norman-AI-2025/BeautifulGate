@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { LanguageSelector } from '@/components/LanguageSelector';
 import { LogOut, User, Shield, Car, HeartHandshake } from 'lucide-react';
 import { UserRole } from '@/types';
 
@@ -94,11 +93,8 @@ export const Header: React.FC = () => {
           </nav>
         </div>
 
-        {/* Right Section: Language Selector, Quick Switcher & User Profile */}
+        {/* Right Section: Quick Switcher & User Profile */}
         <div className="flex items-center gap-2 sm:gap-3">
-          {/* Universal Language Selector Button (visible on all pages, mobile & desktop) */}
-          <LanguageSelector compact />
-
           {/* Quick Demo Switcher Pill */}
           <div className="hidden lg:flex items-center rounded-full bg-neutral-100 p-1 border border-neutral-200 text-xs">
             <button

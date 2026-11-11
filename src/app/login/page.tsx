@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { LanguageSelector } from '@/components/LanguageSelector';
 import { ArrowRight, UserCheck, Car, Shield } from 'lucide-react';
 import { UserRole } from '@/types';
 
@@ -40,11 +39,6 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-neutral-100/60 flex flex-col justify-center items-center px-4 py-12 relative">
-      {/* Top Floating Language Selector */}
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-8">
-        <LanguageSelector />
-      </div>
-
       {/* Brand Header */}
       <div className="mb-6 text-center">
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white border border-neutral-200/80 shadow-md p-2 mb-3">

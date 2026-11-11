@@ -3,7 +3,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { LanguageSelector } from '@/components/LanguageSelector';
 import { ArtisanDrawer } from '@/components/ArtisanDrawer';
 import { AnalyticsCharts } from '@/components/AnalyticsCharts';
 import { LinearStageIndicator } from '@/components/LinearStageIndicator';
@@ -320,9 +319,8 @@ export default function AdminPage() {
               </h1>
             </div>
 
-            {/* Top-Level Navigation Bar & Language Selector */}
+            {/* Top-Level Navigation Bar */}
             <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
-              <LanguageSelector compact />
               <div className="flex rounded-full bg-white/10 p-1 border border-white/10">
                 <button
                   type="button"

@@ -3,6 +3,7 @@ import './globals.css';
 import { AppProvider } from '@/context/AppContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { Header } from '@/components/Header';
+import { LanguageSelector } from '@/components/LanguageSelector';
 
 export const metadata: Metadata = {
   title: 'Beautiful Gate | Assisted Mobility & Artisan Workshop Platform',
@@ -21,6 +22,8 @@ export default function RootLayout({
           <AppProvider>
             <Header />
             {children}
+            {/* Universal Floating Language Button at Bottom Right with Globe Icon */}
+            <LanguageSelector floating />
           </AppProvider>
         </LanguageProvider>
       </body>

@@ -3,7 +3,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { LanguageSelector } from '@/components/LanguageSelector';
 import { 
   Phone, 
   MessageSquare, 
@@ -277,7 +276,6 @@ export default function DriverPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <LanguageSelector compact />
               <div className="text-right hidden sm:block">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-orange-300 block">
                   {t('common.status', 'Queue Status')}
