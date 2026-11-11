@@ -615,7 +615,6 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                 {/* Search Bar Input */}
                 <div className="relative">
                   <div className="relative">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
                     <input
                       type="text"
                       required
@@ -628,7 +627,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                         setShowDestDropdown(true);
                       }}
                       placeholder={t('vanModal.typeOrSearchHospital', 'Type or search hospital or clinic destination...')}
-                      className="apple-input w-full pl-10 pr-4 text-xs font-medium"
+                      className="apple-input w-full px-4 text-xs font-medium"
                     />
                     {isLoadingGeo && (
                       <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#F37021] animate-pulse">

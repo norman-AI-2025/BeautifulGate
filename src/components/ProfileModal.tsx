@@ -414,32 +414,26 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               <label className="block text-xs font-bold text-neutral-700 mb-1">
                 {t('profile.phoneNumber', 'Contact Phone')}
               </label>
-              <div className="relative">
-                <Phone className="h-3.5 w-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="text"
-                  disabled={isReadOnly}
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="apple-input w-full pl-9 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed font-medium"
-                />
-              </div>
+              <input
+                type="text"
+                disabled={isReadOnly}
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                className="apple-input w-full disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed font-medium"
+              />
             </div>
 
             <div>
               <label className="block text-xs font-bold text-neutral-700 mb-1">
                 {t('profile.emailAddress', 'Email Address')}
               </label>
-              <div className="relative">
-                <Mail className="h-3.5 w-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <input
-                  type="email"
-                  disabled={isReadOnly}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="apple-input w-full pl-9 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed font-medium"
-                />
-              </div>
+              <input
+                type="email"
+                disabled={isReadOnly}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="apple-input w-full disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed font-medium"
+              />
             </div>
           </div>
 
@@ -450,16 +444,13 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 ? t('profile.homeAddress', 'Home Address (Default Pickup)') 
                 : t('profile.operatingBase', 'Operating Station / Base')}
             </label>
-            <div className="relative">
-              <MapPin className="h-3.5 w-3.5 text-[#F37021] absolute left-3 top-3" />
-              <textarea
-                rows={2}
-                disabled={isReadOnly}
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-                className="apple-input w-full pl-9 resize-none disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed font-medium"
-              />
-            </div>
+            <textarea
+              rows={2}
+              disabled={isReadOnly}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="apple-input w-full resize-none disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed font-medium"
+            />
           </div>
 
           {/* 4. Customer Specific: Mobility Type & Bank Disbursement */}
@@ -505,17 +496,14 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                   <label className="block text-xs font-bold text-neutral-700 mb-1">
                     {t('profile.bankAccount', 'Bank Account Number')}
                   </label>
-                  <div className="relative">
-                    <CreditCard className="h-3.5 w-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      disabled={isReadOnly}
-                      value={bankAccount}
-                      onChange={(e) => setBankAccount(e.target.value)}
-                      placeholder="e.g. 1140 1234 5678"
-                      className="apple-input w-full pl-9 font-mono disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
-                    />
-                  </div>
+                  <input
+                    type="text"
+                    disabled={isReadOnly}
+                    value={bankAccount}
+                    onChange={(e) => setBankAccount(e.target.value)}
+                    placeholder="e.g. 1140 1234 5678"
+                    className="apple-input w-full font-mono disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
+                  />
                 </div>
               </div>
             </div>

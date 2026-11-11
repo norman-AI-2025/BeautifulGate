@@ -203,26 +203,21 @@ export const TransitDonationModal: React.FC<TransitDonationModalProps> = ({ book
 
                 {/* Custom Amount Field */}
                 <div className="pt-1">
-                  <div className="relative">
-                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 font-mono font-bold text-xs text-neutral-400">
-                      RM
-                    </span>
-                    <input
-                      type="number"
-                      min="1"
-                      step="1"
-                      value={customValue}
-                      onChange={(e) => {
-                        setIsCustom(true);
-                        handleCustomChange(e.target.value);
-                      }}
-                      onFocus={() => setIsCustom(true)}
-                      placeholder={t('donation.customAmount', 'Custom Amount (RM)')}
-                      className={`apple-input w-full pl-10 text-xs font-mono font-bold ${
-                        isCustom ? 'border-[#F37021] ring-2 ring-orange-200' : ''
-                      }`}
-                    />
-                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={customValue}
+                    onChange={(e) => {
+                      setIsCustom(true);
+                      handleCustomChange(e.target.value);
+                    }}
+                    onFocus={() => setIsCustom(true)}
+                    placeholder={t('donation.customAmount', 'Custom Amount (RM)')}
+                    className={`apple-input w-full text-xs font-mono font-bold ${
+                      isCustom ? 'border-[#F37021] ring-2 ring-orange-200' : ''
+                    }`}
+                  />
                 </div>
               </div>
 

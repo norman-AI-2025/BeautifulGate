@@ -1343,7 +1343,7 @@ export default function AdminPage() {
                                                             {co.assigned_space}
                                                           </p>
                                                           <p className="truncate text-[10px] text-neutral-600" title={co.hospital_name}>
-                                                            🏥 {co.hospital_name}
+                                                            {co.hospital_name}
                                                           </p>
                                                         </div>
                                                       </div>
@@ -1388,14 +1388,13 @@ export default function AdminPage() {
               </div>
 
               {/* Search Bar */}
-              <div className="relative w-full sm:w-72">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+              <div className="w-full sm:w-72">
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t('adminTable.searchArtisans', 'Search by name, OKU ID...')}
-                  className="apple-input w-full pl-10 text-xs"
+                  className="apple-input w-full text-xs"
                 />
               </div>
             </div>
@@ -1839,33 +1838,95 @@ export default function AdminPage() {
         {/* ============================================================== */}
         {activeTab === 'directory' && (
           <div className="space-y-6">
-            {/* Header & Policy Notice */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-2xl bg-[#F37021] text-white flex items-center justify-center shadow-md">
-                  <Users className="h-5 w-5" />
-                </div>
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-                    {t('admin.directoryTitle', 'User Directory & Driver Management')}
-                  </h2>
-                  <p className="text-xs text-neutral-500 font-medium">
-                    {t('admin.directorySubtitle', 'Review registered beneficiary and driver profiles. Administrators can inspect all user details, and directly manage driver credentials, vehicle assignment, and duty status.')}
-                  </p>
-                </div>
+            {/* Header: Title Only */}
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-2xl bg-[#F37021] text-white flex items-center justify-center shadow-md">
+                <Users className="h-5 w-5" />
               </div>
+              <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
+                {t('admin.directoryTitle', 'User Directory & Driver Management')}
+              </h2>
             </div>
 
-            {/* Policy & Permission Banner */}
-            <div className="rounded-2xl border border-orange-200 bg-orange-50/70 p-4 text-xs flex items-start gap-3 shadow-xs">
-              <ShieldCheck className="h-5 w-5 text-[#F37021] shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <span className="font-extrabold text-orange-950 block">
-                  {t('admin.policyNotice', 'Administrator Clearance: View-only access to beneficiary accounts (personal data managed by user). Full management authority over driver operations.')}
+            {/* Vehicle Profile Card */}
+            <div className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs">
+              <div className="flex items-center justify-between mb-4 pb-3 border-b border-neutral-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-neutral-900 text-white flex items-center justify-center shadow-xs">
+                    <Car className="h-4 w-4 text-orange-400" />
+                  </div>
+                  <h3 className="text-base font-black text-neutral-900">
+                    Vehicle Profile · Toyota HiAce Commuter
+                  </h3>
+                </div>
+                <span className="font-mono font-black text-xs px-3 py-1 rounded-xl bg-orange-50 text-[#F37021] border border-orange-200 shadow-xs">
+                  WVV 4108
                 </span>
-                <p className="text-neutral-600 leading-relaxed">
-                  Beneficiaries manage their own profile photos, OKU details, and bank accounts. Supervisors hold exclusive authority to edit driver accreditations, vehicle assignments (e.g. Toyota HiAce WVV 4108), driver statuses, and emergency contacts.
-                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+                {/* Vehicle Image */}
+                <div className="md:col-span-4 relative h-44 w-full rounded-2xl overflow-hidden border border-neutral-200 shadow-xs group">
+                  <Image
+                    src="/images/toyota-hiace-van.jpg"
+                    alt="Toyota HiAce Commuter Van"
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                  <div className="absolute bottom-2.5 left-2.5 flex items-center gap-2">
+                    <span className="font-mono font-black text-xs px-2.5 py-0.5 rounded-lg bg-white text-neutral-900 shadow-sm">
+                      WVV 4108
+                    </span>
+                    <span className="text-[10px] font-bold text-white bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded-lg">
+                      Toyota HiAce
+                    </span>
+                  </div>
+                </div>
+
+                {/* Vehicle Details */}
+                <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                      Car Plate
+                    </span>
+                    <span className="font-mono font-black text-base text-neutral-900 mt-1 block">
+                      WVV 4108
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md mt-1.5 inline-block">
+                      Active Operation
+                    </span>
+                  </div>
+
+                  <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                      Colour
+                    </span>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="h-3.5 w-3.5 rounded-full bg-white border-2 border-neutral-400 shadow-xs shrink-0" />
+                      <span className="font-bold text-sm text-neutral-900">
+                        Pearl White
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-neutral-500 font-medium block mt-1.5">
+                      White Pearl Metallic
+                    </span>
+                  </div>
+
+                  <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
+                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                      Seatings
+                    </span>
+                    <span className="font-black text-sm text-neutral-900 mt-1 block">
+                      7 Passengers
+                    </span>
+                    <div className="text-[10px] text-neutral-600 mt-1 space-y-0.5 font-medium">
+                      <p>Row 1: Driver + 1 Pax</p>
+                      <p>Row 2: 4 Regular Seats</p>
+                      <p>Row 3: 2 Wheelchair Bays</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -1978,13 +2039,12 @@ export default function AdminPage() {
 
                 {/* Search Input */}
                 <div className="relative w-full sm:w-72">
-                  <Search className="h-4 w-4 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     value={directorySearchQuery}
                     onChange={(e) => setDirectorySearchQuery(e.target.value)}
                     placeholder={t('admin.searchDirectoryPlaceholder', 'Search by name, IC/OKU, phone...')}
-                    className="apple-input w-full pl-9 text-xs"
+                    className="apple-input w-full pr-8 text-xs"
                   />
                   {directorySearchQuery && (
                     <button
@@ -2201,7 +2261,7 @@ export default function AdminPage() {
                                     <span>{t('admin.approveSupervisor', 'Approve Admin')}</span>
                                   </button>
                                 )}
-                                {p.id === currentUser?.id ? (
+                                {(p.id === currentUser?.id || p.email === currentUser?.email || currentUser?.role === 'admin') ? (
                                   <button
                                     type="button"
                                     onClick={() => {
@@ -2227,7 +2287,7 @@ export default function AdminPage() {
                               </div>
                             ) : (
                               <div className="flex flex-col items-end gap-1">
-                                {p.id === currentUser?.id ? (
+                                {(p.id === currentUser?.id || p.email === currentUser?.email || currentUser?.role === 'admin') ? (
                                   <button
                                     type="button"
                                     onClick={() => {
