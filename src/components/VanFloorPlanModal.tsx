@@ -170,7 +170,8 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
   existingBookingsForSlot,
   onBookingSuccess,
 }) => {
-  const { currentUser, createBooking, isDateBlockedByLeave } = useApp();
+  const { currentUser, createBooking, isDateBlockedByLeave, vehicles } = useApp();
+  const activeVehicle = vehicles?.[0];
   const { t } = useLanguage();
 
   // USER SPEC: "each booking can book up to 2 seats"
@@ -350,7 +351,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
               {selectedTimeSlot}
             </span>
             <span className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-neutral-500">
-              · Toyota HiAce Commuter (WVV 4108)
+              · {activeVehicle ? `${activeVehicle.brand} ${activeVehicle.model} (${activeVehicle.plate})` : 'Toyota HiAce Commuter'}
             </span>
           </div>
 

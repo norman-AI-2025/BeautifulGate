@@ -150,6 +150,7 @@ export default function DriverPage() {
     updateBookingStatus, 
     currentUser, 
     profiles, 
+    vehicles,
     driverLeaves, 
     requestDriverLeave, 
     isDateBlockedByLeave 
@@ -414,7 +415,7 @@ export default function DriverPage() {
                 <div className="flex items-center gap-2">
                   <h1 className="text-base font-extrabold">{t('driver.title', 'Driver Console')}</h1>
                   <span className="rounded-md bg-[#F37021] text-white px-2 py-0.5 text-xs font-mono font-black">
-                    WVV 4108
+                    {vehicles?.[0]?.plate || driverProfile?.assigned_vehicle_plate || 'NDC 9751'}
                   </span>
                 </div>
               </div>

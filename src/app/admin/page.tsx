@@ -2183,11 +2183,11 @@ export default function AdminPage() {
                 <table className="w-full text-left text-xs">
                   <thead className="bg-neutral-50 text-neutral-500 font-bold uppercase tracking-wider text-[10px] border-b border-neutral-200">
                     <tr>
-                      <th className="py-3 px-4">User</th>
-                      <th className="py-3 px-4">Role & ID</th>
-                      <th className="py-3 px-4">Contact</th>
-                      <th className="py-3 px-4">Details / Assignment</th>
-                      <th className="py-3 px-4 text-right">Access & Action</th>
+                      <th className="py-3 px-4">{t('admin.tableUser', 'User')}</th>
+                      <th className="py-3 px-4">{t('admin.tableRole', 'Role & ID')}</th>
+                      <th className="py-3 px-4">{t('admin.tableContact', 'Contact')}</th>
+                      <th className="py-3 px-4">{t('admin.tableDetails', 'Details / Assignment')}</th>
+                      <th className="py-3 px-4 text-right">{t('admin.tableAction', 'Access & Action')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-100 bg-white">
@@ -2299,7 +2299,7 @@ export default function AdminPage() {
                                   </span>
                                 </div>
                                 <p className="text-[11px] text-neutral-500 font-medium truncate max-w-xs">
-                                  {p.driver_license || 'GDL Certified'}
+                                  {p.driver_license || t('admin.gdlCertified', 'GDL Certified')}
                                 </p>
                               </div>
                             ) : p.role === 'customer' ? (
@@ -2316,7 +2316,7 @@ export default function AdminPage() {
                               </div>
                             ) : (
                               <span className="text-neutral-500 text-xs font-medium">
-                                Headquarters Operations
+                                {t('admin.hqOperations', 'Headquarters Operations')}
                               </span>
                             )}
                           </td>
