@@ -925,8 +925,6 @@ export default function AdminPage() {
                           <table className="w-full text-left text-xs">
                             <thead className="bg-neutral-50/60 border-b border-neutral-200 text-neutral-600 uppercase tracking-wider font-bold">
                               <tr>
-                                <th className="py-3 px-4">{t('admin.timeSlot', 'Time Slot')}</th>
-                                <th className="py-3 px-4">{t('admin.date', 'Date')}</th>
                                 <th className="py-3 px-4">{t('admin.name', 'Name')}</th>
                                 <th className="py-3 px-4">{t('admin.timePickup', 'Time Pickup')}</th>
                                 <th className="py-3 px-4">{t('admin.timeDropOff', 'Time Drop Off')}</th>
@@ -939,7 +937,6 @@ export default function AdminPage() {
                                 const isExpanded = expandedBookingId === b.id;
                                 const timePickup = formatTimestampTime(b.timestamps.picked_up);
                                 const timeDropOff = formatTimestampTime(b.timestamps.dropped_off);
-                                const formattedDate = formatBookingDate(b.date);
 
                                 return (
                                   <React.Fragment key={b.id}>
@@ -951,26 +948,14 @@ export default function AdminPage() {
                                           : 'hover:bg-neutral-50/80'
                                       }`}
                                     >
-                                      {/* 1. Time Slot */}
-                                      <td className="py-3.5 px-4 font-mono font-bold text-neutral-950 whitespace-nowrap">
+                                      {/* 1. Name */}
+                                      <td className="py-3.5 px-4 whitespace-nowrap">
                                         <div className="flex items-center gap-2">
                                           {isExpanded ? (
                                             <ChevronDown className="h-4 w-4 text-[#F37021] shrink-0 stroke-[2.5]" />
                                           ) : (
                                             <ChevronRight className="h-4 w-4 text-neutral-400 shrink-0 stroke-[2.5]" />
                                           )}
-                                          <span>{b.appointment_time}</span>
-                                        </div>
-                                      </td>
-
-                                      {/* 2. Date */}
-                                      <td className="py-3.5 px-4 font-semibold text-neutral-700 whitespace-nowrap">
-                                        {formattedDate}
-                                      </td>
-
-                                      {/* 3. Name */}
-                                      <td className="py-3.5 px-4 whitespace-nowrap">
-                                        <div className="flex items-center gap-2">
                                           <span className="font-extrabold text-neutral-900">{b.passenger_name}</span>
                                           {b.donation && (
                                             <span
@@ -988,17 +973,17 @@ export default function AdminPage() {
                                         </div>
                                       </td>
 
-                                      {/* 4. Time Pickup */}
+                                      {/* 2. Time Pickup */}
                                       <td className="py-3.5 px-4 font-mono font-semibold text-neutral-700 whitespace-nowrap">
                                         {timePickup}
                                       </td>
 
-                                      {/* 5. Time Drop Off */}
+                                      {/* 3. Time Drop Off */}
                                       <td className="py-3.5 px-4 font-mono font-semibold text-neutral-700 whitespace-nowrap">
                                         {timeDropOff}
                                       </td>
 
-                                      {/* 6. Approval Action */}
+                                      {/* 4. Approval Action */}
                                       <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                                         {isPending ? (
                                           <div className="flex items-center justify-end gap-1.5">
@@ -1038,7 +1023,7 @@ export default function AdminPage() {
                                     {/* EXPANDED RECORD DETAILS */}
                                     {isExpanded && (
                                       <tr className="bg-neutral-50/80">
-                                        <td colSpan={6} className="p-4 sm:p-5 border-t border-neutral-200">
+                                        <td colSpan={4} className="p-4 sm:p-5 border-t border-neutral-200">
                                           <div className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4 shadow-xs">
                                             <div className="flex items-center justify-between pb-2.5 border-b border-neutral-100">
                                               <span className="text-xs font-black uppercase tracking-wider text-neutral-900">
