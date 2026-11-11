@@ -40,29 +40,48 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   // Helper function to resolve nested dot-notation paths like 'brand.name' or 'nav.portal'
   const t = (path: string, fallback?: string): string => {
-    const keys = path.split('.');
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let current: any = translations[language] || translations.en;
-
-    for (const key of keys) {
-      if (current && typeof current === 'object' && key in current) {
-        current = current[key];
-      } else {
-        // Fallback to English if key missing in current language
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        let fallbackCurrent: any = translations.en;
-        for (const fbKey of keys) {
-          if (fallbackCurrent && typeof fallbackCurrent === 'object' && fbKey in fallbackCurrent) {
-            fallbackCurrent = fallbackCurrent[fbKey];
-          } else {
-            return fallback || path;
-          }
+    const resolvePath = (obj: any, p: string): string | undefined => {
+      const keys = p.split('.');
+      let current = obj;
+      for (const key of keys) {
+        if (current && typeof current === 'object' && key in current) {
+          current = current[key];
+        } else {
+          return undefined;
         }
-        return typeof fallbackCurrent === 'string' ? fallbackCurrent : fallback || path;
       }
+      return typeof current === 'string' ? current : undefined;
+    };
+
+    const currentLangDict = translations[language] || translations.en;
+    const enDict = translations.en;
+
+    // 1. Direct path in current language
+    let res = resolvePath(currentLangDict, path);
+    if (res) return res;
+
+    // 2. Cross-alias check: if path starts with 'admin.', check 'adminTable.' as well (and vice-versa)
+    if (path.startsWith('admin.')) {
+      res = resolvePath(currentLangDict, path.replace('admin.', 'adminTable.'));
+      if (res) return res;
+    } else if (path.startsWith('adminTable.')) {
+      res = resolvePath(currentLangDict, path.replace('adminTable.', 'admin.'));
+      if (res) return res;
     }
 
-    return typeof current === 'string' ? current : fallback || path;
+    // 3. Fallback to English dictionary
+    res = resolvePath(enDict, path);
+    if (res) return res;
+
+    if (path.startsWith('admin.')) {
+      res = resolvePath(enDict, path.replace('admin.', 'adminTable.'));
+      if (res) return res;
+    } else if (path.startsWith('adminTable.')) {
+      res = resolvePath(enDict, path.replace('adminTable.', 'admin.'));
+      if (res) return res;
+    }
+
+    return fallback || path;
   };
 
   const currentOption = LANGUAGE_OPTIONS.find((opt) => opt.code === language) || LANGUAGE_OPTIONS[0];

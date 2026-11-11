@@ -2461,7 +2461,9 @@ export default function AdminPage() {
                                   </span>
                                 </div>
                                 <p className="text-[11px] text-neutral-500 font-medium truncate max-w-xs">
-                                  {p.driver_license || t('admin.gdlCertified', 'GDL Certified')}
+                                  {p.driver_license && !p.driver_license.toLowerCase().includes('gdl')
+                                    ? p.driver_license
+                                    : t('admin.gdlCertified', 'GDL Certified Transit Operator')}
                                 </p>
                               </div>
                             ) : p.role === 'customer' ? (
