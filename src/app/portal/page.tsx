@@ -130,9 +130,6 @@ export default function MobileArtisanPortalPage() {
                   <span className="text-[10px] uppercase font-bold tracking-widest text-[#F37021]">
                     {t('nav.portal', 'Beneficiary Portal')}
                   </span>
-                  <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-white/20 text-white font-bold group-hover:bg-[#F37021] transition-colors">
-                    {t('profile.edit', 'Edit Profile')}
-                  </span>
                 </div>
                 <h1 className="text-base sm:text-lg font-extrabold tracking-tight group-hover:text-orange-200 transition-colors">
                   {currentUser?.full_name || t('common.user', 'Beneficiary')}
@@ -152,9 +149,9 @@ export default function MobileArtisanPortalPage() {
               </div>
             </div>
 
-            {/* Main Navigation: Switcher for Residents/Daycare, or Transit Service Pill for Non-Residents */}
+            {/* Main Navigation: Switcher for Residents/Daycare */}
             <div className="flex items-center gap-2">
-              {canAccessIncome ? (
+              {canAccessIncome && (
                 <div className="flex rounded-full bg-white/10 p-1 border border-white/10">
                   <button
                     type="button"
@@ -180,11 +177,6 @@ export default function MobileArtisanPortalPage() {
                     <Sparkles className="h-3.5 w-3.5" />
                     <span className="hidden xs:inline">{t('portal.myEarnings', 'Earnings')}</span>
                   </button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-black text-orange-200 shadow-xs">
-                  <Car className="h-3.5 w-3.5 text-[#F37021]" />
-                  <span>{t('portal.vanTransitOnlyBadge', 'Van Transit Service Only')}</span>
                 </div>
               )}
             </div>
@@ -287,23 +279,24 @@ export default function MobileArtisanPortalPage() {
                         key={b.id}
                         className="rounded-3xl border-2 border-orange-500 bg-white p-5 sm:p-6 shadow-md space-y-4"
                       >
-                        {/* Header Details */}
-                        <div className="flex items-start justify-between border-b border-neutral-100 pb-3">
-                          <div>
-                            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#F37021]">
-                              {b.date || t('common.today', 'Today')} · {t('admin.timeSlot', 'Slot')}: {b.appointment_time}
+                        {/* Header Details: Prioritize Time, Date & Destination */}
+                        <div className="space-y-1.5 border-b border-neutral-100 pb-3">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-xs font-black bg-[#F37021] text-white px-2.5 py-1 rounded-lg shadow-2xs">
+                              {b.appointment_time}
                             </span>
-                            <h3 className="text-xl font-extrabold text-neutral-900 mt-0.5">
+                            <span className="text-xs font-bold text-neutral-600 bg-neutral-100 border border-neutral-200 px-2.5 py-1 rounded-lg">
+                              {b.date || t('common.today', 'Today')}
+                            </span>
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-black text-neutral-900 tracking-tight">
                               {b.hospital_name}
                             </h3>
-                            <p className="text-xs font-semibold text-neutral-700">
+                            <p className="text-xs font-semibold text-neutral-600 mt-0.5">
                               {b.clinic_department}
                             </p>
                           </div>
-
-                          <span className="font-mono text-xs font-extrabold text-white bg-neutral-900 px-3 py-1 rounded-xl shadow-xs">
-                            {b.assigned_space}
-                          </span>
                         </div>
 
                         {/* Status Bar */}
@@ -314,31 +307,17 @@ export default function MobileArtisanPortalPage() {
                           />
                         </div>
 
-                        {/* Driver & Van Info */}
-                        <div className="grid grid-cols-2 gap-3 text-xs">
-                          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-                              {t('portalStatus.operator', 'Operator')}
-                            </span>
-                            <p className="font-bold text-neutral-900 text-sm mt-0.5">
-                              {b.assigned_driver}
-                            </p>
-                            <p className="text-[10px] text-[#F37021] font-semibold mt-0.5">
-                              Toyota HiAce Commuter
-                            </p>
-                          </div>
-
-                          <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-                              {t('portalStatus.vehiclePlate', 'Vehicle Plate')}
-                            </span>
-                            <p className="font-mono font-extrabold text-neutral-900 text-sm mt-0.5">
-                              {b.assigned_vehicle.plate}
-                            </p>
-                            <p className="text-[10px] text-neutral-500 mt-0.5">
-                              {t('portalStatus.hydraulicRamp', 'Hydraulic Ramp Equipped')}
-                            </p>
-                          </div>
+                        {/* Driver & Van Info (Removed vehicle assigned label) */}
+                        <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-xs">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                            {t('portalStatus.operator', 'Operator')}
+                          </span>
+                          <p className="font-bold text-neutral-900 text-sm mt-0.5">
+                            {b.assigned_driver}
+                          </p>
+                          <p className="text-[10px] text-[#F37021] font-semibold mt-0.5">
+                            Toyota HiAce Commuter ({b.assigned_vehicle.plate})
+                          </p>
                         </div>
 
                         {/* Voluntary Transit Donation Button (Replaces Boarding Pass) */}

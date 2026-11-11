@@ -52,15 +52,14 @@ export const Header: React.FC = () => {
 
         {/* Right Section: User Profile & Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
-
           {/* User Session Info */}
           {currentUser ? (
             <div className="flex items-center gap-2 sm:gap-3">
-              {/* Profile Card Button (Click to Edit Profile) */}
+              {/* Profile Avatar Card Button (Click to Open Profile & Settings Modal) */}
               <button
                 type="button"
                 onClick={() => setIsProfileModalOpen(true)}
-                className="flex items-center gap-2.5 p-1 rounded-2xl hover:bg-neutral-100 transition-all tap-target text-left group"
+                className="flex items-center gap-2.5 p-1 rounded-2xl hover:bg-neutral-100 transition-all tap-target text-left group cursor-pointer"
                 title={t('profile.editMyProfile', 'Click to edit your profile and photo')}
               >
                 <UserAvatar
@@ -88,27 +87,6 @@ export const Header: React.FC = () => {
                     </span>
                   </div>
                 </div>
-              </button>
-
-              {/* Explicit Edit Profile Button */}
-              <button
-                type="button"
-                onClick={() => setIsProfileModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-[#F37021] text-[#F37021] hover:text-white border border-orange-200 text-xs font-bold transition-all tap-target shadow-xs"
-                title={t('profile.editMyProfile', 'Click to edit your profile and photo')}
-              >
-                <User className="h-3.5 w-3.5" />
-                <span>{t('profile.edit', 'Edit Profile')}</span>
-              </button>
-
-              {/* Sign Out Button */}
-              <button
-                onClick={handleLogout}
-                className="flex items-center justify-center h-9 w-9 sm:h-10 sm:w-10 rounded-full border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-100 hover:text-black transition-colors tap-target"
-                title={t('nav.signOut', 'Sign Out')}
-                aria-label={t('nav.signOut', 'Sign Out')}
-              >
-                <LogOut className="h-4 w-4" />
               </button>
             </div>
           ) : (

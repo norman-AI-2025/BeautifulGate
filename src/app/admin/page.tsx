@@ -715,33 +715,20 @@ export default function AdminPage() {
                     )}
                   </div>
 
-                  {/* Interactive Status Button with Animation */}
+                  {/* Active Status Badge (Read-only status display, no manual trigger) */}
                   <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const action = getNextStatusAction(currentActiveDispatch.status);
-                        if (action.nextStatus) {
-                          handleUpdateActiveDispatchStatus(currentActiveDispatch.id, action.nextStatus);
-                        } else {
-                          handleUpdateActiveDispatchStatus(currentActiveDispatch.id, 'approved');
-                        }
-                      }}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 tap-target active:scale-95 shadow-sm ${
-                        animatingStatusKey ? 'animate-status-switch scale-105' : ''
-                      } ${
+                    <div
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-sm ${
                         currentActiveDispatch.status === 'dropped_off' || currentActiveDispatch.status === 'en_route_next'
-                          ? 'bg-emerald-500 text-white hover:bg-emerald-600'
-                          : 'bg-[#F37021] text-white hover:bg-[#D9530F]'
+                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                          : 'bg-[#F37021]/20 text-orange-300 border border-[#F37021]/30'
                       }`}
-                      title="Click to advance status"
                     >
-                      <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-                      <span key={currentActiveDispatch.status} className="animate-in fade-in duration-200">
+                      <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                      <span key={currentActiveDispatch.status}>
                         {currentActiveDispatch.status.replace(/_/g, ' ')}
                       </span>
-                      <ArrowRight className="h-3 w-3 opacity-80" />
-                    </button>
+                    </div>
                   </div>
                 </div>
 

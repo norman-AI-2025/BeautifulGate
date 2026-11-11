@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useLanguage } from '@/context/LanguageContext';
 import { useApp } from '@/context/AppContext';
@@ -58,15 +58,56 @@ interface DaySchedule {
   isToday?: boolean;
 }
 
-const DEFAULT_DAYS: DaySchedule[] = [
-  { key: 'mon', name: 'Monday', dateStr: '9 Nov 2026', isoDate: '2026-11-09', isHoliday: true, holidayReason: 'HARI DEEPAVALI' },
-  { key: 'tue', name: 'Tuesday', dateStr: '10 Nov 2026', isoDate: '2026-11-10', isToday: true },
-  { key: 'wed', name: 'Wednesday', dateStr: '11 Nov 2026', isoDate: '2026-11-11' },
-  { key: 'thu', name: 'Thursday', dateStr: '12 Nov 2026', isoDate: '2026-11-12' },
-  { key: 'fri', name: 'Friday', dateStr: '13 Nov 2026', isoDate: '2026-11-13' },
-  { key: 'sat', name: 'Saturday', dateStr: '14 Nov 2026', isoDate: '2026-11-14' },
-  { key: 'sun', name: 'Sunday', dateStr: '15 Nov 2026', isoDate: '2026-11-15' },
-];
+export const getCalendarDaysForCurrentWeek = (): DaySchedule[] => {
+  const now = new Date();
+  const dayOfWeek = now.getDay(); // 0 is Sunday, 1 is Monday...
+  // Calculate Monday of current week
+  const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+  const monday = new Date(now);
+  monday.setDate(now.getDate() + diffToMonday);
+
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const shortMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const dayKeys = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+
+  const days: DaySchedule[] = [];
+  for (let i = 0; i < 7; i++) {
+    const current = new Date(monday);
+    current.setDate(monday.getDate() + i);
+
+    const year = current.getFullYear();
+    const month = current.getMonth();
+    const dateNum = current.getDate();
+    const dayIndex = current.getDay();
+
+    const isoDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(dateNum).padStart(2, '0')}`;
+    const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    days.push({
+      key: dayKeys[dayIndex],
+      name: dayNames[dayIndex],
+      dateStr: `${dateNum} ${shortMonths[month]} ${year}`,
+      isoDate,
+      isToday: isoDate === todayIso,
+    });
+  }
+
+  return days;
+};
+
+// Helper: parse slot start time into minutes from midnight
+// e.g. "08:00 am - 08:30 am" -> 8 * 60 = 480
+export const parseSlotStartMinutes = (slot: string): number => {
+  const startPart = slot.split(' - ')[0].trim().toLowerCase(); // e.g. "08:00 am" or "01:30 pm"
+  const match = startPart.match(/(\d+):(\d+)\s*(am|pm)/);
+  if (!match) return 0;
+  let hours = parseInt(match[1], 10);
+  const minutes = parseInt(match[2], 10);
+  const ampm = match[3];
+  if (ampm === 'pm' && hours < 12) hours += 12;
+  if (ampm === 'am' && hours === 12) hours = 0;
+  return hours * 60 + minutes;
+};
 
 export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
   bookings,
@@ -84,12 +125,34 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
     image_url: '/images/toyota-hiace-van.jpg',
   };
   const [selectedIsoDate, setSelectedIsoDate] = useState<string>('2026-11-10');
-  const [selectedDayObj, setSelectedDayObj] = useState<DaySchedule>(DEFAULT_DAYS[1]);
+  const [selectedDayObj, setSelectedDayObj] = useState<DaySchedule>({
+    key: 'tue',
+    name: 'Tuesday',
+    dateStr: '10 Nov 2026',
+    isoDate: '2026-11-10',
+    isToday: true,
+  });
 
   // Expandable calendar state
   const [isCalendarExpanded, setIsCalendarExpanded] = useState<boolean>(false);
-  const [calendarMonth, setCalendarMonth] = useState<number>(10); // 0-indexed: 10 is November
+  const [calendarMonth, setCalendarMonth] = useState<number>(10);
   const [calendarYear, setCalendarYear] = useState<number>(2026);
+  const [nowDate, setNowDate] = useState<Date | null>(null);
+
+  // Sync with client-side clock after hydration to avoid prerender dynamic-date errors
+  useEffect(() => {
+    const clientNow = new Date();
+    setNowDate(clientNow);
+    setCalendarMonth(clientNow.getMonth());
+    setCalendarYear(clientNow.getFullYear());
+
+    const clientWeek = getCalendarDaysForCurrentWeek();
+    const todayObj = clientWeek.find(d => d.isToday) || clientWeek[0];
+    if (todayObj) {
+      setSelectedDayObj(todayObj);
+      setSelectedIsoDate(todayObj.isoDate);
+    }
+  }, []);
 
   // USER SPEC: Clickable to view vehicle & driver details pop up (live database values)
   const [isVehicleModalOpen, setIsVehicleModalOpen] = useState<boolean>(false);
@@ -161,22 +224,38 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
       return { status: 'close', label: 'Driver On Leave' };
     }
 
+    // Date & Time sensitivity check:
+    // 1. Date must be from today onwards (past dates are closed)
+    // 2. If date is today, time must be at least 2 hours from current time
+    const now = nowDate || new Date(2026, 10, 10);
+    const todayYmd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    if (nowDate && day.isoDate < todayYmd) {
+      return { status: 'close', label: t('timetable.legendClosed', 'Closed') };
+    }
+
+    if (nowDate && day.isoDate === todayYmd) {
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const slotStartMinutes = parseSlotStartMinutes(slot);
+      // Must be at least 2 hours (120 minutes) from current time
+      if (slotStartMinutes < currentMinutes + 120) {
+        return { status: 'close', label: t('timetable.legendClosed', 'Closed') };
+      }
+    }
+
     const slotStart = slot.split(' - ')[0].trim().toLowerCase();
     
+    // Only count genuine bookings from Supabase
     const matchedBookings = bookings.filter(b => {
       const bTime = b.appointment_time.trim().toLowerCase();
       const bDate = b.date?.toLowerCase() || '';
-      const dayMatches = bDate.includes(day.name.toLowerCase()) || (day.isToday && !b.date);
+      const dayMatches = bDate.includes(day.name.toLowerCase()) || 
+        bDate.includes(day.dateStr.toLowerCase()) || 
+        bDate.includes(day.isoDate);
       return dayMatches && (bTime.startsWith(slotStart) || slot.toLowerCase().includes(bTime));
     });
 
     if (matchedBookings.length === 0) {
-      if (day.key === 'thu' || day.name === 'Thursday') {
-        return { status: 'booked', label: t('timetable.legendBooked', 'Booked') };
-      }
-      if ((day.key === 'wed' || day.name === 'Wednesday') && (slot.startsWith('02:00') || slot.startsWith('02:30') || slot.startsWith('03:00') || slot.startsWith('03:30') || slot.startsWith('04:00'))) {
-        return { status: 'booked', label: t('timetable.legendBooked', 'Booked') };
-      }
       return { status: 'available', label: '' };
     }
 
@@ -300,9 +379,11 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
 
                 const dayIso = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
                 const isSelected = selectedIsoDate === dayIso;
-                const isToday = dayIso === '2026-11-10';
+                const activeNow = nowDate || new Date(2026, 10, 10);
+                const todayYmd = `${activeNow.getFullYear()}-${String(activeNow.getMonth() + 1).padStart(2, '0')}-${String(activeNow.getDate()).padStart(2, '0')}`;
+                const isToday = dayIso === todayYmd;
                 const isHoliday = dayIso === '2026-11-09';
-                const isUpcoming = dayIso >= '2026-11-09';
+                const isUpcoming = dayIso >= todayYmd;
 
                 return (
                   <button

@@ -20,8 +20,10 @@ import {
   CheckCircle2, 
   FileText, 
   Lock, 
-  Trash2 
+  Trash2,
+  LogOut 
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { Profile, MobilityType, UserRole, BeneficiaryType } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -49,7 +51,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   profile: explicitProfile,
   mode = 'edit_self',
 }) => {
-  const { currentUser, profiles, updateProfile, deleteProfile } = useApp();
+  const router = useRouter();
+  const { currentUser, profiles, updateProfile, deleteProfile, logout } = useApp();
   const { t } = useLanguage();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -669,13 +672,27 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           </div>
 
           {/* Action Buttons */}
-          <div className="pt-2 flex items-center justify-end gap-3">
-            {currentUser?.role === 'admin' && profile.id !== currentUser.id && (
+          <div className="pt-2 flex items-center justify-between gap-3 border-t border-neutral-100">
+            {/* Log Out button for editing self */}
+            {mode === 'edit_self' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  logout();
+                  router.push('/login');
+                }}
+                className="px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 text-xs font-bold transition-all flex items-center gap-1.5 tap-target"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span>{t('nav.signOut', 'Sign Out')}</span>
+              </button>
+            ) : currentUser?.role === 'admin' && profile.id !== currentUser.id ? (
               <button
                 type="button"
                 disabled={isDeleting}
                 onClick={handleDeleteAccount}
-                className="mr-auto px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 text-xs font-bold transition-all flex items-center gap-1.5 tap-target disabled:opacity-50"
+                className="px-3.5 py-2.5 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 text-xs font-bold transition-all flex items-center gap-1.5 tap-target disabled:opacity-50"
               >
                 <Trash2 className="h-3.5 w-3.5" />
                 <span>
@@ -686,25 +703,29 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     : t('admin.deleteAccount', 'Delete Account')}
                 </span>
               </button>
+            ) : (
+              <div />
             )}
 
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-xl border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-100 text-xs font-bold tap-target transition-all"
-            >
-              {isReadOnly ? t('common.close', 'Close') : t('common.cancel', 'Cancel')}
-            </button>
-
-            {!isReadOnly && (
+            <div className="flex items-center gap-2">
               <button
-                type="submit"
-                className="px-6 py-2.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-black shadow-md tap-target transition-all active:scale-95 flex items-center gap-1.5"
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2.5 rounded-xl border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-100 text-xs font-bold tap-target transition-all"
               >
-                <Check className="h-4 w-4 stroke-[2.5]" />
-                <span>{t('profile.saveChanges', 'Save Profile Changes')}</span>
+                {isReadOnly ? t('common.close', 'Close') : t('common.cancel', 'Cancel')}
               </button>
-            )}
+
+              {!isReadOnly && (
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-black shadow-md tap-target transition-all active:scale-95 flex items-center gap-1.5"
+                >
+                  <Check className="h-4 w-4 stroke-[2.5]" />
+                  <span>{t('profile.saveChanges', 'Save Profile Changes')}</span>
+                </button>
+              )}
+            </div>
           </div>
         </form>
       </div>
