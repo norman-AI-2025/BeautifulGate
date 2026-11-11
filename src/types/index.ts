@@ -34,6 +34,34 @@ export interface VehicleSpec {
   configuration: string;
 }
 
+export interface Vehicle {
+  id: string;
+  plate: string;
+  brand: string;
+  model: string;
+  color: string;
+  seats: string;
+  image_url?: string;
+  status: 'active' | 'maintenance' | 'standby';
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export type LeaveStatus = 'pending' | 'approved' | 'rejected';
+
+export interface DriverLeave {
+  id: string;
+  driver_id: string;
+  driver_name: string;
+  date: string; // YYYY-MM-DD
+  reason?: string;
+  status: LeaveStatus;
+  approved_by?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Profile {
   id: string;
   full_name: string;

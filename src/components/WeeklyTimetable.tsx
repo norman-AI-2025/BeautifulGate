@@ -73,8 +73,16 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
   onSelectSlot,
 }) => {
   const { t, language } = useLanguage();
-  const { profiles } = useApp();
+  const { profiles, vehicles, isDateBlockedByLeave } = useApp();
   const driverProfile = profiles.find(p => p.role === 'driver');
+  const activeVehicle = vehicles?.[0] || {
+    plate: 'WVV 4108',
+    brand: 'Toyota',
+    model: 'HiAce High-Roof Commuter',
+    color: 'Pearl White',
+    seats: '7 Passengers (Row 1: Driver + 1 Pax | Row 2: 4 Regular Seats | Row 3: 2 Wheelchair Bays)',
+    image_url: '/images/toyota-hiace-van.jpg',
+  };
   const [selectedIsoDate, setSelectedIsoDate] = useState<string>('2026-11-10');
   const [selectedDayObj, setSelectedDayObj] = useState<DaySchedule>(DEFAULT_DAYS[1]);
 
@@ -149,6 +157,10 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
       return { status: 'close', label: day.holidayReason || t('timetable.legendClosed', 'Closed') };
     }
 
+    if (isDateBlockedByLeave(day.isoDate) || isDateBlockedByLeave(day.dateStr)) {
+      return { status: 'close', label: 'Driver On Leave' };
+    }
+
     const slotStart = slot.split(' - ')[0].trim().toLowerCase();
     
     const matchedBookings = bookings.filter(b => {
@@ -182,7 +194,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
   };
 
   const handleCellClick = (day: DaySchedule, slot: string, slotStatus: string) => {
-    if (slotStatus === 'close' || slotStatus === 'booked') {
+    if (slotStatus === 'close' || slotStatus === 'booked' || isDateBlockedByLeave(day.isoDate) || isDateBlockedByLeave(day.dateStr)) {
       return;
     }
     const cleanTime = slot.split(' - ')[0].toUpperCase();
@@ -350,7 +362,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
             title={t('vanInfo.clickToView', 'Click to view vehicle & driver details')}
           >
             <Car className={`h-4 w-4 ${isVanDetailsExpanded ? 'text-[#F37021]' : 'text-[#F37021]'}`} />
-            <span className="font-extrabold">Toyota HiAce (WVV 4108)</span>
+            <span className="font-extrabold">{activeVehicle.brand} ({activeVehicle.plate})</span>
             {isVanDetailsExpanded ? (
               <ChevronUp className="h-4 w-4 text-orange-400" />
             ) : (
@@ -358,6 +370,19 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
             )}
           </button>
         </div>
+
+        {/* DRIVER ON LEAVE WARNING BANNER */}
+        {(isDateBlockedByLeave(selectedIsoDate) || isDateBlockedByLeave(selectedDayObj.dateStr)) && (
+          <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-4 shadow-xs space-y-1">
+            <div className="flex items-center gap-2 text-amber-950 font-black text-xs sm:text-sm">
+              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+              <span>Driver On Approved Leave · Bookings Unavailable</span>
+            </div>
+            <p className="text-xs text-amber-800 font-medium">
+              The van driver is on approved leave for {getLocalizedDayName(selectedDayObj.name)}, {selectedDayObj.dateStr}. All slots are closed and booking cannot be submitted.
+            </p>
+          </div>
+        )}
 
         {/* EXPANDED VAN & DRIVER IMAGE AND SPECIFICATION PANEL */}
         {isVanDetailsExpanded && (

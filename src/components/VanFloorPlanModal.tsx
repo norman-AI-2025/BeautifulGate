@@ -11,7 +11,8 @@ import {
   Locate, 
   User, 
   Building2, 
-  CheckCircle2 
+  CheckCircle2,
+  AlertCircle 
 } from 'lucide-react';
 import { AssignedSpace, TransitBooking, MobilityType } from '@/types';
 import { useApp } from '@/context/AppContext';
@@ -169,7 +170,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
   existingBookingsForSlot,
   onBookingSuccess,
 }) => {
-  const { currentUser, createBooking } = useApp();
+  const { currentUser, createBooking, isDateBlockedByLeave } = useApp();
   const { t } = useLanguage();
 
   // USER SPEC: "each booking can book up to 2 seats"
@@ -290,6 +291,11 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (isDateBlockedByLeave(selectedDay)) {
+      setErrorMsg(t('vanModal.driverOnLeave', 'Transport bookings are unavailable on this date because the van driver is on approved leave.'));
+      return;
+    }
+
     if (selectedSeats.length === 0) {
       setErrorMsg(t('vanModal.pleaseSelectSeat', 'Please select at least 1 van space.'));
       return;
@@ -359,6 +365,16 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
 
         {/* Form Body - Scrollable */}
         <form onSubmit={handleSubmit} className="overflow-y-auto p-5 sm:p-7 flex-1 space-y-6">
+          {isDateBlockedByLeave(selectedDay) && (
+            <div className="rounded-2xl bg-amber-50 border-2 border-amber-300 p-4 text-xs font-bold text-amber-950 flex items-center gap-2.5 animate-in fade-in-50">
+              <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+              <div>
+                <p className="font-black text-sm">Driver On Approved Leave</p>
+                <p className="text-amber-800 font-medium">Van bookings for {selectedDay} are disabled because the driver is on approved leave.</p>
+              </div>
+            </div>
+          )}
+
           {errorMsg && (
             <div className="rounded-2xl bg-red-50 border-2 border-red-200 p-3.5 text-xs font-bold text-red-800 animate-in fade-in-50">
               {errorMsg}
@@ -697,14 +713,14 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
           <div className="pt-2 border-t border-neutral-200">
             <button
               type="submit"
-              disabled={selectedSeats.length === 0 || !destQuery.trim()}
+              disabled={selectedSeats.length === 0 || !destQuery.trim() || isDateBlockedByLeave(selectedDay)}
               className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2.5 shadow-md tap-target transition-all active:scale-[0.99] ${
-                selectedSeats.length === 0 || !destQuery.trim()
+                selectedSeats.length === 0 || !destQuery.trim() || isDateBlockedByLeave(selectedDay)
                   ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed shadow-none'
                   : 'bg-[#F37021] hover:bg-[#D9530F] text-white shadow-orange-500/20'
               }`}
             >
-              <span>{t('vanModal.confirmBooking', 'Confirm & Submit Booking')}</span>
+              <span>{isDateBlockedByLeave(selectedDay) ? 'Booking Unavailable (Driver On Leave)' : t('vanModal.confirmBooking', 'Confirm & Submit Booking')}</span>
               <span className="font-mono bg-white/20 px-2.5 py-0.5 rounded-lg text-xs">
                 {selectedSeats.length} {selectedSeats.length === 1 ? t('vanModal.seat', 'Seat') : t('vanModal.seats', 'Seats')} · {selectedTimeSlot}
               </span>

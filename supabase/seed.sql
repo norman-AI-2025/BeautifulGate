@@ -157,3 +157,56 @@ insert into public.profiles (
   notes = excluded.notes,
   is_approved = excluded.is_approved,
   updated_at = timezone('utc'::text, now());
+
+
+-- ==============================================================================
+-- 4. OFFICIAL FLEET VEHICLE: Toyota HiAce Commuter (WVV 4108)
+-- ==============================================================================
+create table if not exists public.vehicles (
+  id text primary key,
+  plate text not null unique,
+  brand text not null,
+  model text not null,
+  color text not null,
+  seats text not null,
+  image_url text,
+  status text not null default 'active' check (status in ('active', 'maintenance', 'standby')),
+  notes text,
+  created_at timestamptz default timezone('utc'::text, now()) not null,
+  updated_at timestamptz default timezone('utc'::text, now()) not null
+);
+
+insert into public.vehicles (
+  id,
+  plate,
+  brand,
+  model,
+  color,
+  seats,
+  image_url,
+  status,
+  notes,
+  created_at,
+  updated_at
+) values (
+  'veh-hiace-wvv4108',
+  'WVV 4108',
+  'Toyota',
+  'HiAce High-Roof Commuter',
+  'Pearl White',
+  '7 Passengers (Row 1: Driver + 1 Pax | Row 2: 4 Regular Seats | Row 3: 2 Wheelchair Bays)',
+  '/images/toyota-hiace-van.jpg',
+  'active',
+  'Fitted with rear hydraulic boarding lift and floor clamps',
+  timezone('utc'::text, now()),
+  timezone('utc'::text, now())
+) on conflict (id) do update set
+  plate = excluded.plate,
+  brand = excluded.brand,
+  model = excluded.model,
+  color = excluded.color,
+  seats = excluded.seats,
+  image_url = excluded.image_url,
+  status = excluded.status,
+  notes = excluded.notes,
+  updated_at = timezone('utc'::text, now());

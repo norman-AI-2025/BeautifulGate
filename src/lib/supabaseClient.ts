@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Profile, TransitBooking, CardProduct, CardWorkLog } from '@/types';
+import { Profile, TransitBooking, CardProduct, CardWorkLog, Vehicle, DriverLeave, LeaveStatus } from '@/types';
 
 // Environment variables for Supabase connection
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -231,6 +231,119 @@ export async function dbInsertWorkLog(log: CardWorkLog): Promise<boolean> {
   });
   if (error) {
     console.error('Supabase insertWorkLog error:', error);
+    return false;
+  }
+  return true;
+}
+
+// ==============================================================================
+// VEHICLES API
+// ==============================================================================
+export async function dbFetchVehicles(): Promise<Vehicle[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('vehicles')
+    .select('*')
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.warn('Supabase fetchVehicles error:', error);
+    return null;
+  }
+  return (data || []).map((v: any): Vehicle => ({
+    id: v.id,
+    plate: v.plate,
+    brand: v.brand,
+    model: v.model,
+    color: v.color,
+    seats: v.seats,
+    image_url: v.image_url || '/images/toyota-hiace-van.jpg',
+    status: v.status || 'active',
+    notes: v.notes || '',
+    created_at: v.created_at,
+    updated_at: v.updated_at,
+  }));
+}
+
+export async function dbUpsertVehicle(vehicle: Vehicle): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase
+    .from('vehicles')
+    .upsert({
+      ...vehicle,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'id' });
+
+  if (error) {
+    console.error('Supabase upsertVehicle error:', error);
+    return false;
+  }
+  return true;
+}
+
+// ==============================================================================
+// DRIVER LEAVES API
+// ==============================================================================
+export async function dbFetchDriverLeaves(): Promise<DriverLeave[] | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from('driver_leaves')
+    .select('*')
+    .order('date', { ascending: false });
+
+  if (error) {
+    console.warn('Supabase fetchDriverLeaves error:', error);
+    return null;
+  }
+  return (data || []).map((l: any): DriverLeave => ({
+    id: l.id,
+    driver_id: l.driver_id,
+    driver_name: l.driver_name,
+    date: l.date,
+    reason: l.reason || '',
+    status: l.status || 'pending',
+    approved_by: l.approved_by || '',
+    created_at: l.created_at,
+    updated_at: l.updated_at,
+  }));
+}
+
+export async function dbInsertDriverLeave(leave: DriverLeave): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase
+    .from('driver_leaves')
+    .insert({
+      id: leave.id,
+      driver_id: leave.driver_id,
+      driver_name: leave.driver_name,
+      date: leave.date,
+      reason: leave.reason || '',
+      status: leave.status || 'pending',
+      approved_by: leave.approved_by || null,
+      created_at: leave.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+
+  if (error) {
+    console.error('Supabase insertDriverLeave error:', error);
+    return false;
+  }
+  return true;
+}
+
+export async function dbUpdateDriverLeaveStatus(id: string, status: LeaveStatus, approvedBy?: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase
+    .from('driver_leaves')
+    .update({
+      status,
+      approved_by: approvedBy || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', id);
+
+  if (error) {
+    console.error('Supabase updateDriverLeaveStatus error:', error);
     return false;
   }
   return true;

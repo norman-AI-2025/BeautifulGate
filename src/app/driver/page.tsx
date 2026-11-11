@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -27,7 +28,8 @@ import {
   AlertCircle,
   Users,
   Check,
-  Camera
+  Camera,
+  X
 } from 'lucide-react';
 import { TransitBooking, TransitStatus } from '@/types';
 
@@ -142,13 +144,28 @@ const formatDisplayDate = (dateOrYmd: string, lang: string): string => {
 };
 
 export default function DriverPage() {
-  const { bookings, updateBookingStatus, currentUser, profiles } = useApp();
+  const { 
+    bookings, 
+    updateBookingStatus, 
+    currentUser, 
+    profiles, 
+    driverLeaves, 
+    requestDriverLeave, 
+    isDateBlockedByLeave 
+  } = useApp();
   const { t, language } = useLanguage();
 
   // Selected date in weekly calendar view (defaults to today '2026-11-10')
   const [selectedYmd, setSelectedYmd] = useState<string>('2026-11-10');
   const [showCompletedRuns, setShowCompletedRuns] = useState<boolean>(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState<boolean>(false);
+
+  // Leave Form states
+  const [leaveDate, setLeaveDate] = useState<string>('2026-11-12');
+  const [leaveReason, setLeaveReason] = useState<string>('');
+  const [leaveSubmitted, setLeaveSubmitted] = useState<boolean>(false);
+  const [leaveError, setLeaveError] = useState<string>('');
 
   // Driver profile being viewed/edited
   const driverProfile = useMemo(() => {
@@ -402,7 +419,21 @@ export default function DriverPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
+              {/* Request Leave Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setLeaveSubmitted(false);
+                  setLeaveError('');
+                  setIsLeaveModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500/20 hover:bg-[#F37021] text-orange-200 hover:text-white border border-orange-400/40 text-xs font-bold transition-all tap-target shadow-xs"
+              >
+                <Calendar className="h-3.5 w-3.5" />
+                <span className="hidden xs:inline">Request Leave</span>
+              </button>
+
               {/* Driver Profile Button */}
               <button
                 type="button"
@@ -488,6 +519,7 @@ export default function DriverPage() {
               const isSelected = selectedYmd === d.ymd;
               const runCount = dayRunsCountMap.get(d.ymd) || 0;
               const dayLabel = getDayLabel(d, language);
+              const isDayOnLeave = isDateBlockedByLeave(d.ymd);
 
               return (
                 <button
@@ -497,6 +529,8 @@ export default function DriverPage() {
                   className={`py-2 px-1 rounded-2xl flex flex-col items-center justify-center transition-all tap-target relative ${
                     isSelected
                       ? 'bg-[#F37021] text-white shadow-md scale-102 font-black'
+                      : isDayOnLeave
+                      ? 'bg-amber-100/70 border border-amber-300 text-amber-900 font-bold'
                       : d.isToday
                       ? 'bg-orange-50/80 hover:bg-orange-100 border border-orange-300 text-neutral-900 font-bold'
                       : 'bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-neutral-700 font-semibold'
@@ -521,8 +555,14 @@ export default function DriverPage() {
                     {d.dateNum.split(' ')[0]}
                   </span>
 
-                  {/* Run count pill or dot */}
-                  {runCount > 0 ? (
+                  {/* On leave indicator or Run count pill */}
+                  {isDayOnLeave ? (
+                    <span className={`mt-1 text-[8px] px-1 py-0.2 rounded font-black uppercase tracking-wider ${
+                      isSelected ? 'bg-white text-amber-900' : 'bg-amber-200 text-amber-900'
+                    }`}>
+                      Leave
+                    </span>
+                  ) : runCount > 0 ? (
                     <span className={`mt-1 text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold leading-none ${
                       isSelected
                         ? 'bg-white text-[#F37021]'
@@ -538,6 +578,19 @@ export default function DriverPage() {
             })}
           </div>
         </div>
+
+        {/* ON LEAVE NOTICE BANNER */}
+        {isDateBlockedByLeave(selectedYmd) && (
+          <div className="rounded-3xl border-2 border-amber-400 bg-amber-50 p-5 shadow-sm space-y-2 animate-in fade-in-50">
+            <div className="flex items-center gap-2.5 text-amber-950 font-black text-sm sm:text-base">
+              <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+              <span>ON LEAVE · Transport Services Suspended</span>
+            </div>
+            <p className="text-xs text-amber-900 leading-relaxed font-medium">
+              You are officially registered as <strong>ON LEAVE</strong> on {formatDisplayDate(selectedYmd, language)} with administrator approval. Public beneficiary bookings for this day are closed and no transport missions are assigned.
+            </p>
+          </div>
+        )}
 
         {/* ============================================================== */}
         {/* 1. FOCUS ON TIME: QUEUE LIST GROUPED BY TIMESLOT               */}
@@ -889,6 +942,119 @@ export default function DriverPage() {
           targetProfile={driverProfile}
           mode="edit_self"
         />
+      )}
+
+      {/* Driver Leave Request Modal */}
+      {isLeaveModalOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in-50">
+          <div className="relative w-full max-w-md rounded-3xl bg-white border border-neutral-200 shadow-2xl overflow-hidden">
+            <div className="bg-neutral-900 text-white p-5 sm:p-6 relative">
+              <button
+                type="button"
+                onClick={() => setIsLeaveModalOpen(false)}
+                className="absolute right-4 top-4 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all tap-target"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500 text-white">
+                  Staff Dispatch
+                </span>
+                <span className="font-mono text-xs text-amber-300 font-bold">
+                  {driverProfile?.full_name || 'Driver'}
+                </span>
+              </div>
+              <h2 className="text-xl font-black text-white mt-1.5">
+                Request Driver Leave
+              </h2>
+              <p className="text-xs text-neutral-300 mt-0.5">
+                Submitted leaves require administrator approval before transit bookings are suspended
+              </p>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!leaveDate) {
+                  setLeaveError('Please select a valid date.');
+                  return;
+                }
+                try {
+                  await requestDriverLeave({
+                    date: leaveDate,
+                    reason: leaveReason.trim() || 'Driver Personal Leave',
+                  });
+                  setLeaveSubmitted(true);
+                  setTimeout(() => {
+                    setIsLeaveModalOpen(false);
+                    setLeaveSubmitted(false);
+                    setLeaveReason('');
+                  }, 900);
+                } catch {
+                  setLeaveError('Failed to submit leave request.');
+                }
+              }}
+              className="p-5 sm:p-6 space-y-4"
+            >
+              {leaveError && (
+                <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
+                  {leaveError}
+                </div>
+              )}
+
+              {leaveSubmitted && (
+                <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black">
+                  Leave request submitted successfully. Awaiting Administrator approval.
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs font-bold text-neutral-700 block mb-1">
+                  Leave Date
+                </label>
+                <input
+                  type="date"
+                  value={leaveDate}
+                  onChange={(e) => setLeaveDate(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-2xl border border-neutral-300 bg-neutral-50 focus:bg-white text-neutral-900 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[#F37021] transition-all"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-neutral-700 block mb-1">
+                  Reason for Leave (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={leaveReason}
+                  onChange={(e) => setLeaveReason(e.target.value)}
+                  placeholder="e.g. Medical appointment, family matter, routine checkup"
+                  className="w-full px-3.5 py-2.5 rounded-2xl border border-neutral-300 bg-neutral-50 focus:bg-white text-neutral-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#F37021] transition-all"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsLeaveModalOpen(false)}
+                  className="px-4 py-2.5 rounded-2xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-bold transition-all tap-target"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={leaveSubmitted}
+                  className="px-5 py-2.5 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-black shadow-md transition-all tap-target disabled:opacity-50"
+                >
+                  {leaveSubmitted ? 'Submitted' : 'Submit Leave Request'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>,
+        document.body
       )}
     </div>
   );

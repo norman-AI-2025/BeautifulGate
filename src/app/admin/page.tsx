@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { ProfileModal } from '@/components/ProfileModal';
+import { VehicleModal } from '@/components/VehicleModal';
 import { TransitBooking, ArtisanSummary, TransitStatus, Profile } from '@/types';
 
 // Helper to normalize and sort time slots chronologically
@@ -110,7 +111,11 @@ export default function AdminPage() {
     verifyDonation,
     exportDonationsCSV,
     approveDriverAccount,
-    rejectDriverAccount
+    rejectDriverAccount,
+    vehicles,
+    driverLeaves,
+    approveDriverLeave,
+    rejectDriverLeave,
   } = useApp();
   const { t } = useLanguage();
 
@@ -124,6 +129,7 @@ export default function AdminPage() {
   const [selectedProfileForModal, setSelectedProfileForModal] = useState<Profile | null>(null);
   const [profileModalMode, setProfileModalMode] = useState<'admin_manage_driver' | 'admin_view' | 'edit_self'>('admin_view');
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
 
   // Dispatch table filter tab
   const [dispatchFilter, setDispatchFilter] = useState<'all' | 'pending' | 'active' | 'completed'>('all');
@@ -1821,85 +1827,204 @@ export default function AdminPage() {
             </div>
 
             {/* Vehicle Profile Card */}
-            <div className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs">
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-neutral-100">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-9 w-9 rounded-xl bg-neutral-900 text-white flex items-center justify-center shadow-xs">
-                    <Car className="h-4 w-4 text-orange-400" />
+            {(() => {
+              const activeVehicle = vehicles?.[0] || {
+                id: 'veh-hiace-wvv4108',
+                plate: 'WVV 4108',
+                brand: 'Toyota',
+                model: 'HiAce High-Roof Commuter',
+                color: 'Pearl White',
+                seats: '7 Passengers (Row 1: Driver + 1 Pax | Row 2: 4 Regular Seats | Row 3: 2 Wheelchair Bays)',
+                image_url: '/images/toyota-hiace-van.jpg',
+                status: 'active' as const,
+                notes: 'Fitted with rear hydraulic boarding lift and floor clamps',
+              };
+
+              return (
+                <div className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-neutral-100">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-9 w-9 rounded-xl bg-neutral-900 text-white flex items-center justify-center shadow-xs">
+                        <Car className="h-4 w-4 text-orange-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-neutral-900">
+                          {activeVehicle.brand} {activeVehicle.model}
+                        </h3>
+                        <p className="text-xs text-neutral-500 font-medium">
+                          {activeVehicle.notes || 'Fleet vehicle managed by Beautiful Gate Foundation'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 self-start sm:self-auto">
+                      <span className="font-mono font-black text-xs px-3 py-1 rounded-xl bg-orange-50 text-[#F37021] border border-orange-200 shadow-xs">
+                        {activeVehicle.plate}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsVehicleModalOpen(true)}
+                        className="px-3.5 py-1.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-black flex items-center gap-1.5 shadow-sm tap-target transition-all active:scale-95"
+                      >
+                        <Edit3 className="h-3.5 w-3.5" />
+                        <span>Edit Vehicle</span>
+                      </button>
+                    </div>
                   </div>
-                  <h3 className="text-base font-black text-neutral-900">
-                    Vehicle Profile · Toyota HiAce Commuter
-                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+                    {/* Vehicle Image */}
+                    <div className="md:col-span-4 relative h-48 w-full rounded-2xl overflow-hidden border border-neutral-200 shadow-xs group bg-neutral-100">
+                      <Image
+                        src={activeVehicle.image_url || '/images/toyota-hiace-van.jpg'}
+                        alt={`${activeVehicle.brand} ${activeVehicle.model}`}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        unoptimized={activeVehicle.image_url?.startsWith('data:')}
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                      <div className="absolute bottom-2.5 left-2.5 flex items-center gap-2">
+                        <span className="font-mono font-black text-xs px-2.5 py-0.5 rounded-lg bg-white text-neutral-900 shadow-sm">
+                          {activeVehicle.plate}
+                        </span>
+                        <span className="text-[10px] font-bold text-white bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded-lg">
+                          {activeVehicle.brand} {activeVehicle.model}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Vehicle Details */}
+                    <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          Car Plate
+                        </span>
+                        <span className="font-mono font-black text-base text-neutral-900 mt-1 block">
+                          {activeVehicle.plate}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md mt-1.5 inline-block ${
+                          activeVehicle.status === 'active' 
+                            ? 'text-emerald-700 bg-emerald-100'
+                            : activeVehicle.status === 'maintenance'
+                            ? 'text-rose-700 bg-rose-100'
+                            : 'text-amber-700 bg-amber-100'
+                        }`}>
+                          {activeVehicle.status === 'active' ? 'Active Operation' : activeVehicle.status === 'maintenance' ? 'Under Maintenance' : 'Standby Reserve'}
+                        </span>
+                      </div>
+
+                      <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          Colour
+                        </span>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="h-3.5 w-3.5 rounded-full bg-white border-2 border-neutral-400 shadow-xs shrink-0" />
+                          <span className="font-bold text-sm text-neutral-900 truncate">
+                            {activeVehicle.color}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-neutral-500 font-medium block mt-1.5 truncate">
+                          Factory Exterior Finish
+                        </span>
+                      </div>
+
+                      <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
+                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
+                          Seatings
+                        </span>
+                        <span className="font-black text-sm text-neutral-900 mt-1 block">
+                          Accessible Layout
+                        </span>
+                        <p className="text-[10px] text-neutral-600 mt-1 font-medium leading-relaxed line-clamp-3">
+                          {activeVehicle.seats}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <span className="font-mono font-black text-xs px-3 py-1 rounded-xl bg-orange-50 text-[#F37021] border border-orange-200 shadow-xs">
-                  WVV 4108
+              );
+            })()}
+
+            {/* Driver Leave Management Section */}
+            <div className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-neutral-100">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-9 w-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs">
+                    <Calendar className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-black text-neutral-900">
+                      Driver Leave Requests & Approvals
+                    </h3>
+                    <p className="text-xs text-neutral-500 font-medium">
+                      Approved leave blocks beneficiary transport bookings and marks driver as on leave
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold px-3 py-1 rounded-full bg-neutral-100 text-neutral-700 self-start sm:self-auto">
+                  {driverLeaves.filter(l => l.status === 'pending').length} Pending Review
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
-                {/* Vehicle Image */}
-                <div className="md:col-span-4 relative h-44 w-full rounded-2xl overflow-hidden border border-neutral-200 shadow-xs group">
-                  <Image
-                    src="/images/toyota-hiace-van.jpg"
-                    alt="Toyota HiAce Commuter Van"
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                  <div className="absolute bottom-2.5 left-2.5 flex items-center gap-2">
-                    <span className="font-mono font-black text-xs px-2.5 py-0.5 rounded-lg bg-white text-neutral-900 shadow-sm">
-                      WVV 4108
-                    </span>
-                    <span className="text-[10px] font-bold text-white bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded-lg">
-                      Toyota HiAce
-                    </span>
-                  </div>
+              {driverLeaves.length === 0 ? (
+                <div className="text-center py-6 text-neutral-400 text-xs font-medium">
+                  No driver leave requests recorded.
                 </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {driverLeaves.map(leave => (
+                    <div key={leave.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl border border-neutral-200 bg-neutral-50/60">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-black text-sm text-neutral-900">{leave.driver_name}</span>
+                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-white border border-neutral-200 text-neutral-700">
+                            {leave.date}
+                          </span>
+                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                            leave.status === 'approved' 
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : leave.status === 'rejected'
+                              ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                              : 'bg-amber-100 text-amber-800 border border-amber-300'
+                          }`}>
+                            {leave.status === 'approved' ? 'Approved · Bookings Blocked' : leave.status === 'rejected' ? 'Rejected' : 'Pending Approval'}
+                          </span>
+                        </div>
+                        {leave.reason && (
+                          <p className="text-xs text-neutral-600 font-medium">
+                            Reason: {leave.reason}
+                          </p>
+                        )}
+                        {leave.approved_by && (
+                          <p className="text-[10px] text-neutral-400 font-medium">
+                            Reviewed by: {leave.approved_by}
+                          </p>
+                        )}
+                      </div>
 
-                {/* Vehicle Details */}
-                <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
-                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                      Car Plate
-                    </span>
-                    <span className="font-mono font-black text-base text-neutral-900 mt-1 block">
-                      WVV 4108
-                    </span>
-                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md mt-1.5 inline-block">
-                      Active Operation
-                    </span>
-                  </div>
-
-                  <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
-                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                      Colour
-                    </span>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="h-3.5 w-3.5 rounded-full bg-white border-2 border-neutral-400 shadow-xs shrink-0" />
-                      <span className="font-bold text-sm text-neutral-900">
-                        Pearl White
-                      </span>
+                      {leave.status === 'pending' && (
+                        <div className="flex items-center gap-2 self-end sm:self-center">
+                          <button
+                            type="button"
+                            onClick={() => approveDriverLeave(leave.id)}
+                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1 shadow-xs tap-target transition-all active:scale-95"
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                            <span>Approve</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => rejectDriverLeave(leave.id)}
+                            className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-rose-600 font-bold text-xs flex items-center gap-1 tap-target transition-all active:scale-95"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            <span>Reject</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <span className="text-[10px] text-neutral-500 font-medium block mt-1.5">
-                      White Pearl Metallic
-                    </span>
-                  </div>
-
-                  <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
-                    <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                      Seatings
-                    </span>
-                    <span className="font-black text-sm text-neutral-900 mt-1 block">
-                      7 Passengers
-                    </span>
-                    <div className="text-[10px] text-neutral-600 mt-1 space-y-0.5 font-medium">
-                      <p>Row 1: Driver + 1 Pax</p>
-                      <p>Row 2: 4 Regular Seats</p>
-                      <p>Row 3: 2 Wheelchair Bays</p>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Metric KPI Pills */}
@@ -2326,6 +2451,15 @@ export default function AdminPage() {
           onClose={() => setIsProfileModalOpen(false)}
           targetProfile={selectedProfileForModal}
           mode={profileModalMode}
+        />
+      )}
+
+      {/* Vehicle Modal for Editing Fleet Asset */}
+      {isVehicleModalOpen && (
+        <VehicleModal
+          isOpen={isVehicleModalOpen}
+          onClose={() => setIsVehicleModalOpen(false)}
+          targetVehicle={vehicles?.[0]}
         />
       )}
     </div>

@@ -8,16 +8,21 @@ import {
   CardWorkLog, 
   UserRole, 
   TransitStatus, 
-  AssignedSpace,
-  ArtisanSummary,
-  MobilityType
+  AssignedSpace, 
+  ArtisanSummary, 
+  MobilityType, 
+  Vehicle, 
+  DriverLeave, 
+  LeaveStatus 
 } from '@/types';
 import { 
   INITIAL_PROFILES, 
   INITIAL_PRODUCTS, 
   INITIAL_WORK_LOGS, 
   INITIAL_TRANSIT_BOOKINGS, 
-  DEFAULT_VEHICLE,
+  DEFAULT_VEHICLE, 
+  INITIAL_VEHICLES, 
+  INITIAL_DRIVER_LEAVES, 
   getTodayDateString 
 } from '@/lib/mockData';
 import {
@@ -31,6 +36,11 @@ import {
   dbFetchProducts,
   dbFetchWorkLogs,
   dbInsertWorkLog,
+  dbFetchVehicles,
+  dbUpsertVehicle,
+  dbFetchDriverLeaves,
+  dbInsertDriverLeave,
+  dbUpdateDriverLeaveStatus,
 } from '@/lib/supabaseClient';
 
 interface AppContextType {
@@ -84,6 +94,15 @@ interface AppContextType {
   updateProfile: (profileId: string, updates: Partial<Profile>) => void;
   approveDriverAccount: (profileId: string) => void;
   rejectDriverAccount: (profileId: string) => void;
+  // Vehicle management
+  vehicles: Vehicle[];
+  updateVehicle: (vehicleId: string, updates: Partial<Vehicle>) => Promise<boolean> | boolean;
+  // Driver Leave management
+  driverLeaves: DriverLeave[];
+  requestDriverLeave: (data: { date: string; reason?: string }) => Promise<DriverLeave> | DriverLeave;
+  approveDriverLeave: (leaveId: string) => void;
+  rejectDriverLeave: (leaveId: string) => void;
+  isDateBlockedByLeave: (dateStr: string) => boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -93,6 +112,8 @@ const STORAGE_KEYS = {
   BOOKINGS: 'bg_transit_bookings_v2',
   WORK_LOGS: 'bg_work_logs_v2',
   PROFILES: 'bg_profiles_v2',
+  VEHICLES: 'bg_vehicles_v2',
+  DRIVER_LEAVES: 'bg_driver_leaves_v2',
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -103,6 +124,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [bookings, setBookings] = useState<TransitBooking[]>(INITIAL_TRANSIT_BOOKINGS);
   const [workLogs, setWorkLogs] = useState<CardWorkLog[]>(INITIAL_WORK_LOGS);
   const [products, setProducts] = useState<CardProduct[]>(INITIAL_PRODUCTS);
+  const [vehicles, setVehicles] = useState<Vehicle[]>(INITIAL_VEHICLES);
+  const [driverLeaves, setDriverLeaves] = useState<DriverLeave[]>(INITIAL_DRIVER_LEAVES);
 
   // Initialize and Sync (Supabase or LocalStorage)
   useEffect(() => {
@@ -122,11 +145,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (live && supabase) {
         try {
           // 1. Fetch live Supabase data
-          const [sbProfiles, sbBookings, sbProducts, sbWorkLogs] = await Promise.all([
+          const [sbProfiles, sbBookings, sbProducts, sbWorkLogs, sbVehicles, sbLeaves] = await Promise.all([
             dbFetchProfiles(),
             dbFetchBookings(),
             dbFetchProducts(),
             dbFetchWorkLogs(),
+            dbFetchVehicles(),
+            dbFetchDriverLeaves(),
           ]);
 
           if (isSubscribed) {
@@ -141,6 +166,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             }
             if (sbWorkLogs) {
               setWorkLogs(sbWorkLogs);
+            }
+            if (sbVehicles && sbVehicles.length > 0) {
+              setVehicles(sbVehicles);
+            }
+            if (sbLeaves) {
+              setDriverLeaves(sbLeaves);
             }
           }
 
@@ -161,6 +192,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               async () => {
                 const refreshed = await dbFetchProfiles();
                 if (refreshed && isSubscribed) setProfiles(refreshed);
+              }
+            )
+            .on(
+              'postgres_changes',
+              { event: '*', schema: 'public', table: 'vehicles' },
+              async () => {
+                const refreshed = await dbFetchVehicles();
+                if (refreshed && refreshed.length > 0 && isSubscribed) setVehicles(refreshed);
+              }
+            )
+            .on(
+              'postgres_changes',
+              { event: '*', schema: 'public', table: 'driver_leaves' },
+              async () => {
+                const refreshed = await dbFetchDriverLeaves();
+                if (refreshed && isSubscribed) setDriverLeaves(refreshed);
               }
             )
             .subscribe();
@@ -189,6 +236,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const storedLogs = localStorage.getItem(STORAGE_KEYS.WORK_LOGS);
         if (storedLogs) {
           setWorkLogs(JSON.parse(storedLogs));
+        }
+
+        const storedVehicles = localStorage.getItem(STORAGE_KEYS.VEHICLES);
+        if (storedVehicles) {
+          setVehicles(JSON.parse(storedVehicles));
+        }
+
+        const storedLeaves = localStorage.getItem(STORAGE_KEYS.DRIVER_LEAVES);
+        if (storedLeaves) {
+          setDriverLeaves(JSON.parse(storedLeaves));
         }
 
         const storedUser = localStorage.getItem(STORAGE_KEYS.CURRENT_USER);
@@ -407,6 +464,120 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       driver_status: 'standby' 
     });
   }, [updateProfile]);
+
+  // Vehicle management
+  const updateVehicle = useCallback(async (vehicleId: string, updates: Partial<Vehicle>): Promise<boolean> => {
+    let targetUpdated: Vehicle | null = null;
+    setVehicles(prev => {
+      const updatedList = prev.map(v => {
+        if (v.id === vehicleId || v.plate === vehicleId) {
+          targetUpdated = { ...v, ...updates, updated_at: new Date().toISOString() };
+          return targetUpdated;
+        }
+        return v;
+      });
+      try {
+        localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(updatedList));
+      } catch (e) {
+        console.warn(e);
+      }
+      return updatedList;
+    });
+
+    if (targetUpdated) {
+      await dbUpsertVehicle(targetUpdated);
+      return true;
+    }
+    return false;
+  }, []);
+
+  // Driver leave requests
+  const requestDriverLeave = useCallback(async (data: { date: string; reason?: string }): Promise<DriverLeave> => {
+    const newLeave: DriverLeave = {
+      id: `leave-${Date.now()}`,
+      driver_id: currentUser?.id || 'user-driver-wongkokfu',
+      driver_name: currentUser?.full_name || 'Wong Kok Fu',
+      date: data.date,
+      reason: data.reason || 'Personal / Medical Leave',
+      status: 'pending',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    setDriverLeaves(prev => {
+      const updated = [newLeave, ...prev.filter(l => l.date !== data.date || l.status === 'rejected')];
+      try {
+        localStorage.setItem(STORAGE_KEYS.DRIVER_LEAVES, JSON.stringify(updated));
+      } catch (e) {
+        console.warn(e);
+      }
+      return updated;
+    });
+
+    await dbInsertDriverLeave(newLeave);
+    return newLeave;
+  }, [currentUser]);
+
+  const approveDriverLeave = useCallback(async (leaveId: string) => {
+    const approver = currentUser?.full_name || 'Administrator';
+    setDriverLeaves(prev => {
+      const updated = prev.map(l => l.id === leaveId ? { ...l, status: 'approved' as LeaveStatus, approved_by: approver, updated_at: new Date().toISOString() } : l);
+      try {
+        localStorage.setItem(STORAGE_KEYS.DRIVER_LEAVES, JSON.stringify(updated));
+      } catch (e) {
+        console.warn(e);
+      }
+      return updated;
+    });
+    await dbUpdateDriverLeaveStatus(leaveId, 'approved', approver);
+  }, [currentUser]);
+
+  const rejectDriverLeave = useCallback(async (leaveId: string) => {
+    const rejecter = currentUser?.full_name || 'Administrator';
+    setDriverLeaves(prev => {
+      const updated = prev.map(l => l.id === leaveId ? { ...l, status: 'rejected' as LeaveStatus, approved_by: rejecter, updated_at: new Date().toISOString() } : l);
+      try {
+        localStorage.setItem(STORAGE_KEYS.DRIVER_LEAVES, JSON.stringify(updated));
+      } catch (e) {
+        console.warn(e);
+      }
+      return updated;
+    });
+    await dbUpdateDriverLeaveStatus(leaveId, 'rejected', rejecter);
+  }, [currentUser]);
+
+  const isDateBlockedByLeave = useCallback((dateStr: string): boolean => {
+    if (!dateStr) return false;
+    const cleanQuery = dateStr.trim();
+    return driverLeaves.some(l => {
+      if (l.status !== 'approved') return false;
+      const cleanLeave = (l.date || '').trim();
+      if (cleanQuery.includes(cleanLeave) || cleanLeave.includes(cleanQuery)) return true;
+
+      const queryDayMonth = cleanQuery.match(/(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i);
+      const leaveDayMonth = cleanLeave.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if (queryDayMonth && leaveDayMonth) {
+        const monthMap: Record<string, string> = {
+          jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+          jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+        };
+        const qDay = queryDayMonth[1].padStart(2, '0');
+        const qMonth = monthMap[queryDayMonth[2].toLowerCase().slice(0, 3)];
+        if (qDay === leaveDayMonth[3] && qMonth === leaveDayMonth[2]) {
+          return true;
+        }
+      }
+
+      try {
+        const leaveD = new Date(cleanLeave);
+        const queryD = new Date(cleanQuery);
+        if (!isNaN(leaveD.getTime()) && !isNaN(queryD.getTime())) {
+          return leaveD.toISOString().split('T')[0] === queryD.toISOString().split('T')[0];
+        }
+      } catch {}
+      return false;
+    });
+  }, [driverLeaves]);
 
   const logout = useCallback(() => {
     saveCurrentUser(null);
@@ -883,6 +1054,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     updateProfile,
     approveDriverAccount,
     rejectDriverAccount,
+    vehicles,
+    updateVehicle,
+    driverLeaves,
+    requestDriverLeave,
+    approveDriverLeave,
+    rejectDriverLeave,
+    isDateBlockedByLeave,
   }), [
     currentUser,
     profiles,
@@ -910,6 +1088,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     updateProfile,
     approveDriverAccount,
     rejectDriverAccount,
+    vehicles,
+    updateVehicle,
+    driverLeaves,
+    requestDriverLeave,
+    approveDriverLeave,
+    rejectDriverLeave,
+    isDateBlockedByLeave,
   ]);
 
   return (
