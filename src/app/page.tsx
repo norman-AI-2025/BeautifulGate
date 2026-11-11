@@ -27,7 +27,7 @@ export default function HomePage() {
   // Find assigned driver profile and rating from bookings if any
   const driverProfile = profiles.find(p => p.role === 'driver');
   const vehiclePlate = driverProfile?.assigned_vehicle_plate || 'WVV 4108';
-  const driverName = driverProfile?.full_name || 'Johan bin Ariffin';
+  const driverName = driverProfile?.full_name || 'Wong Kok Fu';
   const driverAvatar = driverProfile?.avatar_url || '/images/driver-johan.jpg';
 
   const ratedBookings = bookings.filter(b => typeof b.rating === 'number' && b.rating > 0);
