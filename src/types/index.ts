@@ -53,6 +53,8 @@ export interface Profile {
   driver_status?: 'active' | 'on_leave' | 'standby';
   is_approved?: boolean;
   notes?: string;
+  chinese_name?: string;
+  epf_number?: string;
 }
 
 export interface TransitBooking {

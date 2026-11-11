@@ -217,6 +217,8 @@ export default function AdminPage() {
       const q = directorySearchQuery.toLowerCase();
       return (
         p.full_name.toLowerCase().includes(q) ||
+        (p.chinese_name && p.chinese_name.toLowerCase().includes(q)) ||
+        (p.epf_number && p.epf_number.toLowerCase().includes(q)) ||
         p.ic_or_oku_number.toLowerCase().includes(q) ||
         p.email.toLowerCase().includes(q) ||
         p.phone.toLowerCase().includes(q) ||
@@ -2008,8 +2010,13 @@ export default function AdminPage() {
                                 )}
                               </div>
                               <div>
-                                <p className="font-extrabold text-neutral-900 text-sm">
-                                  {p.full_name}
+                                <p className="font-extrabold text-neutral-900 text-sm flex items-center gap-1.5">
+                                  <span>{p.full_name}</span>
+                                  {p.chinese_name && (
+                                    <span className="text-xs font-semibold text-neutral-500">
+                                      ({p.chinese_name})
+                                    </span>
+                                  )}
                                 </p>
                                 <p className="text-[11px] text-neutral-500 font-mono">
                                   {p.id}

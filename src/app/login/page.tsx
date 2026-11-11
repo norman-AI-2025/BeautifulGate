@@ -25,7 +25,23 @@ export default function LoginPage() {
     try {
       const success = await Promise.resolve(login(email));
       if (success) {
-        router.push('/portal');
+        // Read authenticated role from current user session
+        let role = 'customer';
+        try {
+          const stored = typeof window !== 'undefined' ? localStorage.getItem('bg_current_user') : null;
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            if (parsed?.role) role = parsed.role;
+          }
+        } catch {}
+
+        if (role === 'admin') {
+          router.push('/admin');
+        } else if (role === 'driver') {
+          router.push('/driver');
+        } else {
+          router.push('/portal');
+        }
       } else {
         setErrorMsg('Invalid email or account not found.');
       }

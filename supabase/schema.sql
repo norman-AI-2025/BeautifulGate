@@ -23,9 +23,15 @@ create table if not exists public.profiles (
   driver_status text default 'active' check (driver_status in ('active', 'on_leave', 'standby')),
   is_approved boolean default true,
   notes text,
+  chinese_name text,
+  epf_number text,
   created_at timestamptz default timezone('utc'::text, now()) not null,
   updated_at timestamptz default timezone('utc'::text, now()) not null
 );
+
+-- Optional migration helpers for existing instances
+alter table public.profiles add column if not exists chinese_name text;
+alter table public.profiles add column if not exists epf_number text;
 
 -- 2. TRANSIT BOOKINGS TABLE (Assisted Transport System)
 create table if not exists public.transit_bookings (

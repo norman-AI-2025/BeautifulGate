@@ -217,6 +217,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <span className="font-mono text-xs text-orange-200">
               {profile.ic_or_oku_number}
             </span>
+            {profile.chinese_name && (
+              <span className="text-xs text-white/90 font-bold bg-white/20 px-2 py-0.5 rounded-full">
+                {profile.chinese_name}
+              </span>
+            )}
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-1.5">
