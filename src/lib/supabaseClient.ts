@@ -289,7 +289,7 @@ export async function dbFetchDriverLeaves(): Promise<DriverLeave[] | null> {
   const { data, error } = await supabase
     .from('driver_leaves')
     .select('*')
-    .order('date', { ascending: false });
+    .order('created_at', { ascending: false });
 
   if (error) {
     console.warn('Supabase fetchDriverLeaves error:', error);
@@ -299,7 +299,7 @@ export async function dbFetchDriverLeaves(): Promise<DriverLeave[] | null> {
     id: l.id,
     driver_id: l.driver_id,
     driver_name: l.driver_name,
-    date: l.date,
+    date: l.date || l.leave_date || '',
     reason: l.reason || '',
     status: l.status || 'pending',
     approved_by: l.approved_by || '',
@@ -310,19 +310,26 @@ export async function dbFetchDriverLeaves(): Promise<DriverLeave[] | null> {
 
 export async function dbInsertDriverLeave(leave: DriverLeave): Promise<boolean> {
   if (!supabase) return false;
-  const { error } = await supabase
-    .from('driver_leaves')
-    .insert({
-      id: leave.id,
-      driver_id: leave.driver_id,
-      driver_name: leave.driver_name,
-      date: leave.date,
-      reason: leave.reason || '',
-      status: leave.status || 'pending',
-      approved_by: leave.approved_by || null,
-      created_at: leave.created_at || new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    });
+  const payload: Record<string, any> = {
+    id: leave.id,
+    driver_id: leave.driver_id,
+    driver_name: leave.driver_name,
+    date: leave.date,
+    reason: leave.reason || '',
+    status: leave.status || 'pending',
+    approved_by: leave.approved_by || null,
+    created_at: leave.created_at || new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  let { error } = await supabase.from('driver_leaves').insert(payload);
+  if (error && (error.code === '42703' || error.message?.includes('date'))) {
+    // In case column was created as 'leave_date'
+    delete payload.date;
+    payload.leave_date = leave.date;
+    const retry = await supabase.from('driver_leaves').insert(payload);
+    error = retry.error;
+  }
 
   if (error) {
     console.error('Supabase insertDriverLeave error:', error);

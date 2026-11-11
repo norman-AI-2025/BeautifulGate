@@ -210,3 +210,67 @@ insert into public.vehicles (
   status = excluded.status,
   notes = excluded.notes,
   updated_at = timezone('utc'::text, now());
+
+-- ==============================================================================
+-- 5. DRIVER LEAVES TABLE (Leave Requests & Approvals)
+-- ==============================================================================
+create table if not exists public.driver_leaves (
+  id text primary key,
+  driver_id text not null,
+  driver_name text not null,
+  date text not null,
+  leave_date text,
+  reason text,
+  status text not null default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  approved_by text,
+  created_at timestamptz default timezone('utc'::text, now()) not null,
+  updated_at timestamptz default timezone('utc'::text, now()) not null
+);
+
+alter table public.driver_leaves add column if not exists date text;
+alter table public.driver_leaves add column if not exists leave_date text;
+alter table public.driver_leaves add column if not exists approved_by text;
+alter table public.driver_leaves add column if not exists reason text;
+alter table public.driver_leaves add column if not exists status text default 'pending';
+
+-- RLS Policies
+alter table public.vehicles enable row level security;
+alter table public.driver_leaves enable row level security;
+
+drop policy if exists "Allow public select on vehicles" on public.vehicles;
+drop policy if exists "Allow public insert on vehicles" on public.vehicles;
+drop policy if exists "Allow public update on vehicles" on public.vehicles;
+drop policy if exists "Allow public delete on vehicles" on public.vehicles;
+create policy "Allow public select on vehicles" on public.vehicles for select using (true);
+create policy "Allow public insert on vehicles" on public.vehicles for insert with check (true);
+create policy "Allow public update on vehicles" on public.vehicles for update using (true);
+create policy "Allow public delete on vehicles" on public.vehicles for delete using (true);
+
+drop policy if exists "Allow public select on driver_leaves" on public.driver_leaves;
+drop policy if exists "Allow public insert on driver_leaves" on public.driver_leaves;
+drop policy if exists "Allow public update on driver_leaves" on public.driver_leaves;
+drop policy if exists "Allow public delete on driver_leaves" on public.driver_leaves;
+create policy "Allow public select on driver_leaves" on public.driver_leaves for select using (true);
+create policy "Allow public insert on driver_leaves" on public.driver_leaves for insert with check (true);
+create policy "Allow public update on driver_leaves" on public.driver_leaves for update using (true);
+create policy "Allow public delete on driver_leaves" on public.driver_leaves for delete using (true);
+
+-- Realtime setup
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' and tablename = 'vehicles'
+  ) then
+    alter publication supabase_realtime add table public.vehicles;
+  end if;
+
+  if not exists (
+    select 1 from pg_publication_tables 
+    where pubname = 'supabase_realtime' and tablename = 'driver_leaves'
+  ) then
+    alter publication supabase_realtime add table public.driver_leaves;
+  end if;
+exception when others then
+  null;
+end $$;
