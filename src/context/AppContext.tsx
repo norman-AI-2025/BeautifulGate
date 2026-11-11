@@ -442,8 +442,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...userData,
       is_approved: isStaffOrDriver ? false : true,
       driver_status: userData.role === 'driver' ? 'standby' : undefined,
-      bank_name: userData.role === 'customer' ? 'Maybank' : undefined,
-      bank_account_number: userData.role === 'customer' ? '1140 0000 0000' : undefined,
     };
     const updated = [...profiles, newProfile];
     setProfiles(updated);
@@ -1120,7 +1118,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const exportPayrollCSV = useCallback(() => {
     const customers = profiles.filter(p => p.role === 'customer');
     const rows = [
-      ['Worker Full Name', 'Malaysian IC / OKU Card', 'Phone', 'Bank Name', 'Account Number', 'Month-to-Date Cards', 'MTD Disbursable Amount (MYR)'],
+      ['Worker Full Name', 'Malaysian IC / OKU Card', 'Phone', 'Month-to-Date Cards', 'MTD Disbursable Amount (MYR)'],
     ];
 
     customers.forEach(c => {
@@ -1129,8 +1127,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         `"${c.full_name}"`,
         `"${c.ic_or_oku_number}"`,
         `"${c.phone}"`,
-        `"${c.bank_name || 'Maybank'}"`,
-        `"${c.bank_account_number || '1140 0000 0000'}"`,
         stats.monthUnits.toString(),
         `"RM ${stats.monthEarned.toFixed(2)}"`,
       ]);

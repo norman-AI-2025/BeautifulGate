@@ -383,7 +383,7 @@ export const translations = {
       mtdEarnings: 'Month-to-Date Earnings',
       ytdEarnings: 'Year-to-Date Earnings',
       actionCol: 'Action',
-      ledgerAndBank: 'Ledger & Bank',
+      ledgerAndBank: 'Artisan Ledger',
       productionAnalytics: 'Production & Disbursement Analytics',
       cardsProducedMonth: 'Cards Produced (Month)',
       cardsProducedYear: 'Cards Produced (YTD)',
@@ -527,6 +527,7 @@ export const translations = {
     },
     // Artisan Drawer
     drawer: {
+      personalInfo: 'Artisan Beneficiary Information',
       personalBank: 'Personal & Bank Disbursement Account',
       bankAndAccount: 'Bank & Account',
       contactPhone: 'Contact Phone',
@@ -626,7 +627,7 @@ export const translations = {
       emailAddress: 'Email Address',
       homeAddress: 'Home Address (Default Pickup)',
       operatingBase: 'Operating Station / Base',
-      accessibilityHeading: 'Accessibility & Workshop Payout',
+      accessibilityHeading: 'Accessibility & Mobility Profile',
       mobilityType: 'Mobility Requirement',
       bankName: 'Disbursement Bank',
       bankAccount: 'Bank Account Number',
@@ -1080,7 +1081,7 @@ export const translations = {
       mtdEarnings: '本月至今收入',
       ytdEarnings: '本年至今收入',
       actionCol: '操作',
-      ledgerAndBank: '总账与银行账户',
+      ledgerAndBank: '工时与生产明细',
       productionAnalytics: '生产产出与薪酬发放数据分析',
       cardsProducedMonth: '本月贺卡总产量',
       cardsProducedYear: '本年贺卡总产量',
@@ -1224,6 +1225,7 @@ export const translations = {
     },
     // Artisan Drawer
     drawer: {
+      personalInfo: '手作坊受益人档案信息',
       personalBank: '个人信息与银行代发账户',
       bankAndAccount: '开户银行与账号',
       contactPhone: '联系电话',
@@ -1323,7 +1325,7 @@ export const translations = {
       emailAddress: '电子邮箱地址',
       homeAddress: '家庭住址（默认接送点）',
       operatingBase: '运营基地 / 站点',
-      accessibilityHeading: '无障碍需求与工场薪资账户',
+      accessibilityHeading: '无障碍出行与移动需求',
       mobilityType: '行动障碍类型',
       bankName: '发放银行',
       bankAccount: '银行账号',
@@ -1777,7 +1779,7 @@ export const translations = {
       mtdEarnings: 'Pendapatan Bulan Ini',
       ytdEarnings: 'Pendapatan Tahun Ini',
       actionCol: 'Tindakan',
-      ledgerAndBank: 'Lejar & Bank',
+      ledgerAndBank: 'Lejar Pengeluaran',
       productionAnalytics: 'Analisis Pengeluaran & Bayaran',
       cardsProducedMonth: 'Kad Dihasilkan (Bulan)',
       cardsProducedYear: 'Kad Dihasilkan (YTD)',
@@ -1921,6 +1923,7 @@ export const translations = {
     },
     // Artisan Drawer
     drawer: {
+      personalInfo: 'Maklumat Penerima Bengkel',
       personalBank: 'Akaun Peribadi & Penyaluran Bank',
       bankAndAccount: 'Bank & Akaun',
       contactPhone: 'Telefon Hubungan',
@@ -2020,7 +2023,7 @@ export const translations = {
       emailAddress: 'Alamat Emel',
       homeAddress: 'Alamat Rumah (Pengambilan Lalai)',
       operatingBase: 'Stesen Operasi / Pangkalan',
-      accessibilityHeading: 'Keperluan Mobiliti & Pembayaran Bengkel',
+      accessibilityHeading: 'Profil Mobiliti & Kebolehcapaian',
       mobilityType: 'Keperluan Mobiliti',
       bankName: 'Bank Pembayaran',
       bankAccount: 'Nombor Akaun Bank',

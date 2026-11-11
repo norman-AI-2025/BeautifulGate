@@ -1533,7 +1533,7 @@ export default function AdminPage() {
                             type="button"
                             className="inline-flex items-center text-xs font-bold text-[#F37021] hover:text-[#D9530F] gap-1 tap-target"
                           >
-                            <span>{t('adminTable.ledgerAndBank', 'Ledger & Bank')}</span>
+                            <span>{t('adminTable.ledgerAndBank', 'Artisan Ledger')}</span>
                             <ChevronRight className="h-4 w-4" />
                           </button>
                         </td>

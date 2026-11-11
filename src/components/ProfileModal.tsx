@@ -73,8 +73,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [mobilityType, setMobilityType] = useState<MobilityType>('Manual Wheelchair');
-  const [bankName, setBankName] = useState('');
-  const [bankAccount, setBankAccount] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
   const [emergencyPhone, setEmergencyPhone] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
@@ -102,8 +100,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setEmail(profile.email || '');
       setAddress(profile.address || '');
       setMobilityType(profile.mobility_type || 'Manual Wheelchair');
-      setBankName(profile.bank_name || '');
-      setBankAccount(profile.bank_account_number || '');
       setEmergencyContact(profile.emergency_contact || '');
       setEmergencyPhone(profile.emergency_phone || '');
       setAvatarUrl(profile.avatar_url);
@@ -182,8 +178,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
     if (profile.role === 'customer') {
       updates.mobility_type = mobilityType;
-      updates.bank_name = bankName.trim();
-      updates.bank_account_number = bankAccount.trim();
     }
 
     if (profile.role === 'driver') {
@@ -469,53 +463,23 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             <div className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4 shadow-xs">
               <h4 className="text-xs font-black uppercase tracking-wider text-neutral-900 flex items-center gap-1.5">
                 <Accessibility className="h-4 w-4 text-[#F37021]" />
-                {t('profile.accessibilityHeading', 'Accessibility & Workshop Payout')}
+                {t('profile.accessibilityHeading', 'Accessibility & Mobility Profile')}
               </h4>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-neutral-700 mb-1">
-                    {t('profile.mobilityType', 'Mobility Requirement')}
-                  </label>
-                  <select
-                    disabled={isReadOnly}
-                    value={mobilityType}
-                    onChange={(e) => setMobilityType(e.target.value as MobilityType)}
-                    className="apple-input w-full font-bold disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
-                  >
-                    {MOBILITY_OPTIONS.map((m) => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-neutral-700 mb-1">
-                    {t('profile.bankName', 'Disbursement Bank')}
-                  </label>
-                  <input
-                    type="text"
-                    disabled={isReadOnly}
-                    value={bankName}
-                    onChange={(e) => setBankName(e.target.value)}
-                    placeholder="e.g. Maybank, CIMB"
-                    className="apple-input w-full font-medium disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-neutral-700 mb-1">
-                    {t('profile.bankAccount', 'Bank Account Number')}
-                  </label>
-                  <input
-                    type="text"
-                    disabled={isReadOnly}
-                    value={bankAccount}
-                    onChange={(e) => setBankAccount(e.target.value)}
-                    placeholder="e.g. 1140 1234 5678"
-                    className="apple-input w-full font-mono disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
-                  />
-                </div>
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">
+                  {t('profile.mobilityType', 'Mobility Requirement')}
+                </label>
+                <select
+                  disabled={isReadOnly}
+                  value={mobilityType}
+                  onChange={(e) => setMobilityType(e.target.value as MobilityType)}
+                  className="apple-input w-full font-bold disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
+                >
+                  {MOBILITY_OPTIONS.map((m) => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
               </div>
             </div>
           )}

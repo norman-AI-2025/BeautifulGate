@@ -71,8 +71,6 @@ export interface Profile {
   role: UserRole;
   mobility_type: MobilityType;
   address?: string;
-  bank_name?: string;
-  bank_account_number?: string;
   avatar_url?: string;
   emergency_contact?: string;
   emergency_phone?: string;

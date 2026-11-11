@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Plus, Edit2, Check, CreditCard, Phone } from 'lucide-react';
+import { X, Plus, Edit2, Check, Phone, Accessibility } from 'lucide-react';
 import { ArtisanSummary } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -72,29 +72,29 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
         </div>
 
         <div className="p-6 space-y-6 flex-1">
-          {/* Section 1: Personal & Bank Details */}
+          {/* Section 1: Personal & Identification Details */}
           <div className="rounded-2xl border border-neutral-200 bg-neutral-50/50 p-5 space-y-3">
             <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-              {t('drawer.personalBank', 'Personal & Bank Disbursement Account')}
+              {t('drawer.personalInfo', 'Artisan Beneficiary Information')}
             </h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex items-center gap-2.5 text-neutral-700">
-                <CreditCard className="h-4 w-4 text-neutral-500" />
+                <Accessibility className="h-4 w-4 text-[#F37021] shrink-0" />
                 <div>
                   <p className="text-xs text-neutral-400 font-medium">
-                    {t('drawer.bankAndAccount', 'Bank & Account')}
+                    {t('adminTable.mobilityProfile', 'Mobility Profile')}
                   </p>
                   <p className="font-semibold text-neutral-900">
-                    {profile.bank_name || 'Maybank'}
+                    {profile.mobility_type || 'Manual Wheelchair'}
                   </p>
                   <p className="font-mono text-xs text-neutral-600">
-                    {profile.bank_account_number || '1140 1234 5678'}
+                    {profile.ic_or_oku_number}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2.5 text-neutral-700">
-                <Phone className="h-4 w-4 text-neutral-500" />
+                <Phone className="h-4 w-4 text-neutral-500 shrink-0" />
                 <div>
                   <p className="text-xs text-neutral-400 font-medium">
                     {t('drawer.contactPhone', 'Contact Phone')}
