@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { 
   X, 
@@ -113,7 +114,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     }
   }, [profile, isOpen]);
 
-  if (!isOpen || !profile) return null;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!isOpen || !profile || !mounted) return null;
 
   // Handle Photo Upload via Local File Reader -> Base64
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,7 +204,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     ? t('auth.driverStaffRole', 'Driver')
     : t('nav.supervisorRole', 'Supervisor');
 
-  return (
+  const modalContent = (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in-50">
       <div className="relative w-full max-w-2xl rounded-3xl bg-white border border-neutral-200 shadow-2xl overflow-hidden my-4 sm:my-8 max-h-[92vh] flex flex-col">
         
@@ -660,5 +666,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : null;
 };
 

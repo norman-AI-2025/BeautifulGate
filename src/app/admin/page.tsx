@@ -487,37 +487,9 @@ export default function AdminPage() {
                   {t('common.verified', 'Admin Dispatch Active')}
                 </span>
               </div>
-              <div className="flex items-center justify-between sm:justify-start gap-4 mt-1">
-                <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-                  Beautiful Gate Operations
-                </h1>
-                {currentUser && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedProfileForModal(currentUser);
-                      setProfileModalMode('edit_self');
-                      setIsProfileModalOpen(true);
-                    }}
-                    className="flex items-center gap-2 px-2.5 py-1 rounded-xl bg-white/10 hover:bg-white/20 border border-white/15 text-white transition-all tap-target group"
-                    title={t('profile.editMyProfile', 'Click to edit your profile and photo')}
-                  >
-                    <div className="relative h-6 w-6 rounded-full overflow-hidden bg-orange-100 border border-orange-400 flex items-center justify-center shrink-0">
-                      {currentUser.avatar_url ? (
-                        <Image src={currentUser.avatar_url} alt={currentUser.full_name} width={24} height={24} className="h-full w-full object-cover" />
-                      ) : (
-                        <span className="font-extrabold text-[10px] text-[#F37021]">
-                          {currentUser.full_name?.charAt(0) || 'A'}
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[11px] text-orange-200 font-bold group-hover:text-white flex items-center gap-1">
-                      <User className="h-3 w-3" />
-                      {t('profile.edit', 'Edit Profile')}
-                    </span>
-                  </button>
-                )}
-              </div>
+              <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-1">
+                Beautiful Gate Operations
+              </h1>
             </div>
 
             {/* Top-Level Navigation Bar */}
