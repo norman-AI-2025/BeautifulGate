@@ -58,7 +58,8 @@ export default function AdminPage() {
   const { t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<'dispatch' | 'artisans' | 'analytics' | 'donations'>('dispatch');
-  const [donationFilter, setDonationFilter] = useState<'all' | 'cash' | 'qr' | 'pending_cash' | 'reconciled'>('all');
+  const [donationTimeRange, setDonationTimeRange] = useState<'1_week' | '1_month' | '1_year'>('1_month');
+  const [donationMethodFilter, setDonationMethodFilter] = useState<'all' | 'qr' | 'cash'>('all');
 
   // Dispatch table filter tab
   const [dispatchFilter, setDispatchFilter] = useState<'all' | 'pending' | 'active' | 'completed'>('all');
@@ -90,24 +91,53 @@ export default function AdminPage() {
   const donatedBookings = useMemo(() => bookings.filter(b => Boolean(b.donation)), [bookings]);
   const totalDonationsAmount = useMemo(() => donatedBookings.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [donatedBookings]);
   const donationsCount = donatedBookings.length;
-  const cashDonations = useMemo(() => donatedBookings.filter(b => b.donation?.method === 'cash'), [donatedBookings]);
-  const cashTotal = useMemo(() => cashDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [cashDonations]);
-  const qrDonations = useMemo(() => donatedBookings.filter(b => b.donation?.method === 'qr'), [donatedBookings]);
-  const qrTotal = useMemo(() => qrDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [qrDonations]);
-  const pendingCashDonations = useMemo(() => cashDonations.filter(b => b.donation?.status === 'pledged'), [cashDonations]);
-  const pendingCashTotal = useMemo(() => pendingCashDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [pendingCashDonations]);
-  const reconciledDonations = useMemo(() => donatedBookings.filter(b => b.donation?.status === 'paid'), [donatedBookings]);
 
-  // Filtered donations for dedicated Donation Tracker tab
+  // Simulated base date (11 Nov 2026) for deterministic hydration and prerendering
+  const SIMULATED_BASELINE_MS = new Date('2026-11-11T12:00:00+08:00').getTime();
+
+  // Helper to test if a donation falls within the time range: 1 week (7d), 1 month (30d), 1 year (365d)
+  const isWithinTimeRange = (dateStr?: string, range: '1_week' | '1_month' | '1_year' = '1_month') => {
+    if (!dateStr) return true;
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return true;
+    const diffDays = (SIMULATED_BASELINE_MS - d.getTime()) / (1000 * 60 * 60 * 24);
+
+    if (range === '1_week') return diffDays <= 7;
+    if (range === '1_month') return diffDays <= 30;
+    if (range === '1_year') return diffDays <= 365;
+    return true;
+  };
+
+  // 1. PRIORITIZE: Donation in a Month
+  const monthDonations = useMemo(() => {
+    return donatedBookings.filter(b => isWithinTimeRange(b.donation?.timestamp, '1_month'));
+  }, [donatedBookings]);
+  const monthTotal = useMemo(() => monthDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [monthDonations]);
+  const monthCount = monthDonations.length;
+
+  // 2. PRIORITIZE: Donation via QR (within selected time filter)
+  const qrDonations = useMemo(() => {
+    return donatedBookings.filter(b => b.donation?.method === 'qr' && isWithinTimeRange(b.donation?.timestamp, donationTimeRange));
+  }, [donatedBookings, donationTimeRange]);
+  const qrTotal = useMemo(() => qrDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [qrDonations]);
+
+  // 3. PRIORITIZE: Donation via Driver (Cash) (within selected time filter)
+  const cashDonations = useMemo(() => {
+    return donatedBookings.filter(b => b.donation?.method === 'cash' && isWithinTimeRange(b.donation?.timestamp, donationTimeRange));
+  }, [donatedBookings, donationTimeRange]);
+  const cashTotal = useMemo(() => cashDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [cashDonations]);
+
+  // Filtered donations for Donation Audit Ledger (Pending remittance & Reconciled removed)
   const filteredDonations = useMemo(() => {
     return donatedBookings.filter(b => {
-      if (donationFilter === 'cash') return b.donation?.method === 'cash';
-      if (donationFilter === 'qr') return b.donation?.method === 'qr';
-      if (donationFilter === 'pending_cash') return b.donation?.method === 'cash' && b.donation?.status === 'pledged';
-      if (donationFilter === 'reconciled') return b.donation?.status === 'paid';
+      // 1. Time range filter (1 Week, 1 Month, 1 Year)
+      if (!isWithinTimeRange(b.donation?.timestamp, donationTimeRange)) return false;
+      // 2. Method filter (All, QR, Cash)
+      if (donationMethodFilter === 'qr') return b.donation?.method === 'qr';
+      if (donationMethodFilter === 'cash') return b.donation?.method === 'cash';
       return true;
     });
-  }, [donatedBookings, donationFilter]);
+  }, [donatedBookings, donationTimeRange, donationMethodFilter]);
 
   // Active trips available for dispatch focus
   const activeDispatchesList = useMemo(() => {
@@ -1163,18 +1193,13 @@ export default function AdminPage() {
           <div className="space-y-6">
             {/* Header & Export CSV */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-orange-500 to-[#D9530F] text-white flex items-center justify-center shadow-sm">
-                    <HeartHandshake className="h-4 w-4" />
-                  </div>
-                  <h2 className="text-xl font-black tracking-tight text-neutral-900">
-                    {t('admin.donationTrackerTitle', 'Voluntary Transit Donations & Fuel Subsidy Tracker')}
-                  </h2>
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-orange-500 to-[#D9530F] text-white flex items-center justify-center shadow-sm">
+                  <HeartHandshake className="h-4 w-4" />
                 </div>
-                <p className="text-xs text-neutral-500 mt-1 max-w-2xl">
-                  {t('admin.donationTrackerSubtitle', 'Audit voluntary passenger contributions, reconcile driver cash collections, and track DuitNow QR transfers for vehicle maintenance.')}
-                </p>
+                <h2 className="text-xl font-black tracking-tight text-neutral-900">
+                  {t('admin.donationTrackerTitle', 'Voluntary Transit Donations & Fuel Subsidy Tracker')}
+                </h2>
               </div>
 
               <button
@@ -1187,61 +1212,47 @@ export default function AdminPage() {
               </button>
             </div>
 
-            {/* 4 Financial Metric Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Card 1: Total Raised */}
+            {/* 3 Prioritized Metric Cards: Donation in a Month, Donation via QR, Donation via Driver */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Card 1: Donation in a Month */}
               <div className="rounded-3xl border-2 border-[#F37021] bg-gradient-to-br from-orange-50 to-amber-50 p-5 shadow-xs">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-orange-950 flex items-center gap-1.5">
                   <HeartHandshake className="h-4 w-4 text-[#F37021]" />
-                  {t('admin.totalDonationsCollected', 'Total Donations Raised')}
+                  {t('admin.donationInMonth', 'Donation in a Month')}
                 </span>
                 <p className="text-3xl font-black text-[#D9530F] mt-2 font-mono">
-                  RM {totalDonationsAmount.toFixed(2)}
+                  RM {monthTotal.toFixed(2)}
                 </p>
                 <p className="text-[11px] text-neutral-600 mt-1">
-                  {donationsCount} {t('admin.contributions', 'contributions')} ({((donationsCount / (totalBookingsCount || 1)) * 100).toFixed(0)}% trip support)
+                  {monthCount} {t('admin.contributions', 'contributions')}
                 </p>
               </div>
 
-              {/* Card 2: Cash via Driver */}
+              {/* Card 2: Donation via QR */}
+              <div className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-xs">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
+                  <QrCode className="h-4 w-4 text-emerald-600" />
+                  {t('admin.donationViaQR', 'Donation via QR')}
+                </span>
+                <p className="text-3xl font-black text-neutral-900 mt-2 font-mono">
+                  RM {qrTotal.toFixed(2)}
+                </p>
+                <p className="text-[11px] text-emerald-700 font-semibold mt-1">
+                  {qrDonations.length} {t('admin.contributions', 'contributions')} · DuitNow National QR
+                </p>
+              </div>
+
+              {/* Card 3: Donation via Driver */}
               <div className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-xs">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
                   <Banknote className="h-4 w-4 text-amber-600" />
-                  {t('admin.cashViaDriver', 'Cash via Driver Johan')}
+                  {t('admin.donationViaDriver', 'Donation via Driver')}
                 </span>
                 <p className="text-3xl font-black text-neutral-900 mt-2 font-mono">
                   RM {cashTotal.toFixed(2)}
                 </p>
                 <p className="text-[11px] text-neutral-500 mt-1">
                   {cashDonations.length} {t('admin.contributions', 'contributions')} · Handed over in cash
-                </p>
-              </div>
-
-              {/* Card 3: DuitNow QR */}
-              <div className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-xs">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
-                  <QrCode className="h-4 w-4 text-emerald-600" />
-                  {t('admin.qrTransfers', 'DuitNow QR Transfers')}
-                </span>
-                <p className="text-3xl font-black text-neutral-900 mt-2 font-mono">
-                  RM {qrTotal.toFixed(2)}
-                </p>
-                <p className="text-[11px] text-emerald-700 font-semibold mt-1">
-                  {qrDonations.length} {t('admin.contributions', 'contributions')} · Direct to Public Bank
-                </p>
-              </div>
-
-              {/* Card 4: Pending Cash Verification */}
-              <div className="rounded-3xl border-2 border-amber-300 bg-amber-50/70 p-5 shadow-xs">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-900 flex items-center gap-1.5">
-                  <AlertCircle className="h-4 w-4 text-amber-600" />
-                  {t('admin.pendingCashVerification', 'Pending Driver Remittance')}
-                </span>
-                <p className="text-3xl font-black text-amber-950 mt-2 font-mono">
-                  RM {pendingCashTotal.toFixed(2)}
-                </p>
-                <p className="text-[11px] text-amber-800 font-semibold mt-1">
-                  {pendingCashDonations.length} {t('admin.contributions', 'contributions')} to be reconciled
                 </p>
               </div>
             </div>
@@ -1254,72 +1265,87 @@ export default function AdminPage() {
                     <Receipt className="h-5 w-5 text-[#F37021]" />
                     <span>Donation Audit Ledger</span>
                   </h3>
-                  <p className="text-xs text-neutral-500 mt-0.5">
-                    Official record of transit contributions, reconciliation timestamps, and payment channels.
-                  </p>
                 </div>
 
-                {/* Filter Pills */}
-                <div className="flex flex-wrap items-center rounded-xl bg-neutral-100 p-1 border border-neutral-200 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setDonationFilter('all')}
-                    className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                      donationFilter === 'all'
-                        ? 'bg-[#F37021] text-white shadow-xs font-black'
-                        : 'text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    {t('admin.filterAllDonations', 'All Donations')} ({donatedBookings.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDonationFilter('cash')}
-                    className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                      donationFilter === 'cash'
-                        ? 'bg-amber-600 text-white shadow-xs font-black'
-                        : 'text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    {t('admin.filterCash', 'Cash')} ({cashDonations.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDonationFilter('qr')}
-                    className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                      donationFilter === 'qr'
-                        ? 'bg-emerald-600 text-white shadow-xs font-black'
-                        : 'text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    {t('admin.filterQR', 'DuitNow QR')} ({qrDonations.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDonationFilter('pending_cash')}
-                    className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                      donationFilter === 'pending_cash'
-                        ? 'bg-yellow-500 text-yellow-950 shadow-xs font-black'
-                        : 'text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    {t('admin.filterPendingCash', 'Pending Remittance')} ({pendingCashDonations.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDonationFilter('reconciled')}
-                    className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                      donationFilter === 'reconciled'
-                        ? 'bg-neutral-900 text-white shadow-xs font-black'
-                        : 'text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    {t('admin.filterReconciled', 'Reconciled')} ({reconciledDonations.length})
-                  </button>
+                {/* Filter Bars: Time Range (1 Week, 1 Month, 1 Year) & Methods */}
+                <div className="flex flex-wrap items-center gap-3">
+                  {/* Time Range Filter Bar */}
+                  <div className="flex items-center rounded-xl bg-neutral-100 p-1 border border-neutral-200 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setDonationTimeRange('1_week')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
+                        donationTimeRange === '1_week'
+                          ? 'bg-[#F37021] text-white shadow-xs font-black'
+                          : 'text-neutral-600 hover:text-black'
+                      }`}
+                    >
+                      {t('admin.filter1Week', '1 Week')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDonationTimeRange('1_month')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
+                        donationTimeRange === '1_month'
+                          ? 'bg-[#F37021] text-white shadow-xs font-black'
+                          : 'text-neutral-600 hover:text-black'
+                      }`}
+                    >
+                      {t('admin.filter1Month', '1 Month')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDonationTimeRange('1_year')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
+                        donationTimeRange === '1_year'
+                          ? 'bg-[#F37021] text-white shadow-xs font-black'
+                          : 'text-neutral-600 hover:text-black'
+                      }`}
+                    >
+                      {t('admin.filter1Year', '1 Year')}
+                    </button>
+                  </div>
+
+                  {/* Method Filter (Pending remittance & Reconciled removed) */}
+                  <div className="flex items-center rounded-xl bg-neutral-100 p-1 border border-neutral-200 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setDonationMethodFilter('all')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
+                        donationMethodFilter === 'all'
+                          ? 'bg-neutral-900 text-white shadow-xs font-black'
+                          : 'text-neutral-600 hover:text-black'
+                      }`}
+                    >
+                      {t('admin.filterAllDonations', 'All')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDonationMethodFilter('qr')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
+                        donationMethodFilter === 'qr'
+                          ? 'bg-emerald-600 text-white shadow-xs font-black'
+                          : 'text-neutral-600 hover:text-black'
+                      }`}
+                    >
+                      {t('admin.donationViaQR', 'Donation via QR')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDonationMethodFilter('cash')}
+                      className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
+                        donationMethodFilter === 'cash'
+                          ? 'bg-amber-600 text-white shadow-xs font-black'
+                          : 'text-neutral-600 hover:text-black'
+                      }`}
+                    >
+                      {t('admin.donationViaDriver', 'Donation via Driver')}
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {/* Table */}
+              {/* Table (Action column removed) */}
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-neutral-50/80 border-b border-neutral-200 text-neutral-600 uppercase tracking-wider font-bold">
@@ -1330,14 +1356,12 @@ export default function AdminPage() {
                       <th className="py-3.5 px-4">{t('admin.driverCol', 'Assigned Driver')}</th>
                       <th className="py-3.5 px-4">{t('admin.methodCol', 'Method')}</th>
                       <th className="py-3.5 px-4">{t('admin.amountCol', 'Amount (MYR)')}</th>
-                      <th className="py-3.5 px-4">{t('admin.statusCol', 'Reconciliation Status')}</th>
-                      <th className="py-3.5 px-4 text-right">{t('admin.actionCol', 'Action')}</th>
+                      <th className="py-3.5 px-4">{t('admin.statusCol', 'Status')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-neutral-200 bg-white">
                     {filteredDonations.map((b) => {
                       const d = b.donation!;
-                      const isPendingCash = d.method === 'cash' && d.status === 'pledged';
 
                       return (
                         <tr key={b.id} className="hover:bg-neutral-50/80 transition-colors">
@@ -1427,31 +1451,13 @@ export default function AdminPage() {
                               )}
                             </span>
                           </td>
-
-                          {/* Action */}
-                          <td className="py-4 px-4 text-right whitespace-nowrap">
-                            {isPendingCash ? (
-                              <button
-                                type="button"
-                                onClick={() => verifyDonation(b.id)}
-                                className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 ml-auto shadow-xs tap-target transition-all active:scale-95"
-                              >
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                <span>{t('admin.actionVerify', 'Verify Cash')}</span>
-                              </button>
-                            ) : (
-                              <span className="text-[11px] text-neutral-400 font-medium">
-                                Reconciled
-                              </span>
-                            )}
-                          </td>
                         </tr>
                       );
                     })}
 
                     {filteredDonations.length === 0 && (
                       <tr>
-                        <td colSpan={8} className="py-12 text-center text-neutral-400">
+                        <td colSpan={7} className="py-12 text-center text-neutral-400">
                           <HeartHandshake className="mx-auto h-8 w-8 text-neutral-300 mb-2" />
                           <p className="text-sm font-bold text-neutral-700">
                             {t('admin.noDonationsFound', 'No donation records match the selected filter.')}
@@ -1472,7 +1478,7 @@ export default function AdminPage() {
                   Beautiful Gate Foundation for the Disabled · Official Transit Donation & Tax Compliance
                 </span>
                 <p className="text-neutral-600 leading-relaxed">
-                  {t('donation.taxExempt', 'Beautiful Gate Foundation donations are eligible for tax exemption under Section 44(6) ITA 1967.')} All voluntary transit donations are restricted to vehicle diesel, hydraulic lift maintenance, driver allowance, and accessible transport subsidies. Driver Johan bin Ariffin remits all cash collections to Supervisor Faridah Hashim at the end of each operational shift.
+                  {t('donation.taxExempt', 'Beautiful Gate Foundation donations are eligible for tax exemption under Section 44(6) ITA 1967.')} All voluntary transit donations directly fund vehicle diesel, hydraulic lift maintenance, driver allowance, and accessible transport subsidies.
                 </p>
               </div>
             </div>
