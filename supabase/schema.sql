@@ -142,3 +142,4 @@ begin;
     public.card_products, 
     public.card_work_logs;
 commit;
+
