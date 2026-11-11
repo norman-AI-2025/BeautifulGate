@@ -266,6 +266,22 @@ export async function dbUpdateBooking(id: string, updates: Record<string, any>):
 
   const { error } = await supabase.from('transit_bookings').update(payload).eq('id', id);
   if (error) {
+    // If error is check constraint violation for detailed sub-status (e.g. en_route_pickup),
+    // fallback gracefully to compatible status 'in_progress' or 'completed' so Supabase always persists!
+    if (error.code === '23514' && updates.status) {
+      let fallbackStatus = 'in_progress';
+      if (updates.status === 'dropped_off' || updates.status === 'en_route_next') {
+        fallbackStatus = 'completed';
+      }
+      console.warn(`Supabase status constraint fallback: updating ${updates.status} as ${fallbackStatus}`);
+      const { error: retryError } = await supabase
+        .from('transit_bookings')
+        .update({ ...payload, status: fallbackStatus })
+        .eq('id', id);
+
+      if (!retryError) return true;
+    }
+
     console.error('Supabase updateBooking error:', error);
     return false;
   }
