@@ -25,6 +25,7 @@ create table if not exists public.profiles (
   notes text,
   chinese_name text,
   epf_number text,
+  beneficiary_type text default 'resident' check (beneficiary_type in ('resident', 'daycare', 'non_resident')),
   created_at timestamptz default timezone('utc'::text, now()) not null,
   updated_at timestamptz default timezone('utc'::text, now()) not null
 );
@@ -44,6 +45,7 @@ alter table public.profiles add column if not exists address text;
 alter table public.profiles add column if not exists emergency_contact text;
 alter table public.profiles add column if not exists emergency_phone text;
 alter table public.profiles add column if not exists mobility_type text default 'None';
+alter table public.profiles add column if not exists beneficiary_type text default 'resident';
 
 -- 2. TRANSIT BOOKINGS TABLE (Assisted Transport System)
 create table if not exists public.transit_bookings (

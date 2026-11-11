@@ -22,7 +22,7 @@ import {
   Lock, 
   Trash2 
 } from 'lucide-react';
-import { Profile, MobilityType, UserRole } from '@/types';
+import { Profile, MobilityType, UserRole, BeneficiaryType } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -73,6 +73,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [mobilityType, setMobilityType] = useState<MobilityType>('Manual Wheelchair');
+  const [beneficiaryType, setBeneficiaryType] = useState<BeneficiaryType>('resident');
   const [emergencyContact, setEmergencyContact] = useState('');
   const [emergencyPhone, setEmergencyPhone] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | undefined>(undefined);
@@ -100,6 +101,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setEmail(profile.email || '');
       setAddress(profile.address || '');
       setMobilityType(profile.mobility_type || 'Manual Wheelchair');
+      setBeneficiaryType(profile.beneficiary_type || 'resident');
       setEmergencyContact(profile.emergency_contact || '');
       setEmergencyPhone(profile.emergency_phone || '');
       setAvatarUrl(profile.avatar_url);
@@ -178,6 +180,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
     if (profile.role === 'customer') {
       updates.mobility_type = mobilityType;
+      updates.beneficiary_type = beneficiaryType;
     }
 
     if (profile.role === 'driver') {
@@ -480,6 +483,27 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     <option key={m} value={m}>{m}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">
+                  {t('profile.beneficiaryType', 'Beneficiary Category')}
+                </label>
+                <select
+                  disabled={isReadOnly}
+                  value={beneficiaryType}
+                  onChange={(e) => setBeneficiaryType(e.target.value as BeneficiaryType)}
+                  className="apple-input w-full font-bold disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
+                >
+                  <option value="resident">{t('profile.beneficiaryTypeResident', 'Resident (Living in Centre)')}</option>
+                  <option value="daycare">{t('profile.beneficiaryTypeDaycare', 'Daycare (Daily Workshop)')}</option>
+                  <option value="non_resident">{t('profile.beneficiaryTypeNonResident', 'Non-Resident (Transport Only)')}</option>
+                </select>
+                <p className="text-[11px] text-neutral-500 mt-1">
+                  {beneficiaryType === 'non_resident' 
+                    ? t('profile.nonResidentNote', 'Non-resident beneficiaries can only access the booking van function.')
+                    : t('profile.residentDaycareNote', 'Resident and Daycare beneficiaries have access to both van booking and workshop income tracking.')}
+                </p>
               </div>
             </div>
           )}

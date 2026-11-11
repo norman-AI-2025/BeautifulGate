@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { MobilityType, UserRole } from '@/types';
+import { MobilityType, UserRole, BeneficiaryType } from '@/types';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -20,6 +20,7 @@ export default function SignUpPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mobilityProfile, setMobilityProfile] = useState<MobilityType>('Manual Wheelchair');
+  const [beneficiaryType, setBeneficiaryType] = useState<BeneficiaryType>('resident');
   const [errorMsg, setErrorMsg] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,6 +38,7 @@ export default function SignUpPage() {
         email: email,
         role: role,
         mobility_type: role === 'driver' ? 'None' : mobilityProfile,
+        beneficiary_type: role === 'customer' ? beneficiaryType : undefined,
       }));
 
       if (role === 'customer') {
@@ -196,27 +198,60 @@ export default function SignUpPage() {
             />
           </div>
 
-          {/* Default Mobility Profile (Segmented Choice for Beneficiaries) */}
+          {/* Default Mobility Profile & Beneficiary Category (Segmented Choice for Beneficiaries) */}
           {role === 'customer' && (
-            <div>
-              <label className="block text-xs font-semibold text-neutral-700 mb-2">
-                {t('auth.mobilityCategory', 'Default Mobility Profile')}
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {(['Manual Wheelchair', 'Motorized Wheelchair', 'Assisted Walk', 'None / Escort'] as MobilityType[]).map((type) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setMobilityProfile(type)}
-                    className={`p-3 rounded-xl border text-xs font-bold text-left transition-all tap-target ${
-                      mobilityProfile === type
-                        ? 'border-[#F37021] bg-[#F37021] text-white shadow-xs'
-                        : 'border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-400'
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 mb-2">
+                  {t('profile.beneficiaryType', 'Beneficiary Category')}
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { key: 'resident' as BeneficiaryType, label: t('profile.beneficiaryTypeResident', 'Resident') },
+                    { key: 'daycare' as BeneficiaryType, label: t('profile.beneficiaryTypeDaycare', 'Daycare') },
+                    { key: 'non_resident' as BeneficiaryType, label: t('profile.beneficiaryTypeNonResident', 'Non-Resident') }
+                  ].map((item) => (
+                    <button
+                      key={item.key}
+                      type="button"
+                      onClick={() => setBeneficiaryType(item.key)}
+                      className={`p-2.5 rounded-xl border text-xs font-bold text-center transition-all tap-target ${
+                        beneficiaryType === item.key
+                          ? 'border-[#F37021] bg-[#F37021] text-white shadow-xs'
+                          : 'border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-400'
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-[11px] text-neutral-500 mt-1">
+                  {beneficiaryType === 'non_resident'
+                    ? t('profile.nonResidentSignupNote', 'Van transit booking only')
+                    : t('profile.residentDaycareSignupNote', 'Includes workshop earnings tracking & van transit')}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-neutral-700 mb-2">
+                  {t('auth.mobilityCategory', 'Default Mobility Profile')}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(['Manual Wheelchair', 'Motorized Wheelchair', 'Assisted Walk', 'None / Escort'] as MobilityType[]).map((type) => (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setMobilityProfile(type)}
+                      className={`p-3 rounded-xl border text-xs font-bold text-left transition-all tap-target ${
+                        mobilityProfile === type
+                          ? 'border-[#F37021] bg-[#F37021] text-white shadow-xs'
+                          : 'border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-400'
+                      }`}
+                    >
+                      {type}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}

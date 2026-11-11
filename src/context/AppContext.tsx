@@ -13,7 +13,8 @@ import {
   MobilityType, 
   Vehicle, 
   DriverLeave, 
-  LeaveStatus 
+  LeaveStatus,
+  BeneficiaryType 
 } from '@/types';
 import { 
   INITIAL_PROFILES, 
@@ -62,6 +63,7 @@ interface AppContextType {
     email: string;
     role: UserRole;
     mobility_type: MobilityType;
+    beneficiary_type?: BeneficiaryType;
   }) => Promise<Profile> | Profile;
   logout: () => void;
   // Booking actions
@@ -410,6 +412,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       email,
       role: role || 'customer',
       mobility_type: 'None',
+      beneficiary_type: (role || 'customer') === 'customer' ? 'resident' : undefined,
     };
 
     const updatedProfiles = [...profiles, newUser];
@@ -434,12 +437,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     email: string;
     role: UserRole;
     mobility_type: MobilityType;
+    beneficiary_type?: BeneficiaryType;
   }): Promise<Profile> => {
     // If staff/driver signs up, they require administrator approval before active duty
     const isStaffOrDriver = userData.role === 'driver' || userData.role === 'admin';
     const newProfile: Profile = {
       id: `user-${Date.now()}`,
       ...userData,
+      beneficiary_type: userData.role === 'customer' ? (userData.beneficiary_type || 'resident') : undefined,
       is_approved: isStaffOrDriver ? false : true,
       driver_status: userData.role === 'driver' ? 'standby' : undefined,
     };
@@ -1057,11 +1062,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const todayStr = getTodayDateString();
 
     const now = new Date();
-    // Start of week (Monday)
+    // Start of week (Monday 00:00:00) to End of week (Sunday 23:59:59)
     const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
     const startOfWeek = new Date(now);
     startOfWeek.setDate(now.getDate() - dayOfWeek);
     startOfWeek.setHours(0, 0, 0, 0);
+
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
 
     const currentYear = now.getFullYear();
     const currentMonth = now.getMonth();
@@ -1078,7 +1087,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     logs.forEach(log => {
       const logDate = new Date(log.logged_date);
       const isToday = log.logged_date === todayStr;
-      const isThisWeek = logDate >= startOfWeek;
+      const isThisWeek = logDate >= startOfWeek && logDate <= endOfWeek;
       const isThisMonth = logDate.getFullYear() === currentYear && logDate.getMonth() === currentMonth;
       const isThisYear = logDate.getFullYear() === currentYear;
 

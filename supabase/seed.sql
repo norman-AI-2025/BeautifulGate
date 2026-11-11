@@ -21,6 +21,7 @@ alter table public.profiles add column if not exists address text;
 alter table public.profiles add column if not exists emergency_contact text;
 alter table public.profiles add column if not exists emergency_phone text;
 alter table public.profiles add column if not exists mobility_type text default 'None';
+alter table public.profiles add column if not exists beneficiary_type text default 'resident';
 
 -- Ensure all required columns exist on transit_bookings
 alter table public.transit_bookings add column if not exists is_approved boolean default true;

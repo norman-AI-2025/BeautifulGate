@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -37,14 +37,26 @@ export default function MobileArtisanPortalPage() {
     currentUser, 
     bookings, 
     products, 
-    addWorkLog, 
     getArtisanStats, 
     workLogs 
   } = useApp();
   const { t } = useLanguage();
 
+  // Beneficiary Access Control:
+  // - 'resident' and 'daycare': access both van bookings and workshop income tracking
+  // - 'non_resident': ONLY access booking van function
+  const beneficiaryType = currentUser?.beneficiary_type || 'resident';
+  const canAccessIncome = beneficiaryType === 'resident' || beneficiaryType === 'daycare';
+
   // Main Tabs: "transit" | "earnings"
   const [mainTab, setMainTab] = useState<'transit' | 'earnings'>('transit');
+
+  // Enforce access control: non-residents can only access transit
+  useEffect(() => {
+    if (!canAccessIncome && mainTab === 'earnings') {
+      setMainTab('transit');
+    }
+  }, [canAccessIncome, mainTab]);
 
   // Van Transit Sub-Tabs: "book" | "status"
   const [transitTab, setTransitTab] = useState<'book' | 'status'>('book');
@@ -56,14 +68,6 @@ export default function MobileArtisanPortalPage() {
   // USER SPEC: minimize completed and rated services, click to expand, default minimized
   const [isCompletedExpanded, setIsCompletedExpanded] = useState<boolean>(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
-
-  // Workshop logging state
-  const [selectedProductId, setSelectedProductId] = useState<string>(products[0]?.id || '');
-  const [cardsCountInput, setCardsCountInput] = useState<number>(20);
-  const [recordSuccessMsg, setRecordSuccessMsg] = useState(false);
-
-  const selectedProduct = products.find(p => p.id === selectedProductId) || products[0];
-  const livePreviewEarned = ((cardsCountInput || 0) * (selectedProduct?.piece_rate || 0)).toFixed(2);
 
   // User's specific bookings
   const userBookings = bookings.filter(b => 
@@ -90,14 +94,6 @@ export default function MobileArtisanPortalPage() {
   const handleBookingSuccess = (id: string) => {
     setJustBookedId(id);
     setTransitTab('status'); // Auto switch to status tab as requested!
-  };
-
-  const handleRecordWork = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (cardsCountInput <= 0) return;
-    addWorkLog(cardsCountInput, selectedProductId, currentUser?.id);
-    setRecordSuccessMsg(true);
-    setTimeout(() => setRecordSuccessMsg(false), 3000);
   };
 
   const artisanStats = currentUser ? getArtisanStats(currentUser.id) : null;
@@ -143,39 +139,54 @@ export default function MobileArtisanPortalPage() {
                 </h1>
                 <p className="text-xs text-orange-200 flex items-center gap-1.5 mt-0.5">
                   <span className="inline-block h-2 w-2 rounded-full bg-[#F37021]" />
-                  {currentUser?.mobility_type || 'Wheelchair Transit'} · {t('common.verified', 'OKU Verified')}
+                  <span>
+                    {beneficiaryType === 'daycare'
+                      ? t('profile.beneficiaryDaycareBadge', 'Daycare')
+                      : beneficiaryType === 'non_resident'
+                      ? t('profile.beneficiaryNonResidentBadge', 'Non-Resident')
+                      : t('profile.beneficiaryResidentBadge', 'Resident')}
+                  </span>
+                  <span>·</span>
+                  <span>{currentUser?.mobility_type || 'Wheelchair Transit'}</span>
                 </p>
               </div>
             </div>
 
-            {/* Main Navigation Segmented Switcher */}
+            {/* Main Navigation: Switcher for Residents/Daycare, or Transit Service Pill for Non-Residents */}
             <div className="flex items-center gap-2">
-              <div className="flex rounded-full bg-white/10 p-1 border border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setMainTab('transit')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all tap-target ${
-                    mainTab === 'transit'
-                      ? 'bg-[#F37021] text-white shadow-sm font-black'
-                      : 'text-neutral-300 hover:text-white'
-                  }`}
-                >
-                  <Car className="h-3.5 w-3.5" />
-                  <span className="hidden xs:inline">{t('portal.vanTransit', 'Transit')}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMainTab('earnings')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all tap-target ${
-                    mainTab === 'earnings'
-                      ? 'bg-[#F37021] text-white shadow-sm font-black'
-                      : 'text-neutral-300 hover:text-white'
-                  }`}
-                >
-                  <Sparkles className="h-3.5 w-3.5" />
-                  <span className="hidden xs:inline">{t('portal.myEarnings', 'Earnings')}</span>
-                </button>
-              </div>
+              {canAccessIncome ? (
+                <div className="flex rounded-full bg-white/10 p-1 border border-white/10">
+                  <button
+                    type="button"
+                    onClick={() => setMainTab('transit')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all tap-target ${
+                      mainTab === 'transit'
+                        ? 'bg-[#F37021] text-white shadow-sm font-black'
+                        : 'text-neutral-300 hover:text-white'
+                    }`}
+                  >
+                    <Car className="h-3.5 w-3.5" />
+                    <span className="hidden xs:inline">{t('portal.vanTransit', 'Transit')}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMainTab('earnings')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all tap-target ${
+                      mainTab === 'earnings'
+                        ? 'bg-[#F37021] text-white shadow-sm font-black'
+                        : 'text-neutral-300 hover:text-white'
+                    }`}
+                  >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    <span className="hidden xs:inline">{t('portal.myEarnings', 'Earnings')}</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/15 text-xs font-black text-orange-200 shadow-xs">
+                  <Car className="h-3.5 w-3.5 text-[#F37021]" />
+                  <span>{t('portal.vanTransitOnlyBadge', 'Van Transit Service Only')}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -566,10 +577,10 @@ export default function MobileArtisanPortalPage() {
                 </p>
               </div>
 
-              {/* This Week */}
+              {/* This Week (Mon - Sun strictly) */}
               <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-4 shadow-xs">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-orange-700">
-                  {t('portal.thisWeek', 'This Week')}
+                  {t('portal.thisWeekMonSun', 'A Week (Mon – Sun)')}
                 </span>
                 <p className="text-2xl font-black text-orange-950 font-mono mt-1">
                   RM {artisanStats?.weekEarned.toFixed(2) || '0.00'}
@@ -604,91 +615,6 @@ export default function MobileArtisanPortalPage() {
                   {artisanStats?.yearUnits || 0} {t('portal.cardsProduced', 'cards produced')}
                 </p>
               </div>
-            </div>
-
-            {/* Daily Production Entry Card */}
-            <div className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-sm space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-                <h3 className="text-base font-extrabold text-neutral-900">
-                  {t('portal.dailyProduction', 'Daily Production Entry')}
-                </h3>
-                <span className="text-[10px] font-mono font-bold bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full border border-emerald-300">
-                  {t('portal.perCard', 'RM / Card')}
-                </span>
-              </div>
-
-              {recordSuccessMsg && (
-                <div className="rounded-xl bg-emerald-600 text-white p-3 text-xs font-bold flex items-center gap-2">
-                  <Check className="h-4 w-4" />
-                  {t('portal.productionSaved', 'Production entry saved successfully!')}
-                </div>
-              )}
-
-              <form onSubmit={handleRecordWork} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-neutral-700 mb-1">
-                    {t('portal.selectCardProduct', 'Select Card Product & Resort Client')}
-                  </label>
-                  <select
-                    value={selectedProductId}
-                    onChange={(e) => setSelectedProductId(e.target.value)}
-                    className="apple-input w-full text-xs font-medium"
-                  >
-                    {products.map(p => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} · {p.resort_client} (RM {p.piece_rate.toFixed(2)}/{t('portal.perCard', 'card')})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-neutral-700 mb-1">
-                    {t('portal.amountCompleted', 'Amount of Cards Completed Today')}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      min="1"
-                      max="500"
-                      required
-                      value={cardsCountInput || ''}
-                      onChange={(e) => setCardsCountInput(parseInt(e.target.value) || 0)}
-                      placeholder="e.g. 24"
-                      className="apple-input w-full text-2xl font-black font-mono tracking-tight text-neutral-900"
-                    />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold uppercase text-neutral-400">
-                      {t('portal.units', 'Units')}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Live Calculated Payout Preview */}
-                <div className="rounded-2xl border-2 border-orange-300 bg-gradient-to-r from-orange-50 to-amber-50 p-4">
-                  <div className="flex items-center justify-between text-xs text-orange-800">
-                    <span>{t('portal.pieceRateFormula', 'Piece Rate Formula')}</span>
-                    <span className="font-mono font-bold">
-                      {cardsCountInput || 0} {t('drawer.cards', 'cards')} × RM {selectedProduct?.piece_rate.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="mt-1 flex items-baseline justify-between border-t border-orange-200 pt-2">
-                    <span className="text-xs font-bold text-orange-950">
-                      {t('portal.calculatedPayout', 'Calculated Payout:')}
-                    </span>
-                    <span className="text-2xl font-black text-orange-950 font-mono">
-                      RM {livePreviewEarned}
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-3 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-md tap-target"
-                >
-                  <Plus className="h-4 w-4" />
-                  {t('portal.recordWork', 'Record Work')}
-                </button>
-              </form>
             </div>
 
             {/* Recent Activity List */}

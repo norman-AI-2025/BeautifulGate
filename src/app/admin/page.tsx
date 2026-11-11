@@ -417,9 +417,11 @@ export default function AdminPage() {
     return groups;
   }, [bookings, filteredBookings]);
 
-  // Registered artisans (customers)
+  // Registered artisans (resident and daycare beneficiaries; non-residents only use van transit)
   const registeredArtisans = useMemo(() => {
-    const customerProfiles = profiles.filter(p => p.role === 'customer');
+    const customerProfiles = profiles.filter(
+      p => p.role === 'customer' && p.beneficiary_type !== 'non_resident'
+    );
     return customerProfiles.map(p => getArtisanStats(p.id));
   }, [profiles, getArtisanStats]);
 
@@ -2321,6 +2323,21 @@ export default function AdminPage() {
                                     ? t('auth.driverStaffRole', 'Driver')
                                     : t('nav.supervisorRole', 'Supervisor')}
                                 </span>
+                                {p.role === 'customer' && (
+                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                                    p.beneficiary_type === 'daycare'
+                                      ? 'bg-blue-100 text-blue-900 border border-blue-300'
+                                      : p.beneficiary_type === 'non_resident'
+                                      ? 'bg-neutral-100 text-neutral-700 border border-neutral-300'
+                                      : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
+                                  }`}>
+                                    {p.beneficiary_type === 'daycare' 
+                                      ? t('profile.beneficiaryDaycareBadge', 'Daycare')
+                                      : p.beneficiary_type === 'non_resident'
+                                      ? t('profile.beneficiaryNonResidentBadge', 'Non-Resident')
+                                      : t('profile.beneficiaryResidentBadge', 'Resident')}
+                                  </span>
+                                )}
                                 {(isDriver || p.role === 'admin') && (
                                   p.is_approved === false ? (
                                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
@@ -2383,10 +2400,17 @@ export default function AdminPage() {
                               </div>
                             ) : p.role === 'customer' ? (
                               <div className="space-y-1 text-xs">
-                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-neutral-800 bg-neutral-100 px-2 py-0.5 rounded-md">
-                                  <Accessibility className="h-3 w-3 text-[#F37021]" />
-                                  {p.mobility_type}
-                                </span>
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-neutral-800 bg-neutral-100 px-2 py-0.5 rounded-md">
+                                    <Accessibility className="h-3 w-3 text-[#F37021]" />
+                                    {p.mobility_type}
+                                  </span>
+                                  <span className="text-[10px] font-bold text-neutral-500">
+                                    {p.beneficiary_type === 'non_resident'
+                                      ? t('profile.vanTransitOnly', 'Van Transit Only')
+                                      : t('profile.workshopAndTransit', 'Workshop & Transit')}
+                                  </span>
+                                </div>
                                 {p.address && (
                                   <p className="text-[11px] text-neutral-500 truncate max-w-xs">
                                     {p.address}

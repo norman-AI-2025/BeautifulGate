@@ -50,6 +50,8 @@ export interface Vehicle {
 
 export type LeaveStatus = 'pending' | 'approved' | 'rejected';
 
+export type BeneficiaryType = 'resident' | 'daycare' | 'non_resident';
+
 export interface DriverLeave {
   id: string;
   driver_id: string;
@@ -70,6 +72,7 @@ export interface Profile {
   email: string;
   role: UserRole;
   mobility_type: MobilityType;
+  beneficiary_type?: BeneficiaryType;
   address?: string;
   avatar_url?: string;
   emergency_contact?: string;
