@@ -28,7 +28,9 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
-  Camera
+  Camera,
+  Phone,
+  MessageSquare
 } from 'lucide-react';
 import { TransitBooking } from '@/types';
 
@@ -38,9 +40,12 @@ export default function MobileArtisanPortalPage() {
     bookings, 
     products, 
     getArtisanStats, 
-    workLogs 
+    workLogs,
+    profiles 
   } = useApp();
   const { t } = useLanguage();
+
+  const driverProfile = profiles.find(p => p.role === 'driver');
 
   // Beneficiary Access Control:
   // - 'resident' and 'daycare': access both van bookings and workshop income tracking
@@ -307,17 +312,44 @@ export default function MobileArtisanPortalPage() {
                           />
                         </div>
 
-                        {/* Driver & Van Info (Removed vehicle assigned label) */}
-                        <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-xs">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-                            {t('portalStatus.operator', 'Operator')}
-                          </span>
-                          <p className="font-bold text-neutral-900 text-sm mt-0.5">
-                            {b.assigned_driver}
-                          </p>
-                          <p className="text-[10px] text-[#F37021] font-semibold mt-0.5">
-                            Toyota HiAce Commuter ({b.assigned_vehicle.plate})
-                          </p>
+                        {/* Driver & Van Info with Call and WhatsApp Buttons */}
+                        <div className="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3.5 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                                {t('portalStatus.operator', 'Operator')}
+                              </span>
+                              <p className="font-extrabold text-neutral-900 text-sm mt-0.5">
+                                {b.assigned_driver}
+                              </p>
+                              <p className="text-[11px] text-[#F37021] font-bold mt-0.5">
+                                Toyota HiAce Commuter ({b.assigned_vehicle.plate})
+                              </p>
+                            </div>
+
+                            {/* Direct Call & WhatsApp Buttons */}
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={`tel:${driverProfile?.phone || b.phone || '+60169759883'}`}
+                                className="h-9 px-3 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 font-extrabold text-xs flex items-center gap-1.5 tap-target shadow-2xs hover:shadow-xs transition-all active:scale-95"
+                                title={t('vanInfo.call', 'Call')}
+                              >
+                                <Phone className="h-3.5 w-3.5 text-emerald-600" />
+                                <span>{t('vanInfo.call', 'Call')}</span>
+                              </a>
+
+                              <a
+                                href={`https://wa.me/${(driverProfile?.phone || '+60169759883').replace(/[^0-9]/g, '')}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="h-9 px-3 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 font-extrabold text-xs flex items-center gap-1.5 tap-target shadow-2xs hover:shadow-xs transition-all active:scale-95"
+                                title={t('vanInfo.whatsapp', 'WhatsApp')}
+                              >
+                                <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
+                                <span>{t('vanInfo.whatsapp', 'WhatsApp')}</span>
+                              </a>
+                            </div>
+                          </div>
                         </div>
 
                         {/* Voluntary Transit Donation Button (Replaces Boarding Pass) */}
