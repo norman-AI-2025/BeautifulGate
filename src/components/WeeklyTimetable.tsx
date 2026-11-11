@@ -499,25 +499,6 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
                       </div>
                     )}
                   </div>
-
-                  {/* Accessibility Features Checklist */}
-                  <div className="pt-3 border-t border-neutral-200/80 space-y-1.5 text-xs">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-400 block mb-1">
-                      {t('vanInfo.equipment', 'Accessibility & Safety Equipment')}
-                    </span>
-                    <div className="flex items-start gap-2 text-neutral-800">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                      <span className="font-medium text-[11px]">{t('vanInfo.spec1', 'Heavy-Duty Rear Hydraulic Wheelchair Lift (350kg capacity)')}</span>
-                    </div>
-                    <div className="flex items-start gap-2 text-neutral-800">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                      <span className="font-medium text-[11px]">{t('vanInfo.spec2', '4-Point Q’Straint Wheelchair Floor Anchor Clamps')}</span>
-                    </div>
-                    <div className="flex items-start gap-2 text-neutral-800">
-                      <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                      <span className="font-medium text-[11px]">{t('vanInfo.spec3', 'High-Roof Clearance with Ergonomic Interior Grab Rails')}</span>
-                    </div>
-                  </div>
                 </div>
 
                 {/* 2. DRIVER CARD (5 Cols) - 100% DB Driven from driverProfile */}
@@ -567,24 +548,6 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
                         </span>
                         <p className="text-xs font-black text-orange-900 mt-0.5">
                           {t('vanInfo.experience', '8 Years Certified Accessible Transit Experience')}
-                        </p>
-                      </div>
-
-                      <div className="rounded-xl bg-white border border-neutral-200 p-2.5 space-y-1">
-                        <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">
-                          {language === 'zh' ? '安全认证资质' : language === 'ms' ? 'Akreditasi Keselamatan' : 'Safety Accreditations'}
-                        </span>
-                        <p className="text-[11px] font-semibold text-neutral-800 flex items-center gap-1.5">
-                          <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                          <span>{language === 'zh' ? '商用客运 GDL 执照 & 防御性驾驶' : language === 'ms' ? 'Lesen GDL & Pemanduan Defensif' : 'GDL Certified & Defensive Driving'}</span>
-                        </p>
-                        <p className="text-[11px] font-semibold text-neutral-800 flex items-center gap-1.5">
-                          <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                          <span>{language === 'zh' ? '轮椅四点固定系统 (WTORS) 专员' : language === 'ms' ? 'Pakar Pengikat Kerusi Roda (WTORS)' : 'Wheelchair Tie-Down (WTORS) Specialist'}</span>
-                        </p>
-                        <p className="text-[11px] font-semibold text-neutral-800 flex items-center gap-1.5">
-                          <ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-                          <span>{language === 'zh' ? '圣约翰急救与心肺复苏术 CPR 认证' : language === 'ms' ? 'Pertolongan Cemas & CPR St. John' : 'St. John Certified First Aid & CPR'}</span>
                         </p>
                       </div>
                     </div>
