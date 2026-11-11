@@ -14,7 +14,8 @@ import {
   CheckCircle2, 
   Calendar,
   Layers,
-  FileSpreadsheet
+  FileSpreadsheet,
+  UserPlus
 } from 'lucide-react';
 import { UserRole } from '@/types';
 
@@ -54,33 +55,22 @@ export default function HomePage() {
             {t('home.title', 'Assisted Mobility & Artisan Workshop Platform')}
           </h1>
 
-          {/* Quick Launch CTA Buttons */}
+          {/* Quick Call-to-Action Buttons */}
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/portal"
-              onClick={() => handleLaunchRole('customer')}
-              className="px-6 py-3.5 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white font-extrabold text-sm shadow-md flex items-center tap-target"
+              href="/signup"
+              className="px-8 py-4 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white font-extrabold text-base shadow-lg hover:shadow-xl transition-all flex items-center tap-target active:scale-95"
             >
-              <HeartHandshake className="h-4 w-4 mr-2" />
-              {t('home.launchPortal', 'Launch Beneficiary Portal')}
+              <UserPlus className="h-5 w-5 mr-2" />
+              {t('home.signUpNow', 'Sign Up Now')}
             </Link>
 
             <Link
-              href="/driver"
-              onClick={() => handleLaunchRole('driver')}
-              className="px-6 py-3.5 rounded-2xl bg-[#18181B] hover:bg-black text-white font-extrabold text-sm shadow-md flex items-center tap-target"
+              href="/login"
+              className="px-7 py-4 rounded-2xl bg-[#18181B] hover:bg-black text-white font-extrabold text-base shadow-md hover:shadow-lg transition-all flex items-center tap-target active:scale-95"
             >
-              <Car className="h-4 w-4 mr-2 text-[#F37021]" />
-              {t('home.launchDriver', 'Driver Console')}
-            </Link>
-
-            <Link
-              href="/admin"
-              onClick={() => handleLaunchRole('admin')}
-              className="px-6 py-3.5 rounded-2xl bg-white hover:bg-neutral-100 text-neutral-800 font-extrabold text-sm border border-neutral-300 shadow-xs flex items-center tap-target"
-            >
-              <Shield className="h-4 w-4 mr-2 text-[#F37021]" />
-              {t('home.launchAdmin', 'Supervisor Control Tower')}
+              <span>{t('auth.signIn', 'Sign In')}</span>
+              <ArrowRight className="h-4 w-4 ml-2" />
             </Link>
           </div>
         </div>

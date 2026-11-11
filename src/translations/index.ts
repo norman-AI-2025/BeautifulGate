@@ -36,6 +36,8 @@ export const translations = {
     home: {
       pill: 'Beautiful Gate Foundation for the Disabled',
       title: 'Assisted Mobility & Artisan Workshop Platform',
+      signUpNow: 'Sign Up Now',
+      signInNow: 'Sign In',
       launchPortal: 'Launch Beneficiary Portal',
       launchDriver: 'Driver Console',
       launchAdmin: 'Supervisor Control Tower',
@@ -623,6 +625,8 @@ export const translations = {
     home: {
       pill: '美门残障关怀基金会',
       title: '无障碍接送与手艺工坊管理平台',
+      signUpNow: '立即注册',
+      signInNow: '直接登录',
       launchPortal: '进入受惠者门户',
       launchDriver: '进入司机控制台',
       launchAdmin: '主管指挥监控塔',
@@ -1210,6 +1214,8 @@ export const translations = {
     home: {
       pill: 'Yayasan Beautiful Gate untuk Golongan Kurang Upaya',
       title: 'Platform Mobiliti Berbantu & Pengurusan Bengkel Artisan',
+      signUpNow: 'Daftar Sekarang',
+      signInNow: 'Log Masuk',
       launchPortal: 'Lancarkan Portal Penerima',
       launchDriver: 'Konsol Pemandu',
       launchAdmin: 'Menara Kawalan Penyelia',
