@@ -276,7 +276,7 @@ export const TransitDonationModal: React.FC<TransitDonationModalProps> = ({ book
                 <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-4 space-y-2.5 text-xs">
                   <div className="flex items-center gap-2 text-orange-950 font-bold">
                     <Car className="h-4 w-4 text-[#F37021]" />
-                    <span>{booking.assigned_driver || t('nav.driverRole', 'Assigned Driver')} · {booking.assigned_vehicle?.plate || 'Plate WVV 4108'}</span>
+                    <span>{booking.assigned_driver || t('nav.driverRole', 'Assigned Driver')} · {booking.assigned_vehicle?.plate || 'Plate NDC 9751'}</span>
                   </div>
                   <p className="text-neutral-700 leading-relaxed text-[11px]">
                     {t('donation.cashDesc', 'Hand cash directly to driver upon pickup or drop-off.')}

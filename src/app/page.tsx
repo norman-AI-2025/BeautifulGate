@@ -40,7 +40,7 @@ export default function HomePage() {
 
   // Find assigned driver profile and rating from database
   const driverProfile = profiles.find(p => p.role === 'driver');
-  const vehiclePlate = activeVehicle?.plate || driverProfile?.assigned_vehicle_plate || 'WVV 4108';
+  const vehiclePlate = activeVehicle?.plate || driverProfile?.assigned_vehicle_plate || 'NDC 9751';
   const driverName = driverProfile?.full_name || 'Wong Kok Fu';
 
   const ratedBookings = bookings.filter(b => typeof b.rating === 'number' && b.rating > 0);

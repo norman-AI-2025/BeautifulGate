@@ -78,7 +78,7 @@ export const ServiceRatingCard: React.FC<ServiceRatingCardProps> = ({ booking })
               {t('rating.serviceTitle', 'Rate Your Completed Transit Service')}
             </h4>
             <p className="text-[11px] text-neutral-600 font-medium">
-              {t('rating.driverLabel', 'Driver')}: {booking.assigned_driver || 'Assigned Driver'} · {booking.assigned_vehicle?.plate || 'WVV 4108'}
+              {t('rating.driverLabel', 'Driver')}: {booking.assigned_driver || 'Assigned Driver'} · {booking.assigned_vehicle?.plate || 'NDC 9751'}
             </p>
           </div>
         </div>

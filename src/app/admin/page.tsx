@@ -377,7 +377,7 @@ export default function AdminPage() {
       const occupiedCount = nonDeclined.length;
       const activeDriverInProfiles = profiles.find(p => p.role === 'driver');
       const assignedDriver = g.allSlotBookings[0]?.assigned_driver || activeDriverInProfiles?.full_name || 'Unassigned Driver';
-      const vehiclePlate = g.allSlotBookings[0]?.assigned_vehicle?.plate || activeDriverInProfiles?.assigned_vehicle_plate || 'WVV 4108';
+      const vehiclePlate = g.allSlotBookings[0]?.assigned_vehicle?.plate || activeDriverInProfiles?.assigned_vehicle_plate || vehicles?.[0]?.plate || 'NDC 9751';
       const pendingCount = g.allSlotBookings.filter(b => b.status === 'pending').length;
 
       groups.push({
@@ -1835,8 +1835,8 @@ export default function AdminPage() {
             {/* Vehicle Profile Card */}
             {(() => {
               const activeVehicle = vehicles?.[0] || {
-                id: 'veh-hiace-wvv4108',
-                plate: 'WVV 4108',
+                id: 'veh-hiace-ndc9751',
+                plate: 'NDC 9751',
                 brand: 'Toyota',
                 model: 'HiAce High-Roof Commuter',
                 color: 'Pearl White',

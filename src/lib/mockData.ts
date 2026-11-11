@@ -1,7 +1,7 @@
 import { Profile, TransitBooking, CardProduct, CardWorkLog, VehicleSpec, Vehicle, DriverLeave } from '@/types';
 
 export const DEFAULT_VEHICLE: VehicleSpec = {
-  plate: 'WVV 4108',
+  plate: 'NDC 9751',
   brand: 'Toyota',
   model: 'HiAce High-Roof Commuter',
   color: 'Pearl White',
@@ -10,8 +10,8 @@ export const DEFAULT_VEHICLE: VehicleSpec = {
 
 export const INITIAL_VEHICLES: Vehicle[] = [
   {
-    id: 'veh-hiace-wvv4108',
-    plate: 'WVV 4108',
+    id: 'veh-hiace-ndc9751',
+    plate: 'NDC 9751',
     brand: 'Toyota',
     model: 'HiAce High-Roof Commuter',
     color: 'Pearl White',

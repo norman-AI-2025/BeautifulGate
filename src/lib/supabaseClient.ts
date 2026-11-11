@@ -84,7 +84,7 @@ export async function dbFetchBookings(): Promise<TransitBooking[] | null> {
     assigned_space: row.assigned_space,
     assigned_driver: row.assigned_driver || 'Assigned Driver',
     assigned_vehicle: {
-      plate: row.vehicle_plate || 'WVV 4108',
+      plate: row.vehicle_plate || 'NDC 9751',
       brand: row.vehicle_brand || 'Toyota',
       model: row.vehicle_model || 'HiAce Commuter',
       color: row.vehicle_color || 'Pearl White',

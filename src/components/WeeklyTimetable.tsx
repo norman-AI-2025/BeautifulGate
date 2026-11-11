@@ -76,7 +76,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
   const { profiles, vehicles, isDateBlockedByLeave } = useApp();
   const driverProfile = profiles.find(p => p.role === 'driver');
   const activeVehicle = vehicles?.[0] || {
-    plate: 'WVV 4108',
+    plate: 'NDC 9751',
     brand: 'Toyota',
     model: 'HiAce High-Roof Commuter',
     color: 'Pearl White',

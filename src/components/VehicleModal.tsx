@@ -32,7 +32,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
 
   const activeVehicle = targetVehicle || vehicles[0] || {
     id: 'veh-hiace-wvv4108',
-    plate: 'WVV 4108',
+    plate: 'NDC 9751',
     brand: 'Toyota',
     model: 'HiAce High-Roof Commuter',
     color: 'Pearl White',
@@ -150,7 +150,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
               {t('vehicleModal.fleetAsset', 'Fleet Asset')}
             </span>
             <span className="font-mono text-xs text-orange-300 font-bold">
-              {plate || 'WVV 4108'}
+              {plate || 'NDC 9751'}
             </span>
           </div>
 
