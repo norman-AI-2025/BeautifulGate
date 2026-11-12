@@ -26,6 +26,7 @@ import {
   INITIAL_DRIVER_LEAVES, 
   getTodayDateString 
 } from '@/lib/mockData';
+import { formatPhoneNumber, formatICNumber } from '@/lib/formatters';
 import {
   isSupabaseConfigured,
   supabase,
@@ -469,8 +470,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newProfile: Profile = {
       id: `user-${Date.now()}`,
       full_name: userData.full_name,
-      ic_or_oku_number: userData.ic_or_oku_number,
-      phone: userData.phone,
+      ic_or_oku_number: formatICNumber(userData.ic_or_oku_number),
+      phone: formatPhoneNumber(userData.phone),
       email: userData.email,
       role: userData.role,
       mobility_type: userData.mobility_type,
@@ -496,10 +497,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Update profile details and/or avatar photo
   const updateProfile = useCallback((profileId: string, updates: Partial<Profile>) => {
+    const normalizedUpdates = {
+      ...updates,
+      ...(updates.phone !== undefined ? { phone: formatPhoneNumber(updates.phone) } : {}),
+      ...(updates.ic_or_oku_number !== undefined ? { ic_or_oku_number: formatICNumber(updates.ic_or_oku_number) } : {}),
+    };
+
     setProfiles(prevProfiles => {
       const updated = prevProfiles.map(p => {
         if (p.id === profileId) {
-          const merged = { ...p, ...updates };
+          const merged = { ...p, ...normalizedUpdates };
           // Persist to Supabase asynchronously
           dbUpsertProfile(merged).catch(err => console.warn('Supabase updateProfile error', err));
           return merged;
@@ -516,7 +523,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setCurrentUser(prevUser => {
       if (prevUser && prevUser.id === profileId) {
-        const updatedUser = { ...prevUser, ...updates };
+        const updatedUser = { ...prevUser, ...normalizedUpdates };
         try {
           localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(updatedUser));
         } catch (err) {
@@ -772,8 +779,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `bk-${Date.now()}`,
       passenger_id: currentUser?.id || 'guest',
       passenger_name: data.passenger_name || currentUser?.full_name || 'Passenger',
-      oku_id: data.oku_id || currentUser?.ic_or_oku_number || '',
-      phone: data.phone || currentUser?.phone || '',
+      oku_id: formatICNumber(data.oku_id || currentUser?.ic_or_oku_number || ''),
+      phone: formatPhoneNumber(data.phone || currentUser?.phone || ''),
       pickup_address: data.pickup_address,
       hospital_name: data.hospital_name,
       clinic_department: data.clinic_department || 'General Outpatient / Clinic',

@@ -1,5 +1,6 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Profile, TransitBooking, CardProduct, CardWorkLog, Vehicle, DriverLeave, LeaveStatus, BeneficiaryType } from '@/types';
+import { formatPhoneNumber, formatICNumber } from './formatters';
 
 // Environment variables for Supabase connection
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -66,6 +67,8 @@ export async function dbFetchProfiles(): Promise<Profile[] | null> {
 
     return {
       ...p,
+      phone: formatPhoneNumber(p.phone),
+      ic_or_oku_number: formatICNumber(p.ic_or_oku_number),
       beneficiary_type: beneficiaryType,
       password_hash: passwordHash,
       notes: cleanNotes || undefined,
@@ -78,14 +81,20 @@ export async function dbFetchProfiles(): Promise<Profile[] | null> {
 export async function dbUpsertProfile(profile: Partial<Profile> & { id: string }): Promise<boolean> {
   if (!supabase) return false;
 
-  const beneficiaryType = profile.beneficiary_type;
+  const normalizedProfile = {
+    ...profile,
+    ...(profile.phone ? { phone: formatPhoneNumber(profile.phone) } : {}),
+    ...(profile.ic_or_oku_number ? { ic_or_oku_number: formatICNumber(profile.ic_or_oku_number) } : {}),
+  };
+
+  const beneficiaryType = normalizedProfile.beneficiary_type;
 
   // If native column support is unknown or supported, try native upsert first
   if (hasNativeBeneficiaryTypeColumn !== false) {
     const { error } = await supabase
       .from('profiles')
       .upsert({
-        ...profile,
+        ...normalizedProfile,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'id' });
 
@@ -186,8 +195,8 @@ export async function dbFetchBookings(): Promise<TransitBooking[] | null> {
       id: row.id,
       passenger_id: row.passenger_id || row.id,
       passenger_name: row.passenger_name,
-      oku_id: row.oku_id,
-      phone: row.phone,
+      oku_id: formatICNumber(row.oku_id),
+      phone: formatPhoneNumber(row.phone),
       mobility_type: row.mobility_type,
       pickup_address: row.pickup_address,
       hospital_name: row.hospital_name,
@@ -227,8 +236,8 @@ export async function dbInsertBooking(booking: TransitBooking): Promise<boolean>
   const payload = {
     id: booking.id,
     passenger_name: booking.passenger_name,
-    oku_id: booking.oku_id,
-    phone: booking.phone,
+    oku_id: formatICNumber(booking.oku_id),
+    phone: formatPhoneNumber(booking.phone),
     mobility_type: booking.mobility_type,
     pickup_address: booking.pickup_address,
     hospital_name: booking.hospital_name,

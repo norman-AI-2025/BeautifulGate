@@ -5,6 +5,7 @@ import { X, Plus, Edit2, Check, Phone, Accessibility } from 'lucide-react';
 import { ArtisanSummary } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { formatPhoneNumber, formatICNumber } from '@/lib/formatters';
 
 interface ArtisanDrawerProps {
   artisan: ArtisanSummary;
@@ -59,7 +60,7 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
               </span>
             </div>
             <p className="text-xs font-mono text-neutral-500 mt-0.5">
-              OKU: {profile.ic_or_oku_number}
+              OKU: {formatICNumber(profile.ic_or_oku_number)}
             </p>
           </div>
           <button
@@ -88,7 +89,7 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                     {profile.mobility_type || 'Manual Wheelchair'}
                   </p>
                   <p className="font-mono text-xs text-neutral-600">
-                    {profile.ic_or_oku_number}
+                    {formatICNumber(profile.ic_or_oku_number)}
                   </p>
                 </div>
               </div>
@@ -99,7 +100,7 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                   <p className="text-xs text-neutral-400 font-medium">
                     {t('drawer.contactPhone', 'Contact Phone')}
                   </p>
-                  <p className="font-semibold text-neutral-900">{profile.phone}</p>
+                  <p className="font-semibold text-neutral-900 font-mono">{formatPhoneNumber(profile.phone)}</p>
                   <p className="text-xs text-neutral-500">{profile.email}</p>
                 </div>
               </div>

@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { MobilityType, UserRole, BeneficiaryType } from '@/types';
+import { formatPhoneNumber, formatICNumber } from '@/lib/formatters';
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -32,10 +33,10 @@ export default function SignUpPage() {
 
     try {
       await Promise.resolve(signup({
-        full_name: fullName,
-        ic_or_oku_number: icOrOku,
-        phone: phone,
-        email: email,
+        full_name: fullName.trim(),
+        ic_or_oku_number: formatICNumber(icOrOku),
+        phone: formatPhoneNumber(phone),
+        email: email.trim(),
         password: password,
         role: role,
         mobility_type: role === 'driver' ? 'None' : mobilityProfile,
@@ -150,7 +151,8 @@ export default function SignUpPage() {
                 required
                 value={icOrOku}
                 onChange={(e) => setIcOrOku(e.target.value)}
-                placeholder="e.g. DE0502198901"
+                onBlur={() => setIcOrOku(formatICNumber(icOrOku))}
+                placeholder="e.g. 060412-05-0245"
                 className="apple-input w-full font-mono"
               />
             </div>
@@ -166,8 +168,9 @@ export default function SignUpPage() {
                 required
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="+60 12-345 6789"
-                className="apple-input w-full"
+                onBlur={() => setPhone(formatPhoneNumber(phone))}
+                placeholder="e.g. +6012-3456789"
+                className="apple-input w-full font-mono"
               />
             </div>
             <div>

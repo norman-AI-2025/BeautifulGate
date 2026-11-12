@@ -10,6 +10,7 @@ import { LogOut, User } from 'lucide-react';
 import { UserRole } from '@/types';
 import { ProfileModal } from '@/components/ProfileModal';
 import { UserAvatar } from '@/components/UserAvatar';
+import { formatICNumber } from '@/lib/formatters';
 
 export const Header: React.FC = () => {
   const pathname = usePathname();
@@ -83,7 +84,7 @@ export const Header: React.FC = () => {
                     </span>
                     <span className="text-neutral-300">•</span>
                     <span className="text-[10px] font-mono text-neutral-500">
-                      {currentUser.ic_or_oku_number}
+                      {formatICNumber(currentUser.ic_or_oku_number)}
                     </span>
                   </div>
                 </div>

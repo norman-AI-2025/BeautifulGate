@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Profile, MobilityType, UserRole, BeneficiaryType } from '@/types';
+import { formatPhoneNumber, formatICNumber } from '@/lib/formatters';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
 
@@ -205,12 +206,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
     const updates: Partial<Profile> = {
       full_name: fullName.trim(),
-      ic_or_oku_number: icNumber.trim(),
-      phone: phone.trim(),
+      ic_or_oku_number: formatICNumber(icNumber),
+      phone: formatPhoneNumber(phone),
       email: email.trim(),
       address: address.trim(),
       emergency_contact: emergencyContact.trim(),
-      emergency_phone: emergencyPhone.trim(),
+      emergency_phone: formatPhoneNumber(emergencyPhone),
       avatar_url: avatarUrl,
     };
 
@@ -267,7 +268,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               {roleLabel}
             </span>
             <span className="font-mono text-xs text-orange-200">
-              {profile.ic_or_oku_number}
+              {formatICNumber(profile.ic_or_oku_number)}
             </span>
             {profile.chinese_name && (
               <span className="text-xs text-white/90 font-bold bg-white/20 px-2 py-0.5 rounded-full">
@@ -450,6 +451,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 disabled={isReadOnly}
                 value={icNumber}
                 onChange={(e) => setIcNumber(e.target.value)}
+                onBlur={() => setIcNumber(formatICNumber(icNumber))}
+                placeholder="e.g. 060412-05-0245"
                 className="apple-input w-full font-mono disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
               />
             </div>
@@ -463,7 +466,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 disabled={isReadOnly}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="apple-input w-full disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed font-medium"
+                onBlur={() => setPhone(formatPhoneNumber(phone))}
+                placeholder="e.g. +6012-3456789"
+                className="apple-input w-full disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed font-medium font-mono"
               />
             </div>
 

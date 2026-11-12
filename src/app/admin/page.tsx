@@ -55,6 +55,7 @@ import { ProfileModal } from '@/components/ProfileModal';
 import { VehicleModal } from '@/components/VehicleModal';
 import { UserAvatar } from '@/components/UserAvatar';
 import { TransitBooking, ArtisanSummary, TransitStatus, Profile } from '@/types';
+import { formatPhoneNumber, formatICNumber } from '@/lib/formatters';
 
 // Helper to normalize and sort time slots chronologically
 const parseTimeToMinutes = (timeStr: string): number => {
@@ -782,10 +783,10 @@ export default function AdminPage() {
                       <div className="flex items-center gap-1.5">
                         <Phone className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
                         <a
-                          href={`tel:${currentActiveDispatch.phone}`}
+                          href={`tel:${currentActiveDispatch.phone.replace(/[^0-9+]/g, '')}`}
                           className="font-mono font-bold text-white hover:text-[#F37021] transition-colors"
                         >
-                          {currentActiveDispatch.phone}
+                          {formatPhoneNumber(currentActiveDispatch.phone)}
                         </a>
                       </div>
 
@@ -1253,7 +1254,7 @@ export default function AdminPage() {
                                                     {t('adminTable.contactPhone', 'Contact Phone')}
                                                   </span>
                                                   <p className="font-mono font-bold text-neutral-900 mt-0.5">
-                                                    {b.phone}
+                                                    {formatPhoneNumber(b.phone)}
                                                   </p>
                                                 </div>
 
@@ -1593,12 +1594,12 @@ export default function AdminPage() {
                             {artisan.profile.full_name}
                           </p>
                           <p className="text-[11px] text-neutral-500 font-mono">
-                            {artisan.profile.phone}
+                            {formatPhoneNumber(artisan.profile.phone)}
                           </p>
                         </td>
 
                         <td className="py-4 px-5 font-mono text-neutral-700 font-bold">
-                          {artisan.profile.ic_or_oku_number}
+                          {formatICNumber(artisan.profile.ic_or_oku_number)}
                         </td>
 
                         <td className="py-4 px-5">
@@ -2442,7 +2443,7 @@ export default function AdminPage() {
                                 )}
                               </div>
                               <p className="font-mono text-xs text-neutral-700 font-semibold">
-                                {p.ic_or_oku_number}
+                                {formatICNumber(p.ic_or_oku_number)}
                               </p>
                             </div>
                           </td>
@@ -2450,9 +2451,9 @@ export default function AdminPage() {
                           {/* Contact */}
                           <td className="py-3.5 px-4 whitespace-nowrap">
                             <div className="space-y-0.5 text-xs">
-                              <p className="font-medium text-neutral-800 flex items-center gap-1.5">
+                              <p className="font-medium text-neutral-800 flex items-center gap-1.5 font-mono">
                                 <Phone className="h-3 w-3 text-neutral-400" />
-                                {p.phone}
+                                {formatPhoneNumber(p.phone)}
                               </p>
                               <p className="text-neutral-500 font-mono text-[11px] flex items-center gap-1.5">
                                 <Mail className="h-3 w-3 text-neutral-400" />
