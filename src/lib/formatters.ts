@@ -43,3 +43,4 @@ export function formatICNumber(ic: string | null | undefined): string {
   }
   return ic.trim();
 }
+

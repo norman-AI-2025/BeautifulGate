@@ -328,26 +328,26 @@ export default function DriverPage() {
   }, [allJohanApprovedBookings]);
 
   // Determine current active job or first upcoming non-completed job
-  const initialCurrentJob = useMemo(() => {
+  const currentJob = useMemo(() => {
     if (allDriverJobs.length === 0) return null;
-    const active = allDriverJobs.find(j => j.isActive);
+    const active = allDriverJobs.find(j => j.isActive && !j.isCompleted);
     if (active) return active;
     const upcoming = allDriverJobs.find(j => !j.isCompleted);
     if (upcoming) return upcoming;
-    return allDriverJobs[allDriverJobs.length - 1];
+    return null; // All jobs completed, no active current job
   }, [allDriverJobs]);
 
-  // Centered job in viewport (outline turns green!)
+  // Centered job in viewport
   const [centeredJobId, setCenteredJobId] = useState<string | null>(null);
   const jobRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const hasInitialScrolled = useRef<boolean>(false);
 
   // Auto-scroll current job to center of screen on initial load
   useEffect(() => {
-    if (!hasInitialScrolled.current && initialCurrentJob && isLoaded && allDriverJobs.length > 0) {
-      setCenteredJobId(initialCurrentJob.id);
+    if (!hasInitialScrolled.current && currentJob && isLoaded && allDriverJobs.length > 0) {
+      setCenteredJobId(currentJob.id);
       const timer = setTimeout(() => {
-        const el = jobRefs.current.get(initialCurrentJob.id);
+        const el = jobRefs.current.get(currentJob.id);
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
           hasInitialScrolled.current = true;
@@ -355,7 +355,7 @@ export default function DriverPage() {
       }, 350);
       return () => clearTimeout(timer);
     }
-  }, [initialCurrentJob, isLoaded, allDriverJobs]);
+  }, [currentJob, isLoaded, allDriverJobs]);
 
   // Detect which job container is in the center of the screen as driver scrolls
   useEffect(() => {
@@ -772,17 +772,26 @@ export default function DriverPage() {
               {allDriverJobs.map((job) => {
                 const isCentered = centeredJobId === job.id;
                 const isCompleted = job.isCompleted;
+                const isCurrentJob = currentJob?.id === job.id;
 
                 // Container Styling:
-                // - Centered: green outline, bright clear, elevated shadow
+                // - ONLY the current job gets glowing green outline (even if driver scrolls back to completed job, completed never gets green glow)
+                // - Completed & centered (scrolled back): clear, unblurred with neutral border
                 // - Completed & not centered: faded & blurred
                 // - Upcoming: clean, crisp, neutral border
                 let containerStyle = '';
-                if (isCentered) {
+                if (isCurrentJob) {
                   containerStyle = 'border-2 border-emerald-500 ring-4 ring-emerald-500/20 shadow-2xl shadow-emerald-500/10 scale-[1.01] bg-white opacity-100 blur-0 z-20';
                 } else if (isCompleted) {
-                  containerStyle = 'border border-neutral-200 bg-neutral-100/75 opacity-40 blur-[1.5px] scale-[0.98] cursor-pointer hover:opacity-75 z-10';
+                  if (isCentered) {
+                    // Scrolled back to completed job: unblurred, clear, but standard neutral border (NEVER glowing green)
+                    containerStyle = 'border-2 border-neutral-300 bg-white opacity-100 blur-0 scale-100 shadow-md z-10';
+                  } else {
+                    // Normal completed: faded and blurred
+                    containerStyle = 'border border-neutral-200 bg-neutral-100/75 opacity-40 blur-[1.5px] scale-[0.98] cursor-pointer hover:opacity-75 z-10';
+                  }
                 } else {
+                  // Upcoming jobs
                   containerStyle = 'border-2 border-neutral-200/90 bg-white shadow-sm opacity-100 blur-0 hover:border-neutral-300 z-10';
                 }
 
@@ -829,17 +838,19 @@ export default function DriverPage() {
 
                       {/* Status Badges & Advance All */}
                       <div className="flex items-center gap-2">
-                        {isCentered ? (
-                          <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-600 text-white flex items-center gap-1.5 shadow-sm animate-pulse">
-                            <span className="h-2 w-2 rounded-full bg-white animate-ping" />
-                            {job.isCompleted 
-                              ? t('driver.jobInFocus', 'Job In Focus · Completed') 
-                              : t('driver.currentJob', 'Current Job')}
-                          </span>
-                        ) : isCompleted ? (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-neutral-200 text-neutral-600 flex items-center gap-1">
+                        {isCompleted ? (
+                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-neutral-200 text-neutral-700 flex items-center gap-1">
                             <CheckCircle2 className="h-3 w-3 text-emerald-600" />
                             {t('driver.completedSlot', 'Completed')}
+                          </span>
+                        ) : isCurrentJob ? (
+                          <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-600 text-white flex items-center gap-1.5 shadow-sm animate-pulse">
+                            <span className="h-2 w-2 rounded-full bg-white animate-ping" />
+                            {language === 'zh'
+                              ? '当前行程'
+                              : language === 'ms'
+                              ? 'Tugas Semasa'
+                              : t('driver.currentJob', 'Current Job')}
                           </span>
                         ) : job.isActive ? (
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide bg-[#F37021] text-white flex items-center gap-1 shadow-xs">
@@ -848,7 +859,7 @@ export default function DriverPage() {
                           </span>
                         ) : (
                           <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-100 text-emerald-900 border border-emerald-300">
-                            {t('driverManifest.upcoming', 'Upcoming Job')}
+                            {t('driverManifest.upcomingJob', 'Upcoming Job')}
                           </span>
                         )}
 
@@ -1036,20 +1047,26 @@ export default function DriverPage() {
       </main>
 
       {/* Floating Jump to Current Job Button */}
-      {initialCurrentJob && centeredJobId !== initialCurrentJob.id && (
+      {currentJob && centeredJobId !== currentJob.id && (
         <button
           type="button"
           onClick={() => {
-            const el = jobRefs.current.get(initialCurrentJob.id);
+            const el = jobRefs.current.get(currentJob.id);
             if (el) {
               el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              setCenteredJobId(initialCurrentJob.id);
+              setCenteredJobId(currentJob.id);
             }
           }}
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-2xl flex items-center gap-2 border border-emerald-400/50 backdrop-blur-md cursor-pointer tap-target transition-all hover:scale-105 active:scale-95 animate-bounce"
         >
           <Navigation className="h-3.5 w-3.5 text-white" />
-          <span>{t('driver.jumpToCurrentJob', 'Jump to Current Job')}</span>
+          <span>
+            {language === 'zh'
+              ? '跳转至当前行程'
+              : language === 'ms'
+              ? 'Pergi ke Tugas Semasa'
+              : t('driver.jumpToCurrentJob', 'Jump to Current Job')}
+          </span>
         </button>
       )}
 
