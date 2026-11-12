@@ -24,6 +24,23 @@ export default function SignUpPage() {
   const [beneficiaryType, setBeneficiaryType] = useState<BeneficiaryType>('resident');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const getLocalizedMobilityOption = (m: MobilityType): string => {
+    switch (m) {
+      case 'Manual Wheelchair':
+        return t('profile.mobilityManualWheelchair', 'Manual Wheelchair');
+      case 'Motorized Wheelchair':
+        return t('profile.mobilityMotorizedWheelchair', 'Motorized Wheelchair');
+      case 'Assisted Walk':
+        return t('profile.mobilityAssistedWalk', 'Assisted Walk');
+      case 'None / Escort':
+        return t('profile.mobilityNoneEscort', 'None / Escort');
+      case 'None':
+        return t('profile.mobilityNone', 'None');
+      default:
+        return m;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim() || !email.trim() || !icOrOku.trim()) {
@@ -252,7 +269,7 @@ export default function SignUpPage() {
                           : 'border-neutral-200 bg-neutral-50 text-neutral-700 hover:border-neutral-400'
                       }`}
                     >
-                      {type}
+                      {getLocalizedMobilityOption(type)}
                     </button>
                   ))}
                 </div>
