@@ -561,7 +561,7 @@ export default function DriverPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Request Leave Button */}
+              {/* Leave Button */}
               <button
                 type="button"
                 onClick={() => {
@@ -569,10 +569,9 @@ export default function DriverPage() {
                   setLeaveError('');
                   setIsLeaveModalOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-500/20 hover:bg-[#F37021] text-orange-200 hover:text-white border border-orange-400/40 text-xs font-bold transition-all tap-target shadow-xs"
+                className="px-3 py-1.5 rounded-xl bg-orange-500/20 hover:bg-[#F37021] text-orange-200 hover:text-white border border-orange-400/40 text-xs font-black transition-all tap-target shadow-xs cursor-pointer"
               >
-                <Calendar className="h-3.5 w-3.5" />
-                <span className="hidden xs:inline">{t('driver.requestLeave', 'Request Leave')}</span>
+                <span>{language === 'zh' ? '请假' : language === 'ms' ? 'Cuti' : 'Leave'}</span>
               </button>
 
               {/* Driver Profile Button */}
