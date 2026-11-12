@@ -899,7 +899,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
 
                     {selectedSeats.length === 0 ? (
                       <div className="rounded-xl border border-dashed border-orange-300 bg-white/80 p-3 text-center text-xs text-neutral-500 font-medium">
-                        {t('vanModal.selectSeatsPrompt', 'Select van seat(s) on the floor plan to view available return slots')}
+                        {t('vanModal.selectSeatsPrompt', 'Select van seat(s) on the floor plan to view suggested return slots')}
                       </div>
                     ) : candidateReturnSlots.length === 0 ? (
                       <div className="rounded-xl bg-neutral-100 border border-neutral-200 p-3 text-center text-xs text-neutral-500">
@@ -931,15 +931,15 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                               <span className="font-mono text-xs font-bold leading-tight block truncate">
                                 {slot}
                               </span>
-                              <span className={`text-[10px] font-bold mt-1 block truncate ${
-                                isSelected
-                                  ? 'text-white/90'
-                                  : isAvailable
-                                  ? 'text-emerald-700'
-                                  : 'text-neutral-400'
-                              }`}>
-                                {isAvailable ? `✓ ${t('vanModal.seatsAvailable', 'Available')}` : reason}
-                              </span>
+                              {isSelected ? (
+                                <span className="text-[10px] font-bold mt-1 block truncate text-white/90">
+                                  ✓ {t('common.selected', 'Selected')}
+                                </span>
+                              ) : !isAvailable ? (
+                                <span className="text-[10px] font-bold mt-1 block truncate text-neutral-400">
+                                  {reason}
+                                </span>
+                              ) : null}
                             </button>
                           );
                         })}

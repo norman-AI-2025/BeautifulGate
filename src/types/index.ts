@@ -130,6 +130,28 @@ export interface TransitBooking {
   };
 }
 
+export interface TransitService {
+  id: string; // outbound booking id or service identifier
+  passenger_id: string;
+  passenger_name: string;
+  oku_id: string;
+  phone: string;
+  date: string;
+  outbound: TransitBooking;
+  returnLeg?: TransitBooking;
+  // Currently active leg being executed or displayed:
+  // If returnLeg exists and outbound is dropped_off/en_route_next -> returnLeg
+  // Otherwise -> outbound
+  activeLeg: TransitBooking;
+  currentPhase: 'outbound' | 'return'; // 'Home → Hospital' vs 'Hospital → Home'
+  currentState: TransitStatus;
+  isRoundtrip: boolean;
+  isCompleted: boolean;
+  isPending: boolean;
+  isDeclined: boolean;
+  mobility_type: MobilityType;
+}
+
 export interface CardProduct {
   id: string;
   name: string;

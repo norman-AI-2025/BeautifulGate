@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { useApp } from '@/context/AppContext';
@@ -12,6 +12,7 @@ import { ServiceRatingCard } from '@/components/ServiceRatingCard';
 import { TransitDonationModal } from '@/components/TransitDonationModal';
 import { ProfileModal } from '@/components/ProfileModal';
 import { UserAvatar } from '@/components/UserAvatar';
+import { groupBookingsIntoServices } from '@/lib/transitService';
 import { 
   Car, 
   Sparkles, 
@@ -33,7 +34,7 @@ import {
   Phone,
   MessageSquare
 } from 'lucide-react';
-import { TransitBooking } from '@/types';
+import { TransitBooking, TransitService } from '@/types';
 
 export default function MobileArtisanPortalPage() {
   const router = useRouter();
@@ -86,22 +87,25 @@ export default function MobileArtisanPortalPage() {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState<boolean>(false);
 
   // User's specific bookings
-  const userBookings = bookings.filter(b => 
-    currentUser ? (b.passenger_id === currentUser.id || b.passenger_name === currentUser.full_name) : true
-  );
+  const userBookings = useMemo(() => {
+    return bookings.filter(b => 
+      currentUser ? (b.passenger_id === currentUser.id || b.passenger_name === currentUser.full_name) : true
+    );
+  }, [bookings, currentUser]);
 
-  // Filter pending, approved/active, and completed
-  const pendingBookings = userBookings.filter(b => b.status === 'pending');
-  const activeBookings = userBookings.filter(b => 
-    ['approved', 'en_route_pickup', 'picked_up', 'en_route_hospital'].includes(b.status)
-  );
-  const completedBookings = userBookings.filter(b => 
-    ['dropped_off', 'en_route_next'].includes(b.status)
-  );
-  const declinedBookings = userBookings.filter(b => b.status === 'declined');
+  // Unified Services: Home -> Hospital -> Home is ONE service
+  const userServices = useMemo(() => {
+    return groupBookingsIntoServices(userBookings);
+  }, [userBookings]);
+
+  // Filter pending, active, completed, and declined services
+  const pendingServices = useMemo(() => userServices.filter(s => s.isPending && !s.isDeclined), [userServices]);
+  const activeServices = useMemo(() => userServices.filter(s => !s.isCompleted && !s.isPending && !s.isDeclined), [userServices]);
+  const completedServices = useMemo(() => userServices.filter(s => s.isCompleted), [userServices]);
+  const declinedServices = useMemo(() => userServices.filter(s => s.isDeclined), [userServices]);
 
   // Total active or pending trips
-  const activeAlertCount = pendingBookings.length + activeBookings.length;
+  const activeAlertCount = pendingServices.length + activeServices.length;
 
   const handleSlotSelect = (dayName: string, timeSlot: string) => {
     setModalSlot({ day: dayName, slot: timeSlot });
@@ -291,199 +295,175 @@ export default function MobileArtisanPortalPage() {
             {transitTab === 'status' && (
               <div className="space-y-5">
                 {/* 1. Active / Approved Transit Trips (with Live Status Bar) */}
-                {activeBookings.length > 0 && (
+                {activeServices.length > 0 && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold uppercase tracking-wider text-neutral-800">
-                        {t('portalStatus.approvedMission', 'Approved Transit Mission')} ({activeBookings.length})
+                        {t('portalStatus.approvedMission', 'Approved Transit Mission')} ({activeServices.length})
                       </span>
                       <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 border border-emerald-300 px-2.5 py-0.5 rounded-full">
                         {t('portalStatus.vehicleAssigned', 'Vehicle Assigned')}
                       </span>
                     </div>
 
-                    {activeBookings.map((b) => (
-                      <div
-                        key={b.id}
-                        className="rounded-3xl border-2 border-orange-500 bg-white p-5 sm:p-6 shadow-md space-y-4"
-                      >
-                        {/* Header Details: Prioritize Time, Date & Destination */}
-                        <div className="space-y-1.5 border-b border-neutral-100 pb-3">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-mono text-xs font-black bg-[#F37021] text-white px-2.5 py-1 rounded-lg shadow-2xs">
-                              {b.appointment_time}
-                            </span>
-                            <span className="text-xs font-bold text-neutral-600 bg-neutral-100 border border-neutral-200 px-2.5 py-1 rounded-lg">
-                              {b.date || t('common.today', 'Today')}
-                            </span>
-                            {(() => {
-                              const isReturn = b.journey_type === 'return' || (b.clinic_department || '').toLowerCase().includes('return');
-                              return (
-                                <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-lg border ${
-                                  isReturn
-                                    ? 'bg-amber-100 text-amber-950 border-amber-300'
-                                    : 'bg-blue-100 text-blue-950 border-blue-300'
-                                }`}>
-                                  {isReturn ? `🛬 ${t('admin.returnTrip', 'Return: Hospital → Home')}` : `🛫 ${t('admin.goTrip', 'Go: Home → Hospital')}`}
+                    {activeServices.map((service) => {
+                      const leg = service.activeLeg;
+                      const isReturnPhase = service.currentPhase === 'return';
+
+                      return (
+                        <div
+                          key={service.id}
+                          className="rounded-3xl border-2 border-orange-500 bg-white p-5 sm:p-6 shadow-md space-y-4"
+                        >
+                          {/* Seamless phase switch notice when outbound is completed and return is active */}
+                          {isReturnPhase && service.isRoundtrip && (
+                            <div className="rounded-2xl bg-amber-50 border border-amber-300 p-3 text-xs font-bold text-amber-950 flex items-center gap-2">
+                              <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                              <span>{t('admin.outboundCompletedSwitching', 'Home → Hospital completed · Switched to Hospital → Home journey')}</span>
+                            </div>
+                          )}
+
+                          {/* Header Details: Prioritize Time, Date & Destination */}
+                          <div className="space-y-1.5 border-b border-neutral-100 pb-3">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="font-mono text-xs font-black bg-[#F37021] text-white px-2.5 py-1 rounded-lg shadow-2xs">
+                                {leg.appointment_time}
+                              </span>
+                              <span className="text-xs font-bold text-neutral-600 bg-neutral-100 border border-neutral-200 px-2.5 py-1 rounded-lg">
+                                {leg.date || t('common.today', 'Today')}
+                              </span>
+                              <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-lg border ${
+                                isReturnPhase
+                                  ? 'bg-amber-100 text-amber-950 border-amber-300'
+                                  : 'bg-blue-100 text-blue-950 border-blue-300'
+                              }`}>
+                                {isReturnPhase ? t('admin.returnTrip', 'Return: Hospital → Home') : t('admin.goTrip', 'Go: Home → Hospital')}
+                              </span>
+                              {service.isRoundtrip && !isReturnPhase && service.returnLeg && (
+                                <span className="text-[10px] font-bold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-md border border-neutral-200">
+                                  {t('admin.leg1Outbound', 'Leg 1')} · {t('admin.returnScheduledAt', 'Return at {time}').replace('{time}', service.returnLeg.appointment_time)}
                                 </span>
-                              );
-                            })()}
+                              )}
+                            </div>
+                            <div>
+                              <h3 className="text-xl font-black text-neutral-900 tracking-tight">
+                                {leg.hospital_name}
+                              </h3>
+                              <p className="text-xs font-semibold text-neutral-600 mt-0.5">
+                                {leg.clinic_department}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="text-xl font-black text-neutral-900 tracking-tight">
-                              {b.hospital_name}
-                            </h3>
-                            <p className="text-xs font-semibold text-neutral-600 mt-0.5">
-                              {b.clinic_department}
+
+                          {/* Status Bar */}
+                          <div className="rounded-2xl bg-neutral-50 p-3 border border-neutral-200">
+                            <LinearStageIndicator
+                              status={leg.status}
+                              timestamps={leg.timestamps}
+                            />
+                          </div>
+
+                          {/* Driver & Van Info with Call and WhatsApp Buttons */}
+                          <div className="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3.5 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                                  {t('portalStatus.operator', 'Operator')}
+                                </span>
+                                <p className="font-extrabold text-neutral-900 text-sm mt-0.5">
+                                  {leg.assigned_driver}
+                                </p>
+                                <p className="text-[11px] text-[#F37021] font-bold mt-0.5">
+                                  Toyota HiAce Commuter ({leg.assigned_vehicle.plate})
+                                </p>
+                              </div>
+
+                              {/* Direct Call & WhatsApp Buttons */}
+                              <div className="flex items-center gap-2">
+                                <a
+                                  href={`tel:${driverProfile?.phone || leg.phone || '+60169759883'}`}
+                                  className="h-9 px-3 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 font-extrabold text-xs flex items-center gap-1.5 tap-target shadow-2xs hover:shadow-xs transition-all active:scale-95"
+                                  title={t('vanInfo.call', 'Call')}
+                                >
+                                  <Phone className="h-3.5 w-3.5 text-emerald-600" />
+                                  <span>{t('vanInfo.call', 'Call')}</span>
+                                </a>
+
+                                <a
+                                  href={`https://wa.me/${(driverProfile?.phone || '+60169759883').replace(/[^0-9]/g, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="h-9 px-3 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 font-extrabold text-xs flex items-center gap-1.5 tap-target shadow-2xs hover:shadow-xs transition-all active:scale-95"
+                                  title={t('vanInfo.whatsapp', 'WhatsApp')}
+                                >
+                                  <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
+                                  <span>{t('vanInfo.whatsapp', 'WhatsApp')}</span>
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* 2. Pending Services (Awaiting Administrator Approval) */}
+                {pendingServices.length > 0 && (
+                  <div className="space-y-3">
+                    <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
+                      {t('portalStatus.pendingApproval', 'Pending Administrator Approval')} ({pendingServices.length})
+                    </span>
+
+                    {pendingServices.map((service) => {
+                      const outbound = service.outbound;
+                      return (
+                        <div
+                          key={service.id}
+                          className="rounded-2xl border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 p-4 shadow-xs space-y-3"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="h-7 w-7 rounded-full bg-yellow-400 text-yellow-950 flex items-center justify-center font-bold text-xs">
+                                !
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-bold text-neutral-900">
+                                  {outbound.hospital_name}
+                                </h4>
+                                <p className="text-[11px] text-neutral-600">
+                                  {outbound.clinic_department} · {t('admin.timeSlot', 'Slot')}: {outbound.appointment_time}
+                                  {service.isRoundtrip && service.returnLeg && (
+                                    <span> | Return: {service.returnLeg.appointment_time}</span>
+                                  )}
+                                </p>
+                                <span className="inline-block mt-1 text-[10px] font-extrabold px-2 py-0.5 rounded-md border bg-blue-100 text-blue-950 border-blue-300">
+                                  {service.isRoundtrip ? t('admin.roundtripService', 'Roundtrip Service') : t('admin.goTrip', 'Go: Home → Hospital')}
+                                </span>
+                              </div>
+                            </div>
+
+                            <span className="text-[10px] font-bold uppercase tracking-wider bg-yellow-400 text-yellow-950 px-2.5 py-1 rounded-full shadow-xs">
+                              {t('adminTable.pending', 'Pending')}
+                            </span>
+                          </div>
+
+                          <div className="rounded-xl bg-white/80 p-3 text-xs border border-yellow-200">
+                            <p className="text-neutral-700 font-medium">
+                              {t('portalStatus.allocatedSeat', 'Allocated Seat:')} <span className="font-bold text-neutral-900">{outbound.assigned_space}</span>
+                            </p>
+                            <p className="text-[11px] text-neutral-500 mt-0.5">
+                              {t('portalStatus.pendingVerification', 'Supervisor will verify capacity and assign dispatch.')}
                             </p>
                           </div>
                         </div>
-
-                        {/* Status Bar */}
-                        <div className="rounded-2xl bg-neutral-50 p-3 border border-neutral-200">
-                          <LinearStageIndicator
-                            status={b.status}
-                            timestamps={b.timestamps}
-                          />
-                        </div>
-
-                        {/* Driver & Van Info with Call and WhatsApp Buttons */}
-                        <div className="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-3.5 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-                                {t('portalStatus.operator', 'Operator')}
-                              </span>
-                              <p className="font-extrabold text-neutral-900 text-sm mt-0.5">
-                                {b.assigned_driver}
-                              </p>
-                              <p className="text-[11px] text-[#F37021] font-bold mt-0.5">
-                                Toyota HiAce Commuter ({b.assigned_vehicle.plate})
-                              </p>
-                            </div>
-
-                            {/* Direct Call & WhatsApp Buttons */}
-                            <div className="flex items-center gap-2">
-                              <a
-                                href={`tel:${driverProfile?.phone || b.phone || '+60169759883'}`}
-                                className="h-9 px-3 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 font-extrabold text-xs flex items-center gap-1.5 tap-target shadow-2xs hover:shadow-xs transition-all active:scale-95"
-                                title={t('vanInfo.call', 'Call')}
-                              >
-                                <Phone className="h-3.5 w-3.5 text-emerald-600" />
-                                <span>{t('vanInfo.call', 'Call')}</span>
-                              </a>
-
-                              <a
-                                href={`https://wa.me/${(driverProfile?.phone || '+60169759883').replace(/[^0-9]/g, '')}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="h-9 px-3 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-900 font-extrabold text-xs flex items-center gap-1.5 tap-target shadow-2xs hover:shadow-xs transition-all active:scale-95"
-                                title={t('vanInfo.whatsapp', 'WhatsApp')}
-                              >
-                                <MessageSquare className="h-3.5 w-3.5 text-emerald-600" />
-                                <span>{t('vanInfo.whatsapp', 'WhatsApp')}</span>
-                              </a>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Voluntary Transit Donation Button */}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedDonationBooking(b)}
-                          className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 tap-target transition-all shadow-xs ${
-                            b.donation?.status === 'paid'
-                              ? 'border border-emerald-400 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
-                              : b.donation
-                              ? 'border border-amber-300 bg-amber-50 text-amber-900 hover:bg-amber-100'
-                              : 'border-2 border-[#F37021] bg-gradient-to-r from-orange-500 to-[#D9530F] text-white hover:opacity-95 shadow-md shadow-orange-500/20'
-                          }`}
-                        >
-                          {b.donation?.status === 'paid' ? (
-                            <>
-                              <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                              <span>
-                                {t('donation.donated', 'Donation Completed')}: <span className="font-mono font-extrabold text-emerald-950">RM {b.donation.amount.toFixed(2)}</span> ({b.donation.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')})
-                              </span>
-                            </>
-                          ) : b.donation ? (
-                            <>
-                              <Clock className="h-4 w-4 text-amber-600" />
-                              <span>
-                                {t('donation.pendingVerification', 'Pending Driver Receipt')}: <span className="font-mono font-extrabold text-amber-950">RM {b.donation.amount.toFixed(2)}</span> ({t('donation.cashToDriver', 'Cash')})
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <HeartHandshake className="h-4 w-4 text-white" />
-                              <span>{t('donation.button', 'Make a Transit Donation (Cash / QR)')}</span>
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 
-                {/* 2. Pending Bookings (Awaiting Administrator Approval) */}
-                {pendingBookings.length > 0 && (
-                  <div className="space-y-3">
-                    <span className="text-xs font-bold uppercase tracking-wider text-amber-800">
-                      {t('portalStatus.pendingApproval', 'Pending Administrator Approval')} ({pendingBookings.length})
-                    </span>
-
-                    {pendingBookings.map((b) => (
-                      <div
-                        key={b.id}
-                        className="rounded-2xl border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 p-4 shadow-xs space-y-3"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-2">
-                            <div className="h-7 w-7 rounded-full bg-yellow-400 text-yellow-950 flex items-center justify-center font-bold text-xs">
-                              !
-                            </div>
-                            <div>
-                              <h4 className="text-sm font-bold text-neutral-900">
-                                {b.hospital_name}
-                              </h4>
-                              <p className="text-[11px] text-neutral-600">
-                                {b.clinic_department} · {t('admin.timeSlot', 'Slot')}: {b.appointment_time}
-                              </p>
-                              {(() => {
-                                const isReturn = b.journey_type === 'return' || (b.clinic_department || '').toLowerCase().includes('return');
-                                return (
-                                  <span className={`inline-block mt-1 text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${
-                                    isReturn
-                                      ? 'bg-amber-100 text-amber-950 border-amber-300'
-                                      : 'bg-blue-100 text-blue-950 border-blue-300'
-                                  }`}>
-                                    {isReturn ? `🛬 ${t('admin.returnTrip', 'Return: Hospital → Home')}` : `🛫 ${t('admin.goTrip', 'Go: Home → Hospital')}`}
-                                  </span>
-                                );
-                              })()}
-                            </div>
-                          </div>
-
-                          <span className="text-[10px] font-bold uppercase tracking-wider bg-yellow-400 text-yellow-950 px-2.5 py-1 rounded-full shadow-xs">
-                            {t('adminTable.pending', 'Pending')}
-                          </span>
-                        </div>
-
-                        <div className="rounded-xl bg-white/80 p-3 text-xs border border-yellow-200">
-                          <p className="text-neutral-700 font-medium">
-                            {t('portalStatus.allocatedSeat', 'Allocated Seat:')} <span className="font-bold text-neutral-900">{b.assigned_space}</span>
-                          </p>
-                          <p className="text-[11px] text-neutral-500 mt-0.5">
-                            {t('portalStatus.pendingVerification', 'Supervisor will verify capacity and assign dispatch.')}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* 3. Completed Bookings (Minimized by default, click to expand) */}
-                {completedBookings.length > 0 && (
+                {/* 3. Completed Services (With Service Rating & Donation Button) */}
+                {completedServices.length > 0 && (
                   <div className="rounded-3xl border border-neutral-200 bg-white overflow-hidden shadow-xs transition-all">
                     {/* Collapsible Header Accordion Toggle */}
                     <button
@@ -501,11 +481,11 @@ export default function MobileArtisanPortalPage() {
                               {t('portalStatus.completedAndRated', 'Completed & Rated Services')}
                             </h4>
                             <span className="font-mono text-[10px] font-black px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 border border-neutral-200">
-                              {completedBookings.length}
+                              {completedServices.length}
                             </span>
                           </div>
                           <p className="text-[11px] text-neutral-500 font-medium mt-0.5">
-                            {t('portalStatus.completedSummary', '{count} past service(s) safely completed').replace('{count}', String(completedBookings.length))}
+                            {t('portalStatus.completedSummary', '{count} past service(s) safely completed').replace('{count}', String(completedServices.length))}
                           </p>
                         </div>
                       </div>
@@ -527,85 +507,88 @@ export default function MobileArtisanPortalPage() {
                     {/* Expandable Content Body */}
                     {isCompletedExpanded && (
                       <div className="p-4 sm:p-5 pt-0 space-y-4 border-t border-neutral-100 bg-neutral-50/40">
-                        {completedBookings.map((b) => (
-                          <div
-                            key={b.id}
-                            className="rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5 shadow-xs space-y-3"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-[10px] font-mono text-neutral-400">
-                                    {t('portalStatus.completedRide', 'Completed Ride')} · {b.date || t('common.today', 'Today')} · {b.appointment_time}
-                                  </span>
-                                  {(() => {
-                                    const isReturn = b.journey_type === 'return' || (b.clinic_department || '').toLowerCase().includes('return');
-                                    return (
-                                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
-                                        isReturn
-                                          ? 'bg-amber-100 text-amber-950 border-amber-300'
-                                          : 'bg-blue-100 text-blue-950 border-blue-300'
-                                      }`}>
-                                        {isReturn ? `🛬 ${t('admin.returnTrip', 'Return')}` : `🛫 ${t('admin.goTrip', 'Go')}`}
-                                      </span>
-                                    );
-                                  })()}
-                                </div>
-                                <h4 className="text-base font-bold text-neutral-900 mt-0.5">
-                                  {b.hospital_name}
-                                </h4>
-                                <p className="text-[11px] text-neutral-600">
-                                  {b.clinic_department}
-                                </p>
-                              </div>
-                              <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-full shrink-0">
-                                {t('portalStatus.arrivedSafe', 'Arrived & Safe')}
-                              </span>
-                            </div>
+                        {completedServices.map((service) => {
+                          const representativeBooking = service.returnLeg || service.outbound;
+                          const donationRecord = service.returnLeg?.donation || service.outbound.donation;
 
-                            {/* Rating Component */}
-                            <ServiceRatingCard booking={b} />
-
-                            {/* Voluntary Transit Donation Button */}
-                            <button
-                              type="button"
-                              onClick={() => setSelectedDonationBooking(b)}
-                              className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 tap-target transition-all ${
-                                b.donation
-                                  ? 'border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
-                                  : 'border border-neutral-200 bg-neutral-50 hover:bg-orange-50 hover:border-orange-200 text-neutral-700 hover:text-[#F37021]'
-                              }`}
+                          return (
+                            <div
+                              key={service.id}
+                              className="rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5 shadow-xs space-y-3"
                             >
-                              <HeartHandshake className="h-4 w-4 text-[#F37021]" />
-                              {b.donation ? (
-                                <span>
-                                  {t('donation.donated', 'Donation Completed')}: <span className="font-mono font-extrabold text-emerald-950">RM {b.donation.amount.toFixed(2)}</span> ({b.donation.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')})
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[10px] font-mono text-neutral-400">
+                                      {t('portalStatus.completedRide', 'Completed Service')} · {service.date} · {service.outbound.appointment_time}
+                                      {service.isRoundtrip && service.returnLeg && ` ⇄ ${service.returnLeg.appointment_time}`}
+                                    </span>
+                                    <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
+                                      service.isRoundtrip
+                                        ? 'bg-amber-100 text-amber-950 border-amber-300'
+                                        : 'bg-blue-100 text-blue-950 border-blue-300'
+                                    }`}>
+                                      {service.isRoundtrip ? t('admin.roundtripService', 'Roundtrip Service') : t('admin.goTrip', 'Go: Home → Hospital')}
+                                    </span>
+                                  </div>
+                                  <h4 className="text-base font-bold text-neutral-900 mt-0.5">
+                                    {service.outbound.hospital_name}
+                                  </h4>
+                                  <p className="text-[11px] text-neutral-600">
+                                    {service.isRoundtrip
+                                      ? `${service.outbound.pickup_address} ⇄ ${service.outbound.hospital_name}`
+                                      : `${service.outbound.pickup_address} → ${service.outbound.hospital_name}`}
+                                  </p>
+                                </div>
+                                <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-full shrink-0">
+                                  {t('portalStatus.arrivedSafe', 'Arrived & Safe')}
                                 </span>
-                              ) : (
-                                <span>{t('donation.button', 'Make a Transit Donation (Cash / QR)')}</span>
-                              )}
-                            </button>
-                          </div>
-                        ))}
+                              </div>
+
+                              {/* Rating Component */}
+                              <ServiceRatingCard booking={representativeBooking} />
+
+                              {/* Voluntary Transit Donation Button */}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDonationBooking(representativeBooking)}
+                                className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 tap-target transition-all ${
+                                  donationRecord
+                                    ? 'border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                                    : 'border border-neutral-200 bg-neutral-50 hover:bg-orange-50 hover:border-orange-200 text-neutral-700 hover:text-[#F37021]'
+                                }`}
+                              >
+                                <HeartHandshake className="h-4 w-4 text-[#F37021]" />
+                                {donationRecord ? (
+                                  <span>
+                                    {t('donation.donated', 'Donation Completed')}: <span className="font-mono font-extrabold text-emerald-950">RM {donationRecord.amount.toFixed(2)}</span> ({donationRecord.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')})
+                                  </span>
+                                ) : (
+                                  <span>{t('donation.button', 'Make a Transit Donation (Cash / QR)')}</span>
+                                )}
+                              </button>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
                 )}
 
-                {/* 4. Declined Bookings */}
-                {declinedBookings.length > 0 && (
+                {/* 4. Declined Services */}
+                {declinedServices.length > 0 && (
                   <div className="space-y-3">
                     <span className="text-xs font-bold uppercase tracking-wider text-red-600">
-                      {t('portalStatus.declinedRequests', 'Declined Requests')} ({declinedBookings.length})
+                      {t('portalStatus.declinedRequests', 'Declined Requests')} ({declinedServices.length})
                     </span>
-                    {declinedBookings.map((b) => (
-                      <div key={b.id} className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs">
+                    {declinedServices.map((service) => (
+                      <div key={service.id} className="rounded-2xl border border-red-200 bg-red-50 p-4 text-xs">
                         <div className="flex items-center gap-2 text-red-800 font-bold mb-1">
                           <XCircle className="h-4 w-4" />
-                          <span>{t('portalStatus.requestDeclinedFor', 'Request Declined for')} {b.appointment_time}</span>
+                          <span>{t('portalStatus.requestDeclinedFor', 'Request Declined for')} {service.outbound.appointment_time}</span>
                         </div>
                         <p className="text-red-700">
-                          {t('portalStatus.declinedReason', 'Destination: {hospital}. Slot exceeded maximum accessible van capacity. Please choose another timetable window.').replace('{hospital}', b.hospital_name)}
+                          {t('portalStatus.declinedReason', 'Destination: {hospital}. Slot exceeded maximum accessible van capacity. Please choose another timetable window.').replace('{hospital}', service.outbound.hospital_name)}
                         </p>
                         <button
                           type="button"
@@ -620,7 +603,7 @@ export default function MobileArtisanPortalPage() {
                 )}
 
                 {/* Empty State */}
-                {userBookings.length === 0 && (
+                {userServices.length === 0 && (
                   <div className="rounded-3xl border border-neutral-200 bg-white p-8 text-center space-y-3">
                     <Calendar className="mx-auto h-10 w-10 text-neutral-400" />
                     <h4 className="text-base font-bold text-neutral-900">

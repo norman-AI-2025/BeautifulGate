@@ -908,7 +908,7 @@ export default function DriverPage() {
                                           ? 'bg-amber-100 text-amber-950 border-amber-300' 
                                           : 'bg-blue-100 text-blue-950 border-blue-300'
                                       }`}>
-                                        {isReturn ? `🛬 ${t('admin.returnTrip', 'Return: Hospital → Home')}` : `🛫 ${t('admin.goTrip', 'Go: Home → Hospital')}`}
+                                        {isReturn ? t('admin.returnTrip', 'Return: Hospital → Home') : t('admin.goTrip', 'Go: Home → Hospital')}
                                       </span>
                                     );
                                   })()}
