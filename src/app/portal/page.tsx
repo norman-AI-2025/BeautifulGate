@@ -558,7 +558,7 @@ export default function MobileArtisanPortalPage() {
                                     : 'border border-neutral-200 bg-neutral-50 hover:bg-orange-50 hover:border-orange-200 text-neutral-700 hover:text-[#F37021]'
                                 }`}
                               >
-                                <HeartHandshake className="h-4 w-4 text-[#F37021]" />
+                                {!donationRecord && <HeartHandshake className="h-4 w-4 text-[#F37021]" />}
                                 {donationRecord ? (
                                   <span>
                                     {t('donation.donated', 'Donation Completed')}: <span className="font-mono font-extrabold text-emerald-950">RM {donationRecord.amount.toFixed(2)}</span> ({donationRecord.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')})

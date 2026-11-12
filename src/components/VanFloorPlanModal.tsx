@@ -917,7 +917,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                               type="button"
                               disabled={!isAvailable}
                               onClick={() => {
-                                setSelectedReturnSlot(slot);
+                                setSelectedReturnSlot(prev => prev === slot ? null : slot);
                                 setErrorMsg('');
                               }}
                               className={`p-2.5 rounded-xl border text-left transition-all tap-target flex flex-col justify-between ${
@@ -945,29 +945,6 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                         })}
                       </div>
                     )}
-
-                    {/* Selected Return Route & Seat Summary */}
-                    {selectedReturnSlot && (
-                      <div className="rounded-xl border border-emerald-300 bg-emerald-50/90 p-2.5 text-xs text-emerald-950 flex flex-wrap items-center justify-between gap-2 shadow-2xs animate-in fade-in-50">
-                        <div className="space-y-0.5">
-                          <p className="font-black flex items-center gap-1.5 text-emerald-900">
-                            <Check className="h-3.5 w-3.5 text-emerald-600" />
-                            <span>{t('vanModal.returnRoute', 'Return Route')}:</span>
-                            <span className="truncate font-bold text-neutral-800">
-                              {selectedDestinationItem ? selectedDestinationItem.name : (destQuery || 'Hospital')} → {pickupAddress.slice(0, 24)}...
-                            </span>
-                          </p>
-                          <p className="text-[11px] font-medium text-emerald-800">
-                            {selectedDay.split(',')[0]} · {selectedReturnSlot}
-                          </p>
-                        </div>
-                        {selectedSeats.length > 0 && (
-                          <span className="text-[10px] font-mono font-bold bg-white px-2 py-0.5 rounded border border-emerald-200 text-emerald-900 shrink-0">
-                            {getReturnSlotAvailability(selectedReturnSlot).suggestedReturnSeats.map(s => s.replace('Row ', 'R')).join(' + ')}
-                          </span>
-                        )}
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -989,8 +966,8 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                 {isDateBlockedByLeave(selectedDay) 
                   ? t('timetable.bookingUnavailableDriverLeave', 'Booking Unavailable (Driver On Leave)') 
                   : isBookingReturn && selectedReturnSlot
-                  ? `${t('vanModal.bookRoundtrip', 'Book Roundtrip')} (${selectedTimeSlot} · ${selectedReturnSlot})`
-                  : `${t('vanModal.bookOneWay', 'Book One-Way')} (${selectedTimeSlot})`}
+                  ? t('vanModal.bookRoundtrip', 'Book Roundtrip')
+                  : t('vanModal.bookOneWay', 'Book One-Way')}
               </span>
             </button>
           </div>
