@@ -671,19 +671,25 @@ export default function MobileArtisanPortalPage() {
                 {t('portal.recentHistory', 'Recent Production History')}
               </h3>
               <div className="divide-y divide-neutral-100 mt-2">
-                {userRecentLogs.map((log) => (
-                  <div key={log.id} className="py-2.5 flex items-center justify-between text-xs">
-                    <div>
-                      <p className="font-bold text-neutral-900">{log.card_name}</p>
-                      <p className="text-[11px] text-neutral-500">
-                        {log.logged_date} · {log.units_completed} {t('drawer.units', 'units')}
-                      </p>
-                    </div>
-                    <span className="font-mono font-extrabold text-sm text-[#F37021]">
-                      RM {log.total_earned.toFixed(2)}
-                    </span>
+                {userRecentLogs.length === 0 ? (
+                  <div className="py-8 text-center text-xs text-neutral-400 font-medium">
+                    {t('portal.noRecentLogs', 'No production logs yet. Log cards completed to see your earnings history.')}
                   </div>
-                ))}
+                ) : (
+                  userRecentLogs.map((log) => (
+                    <div key={log.id} className="py-2.5 flex items-center justify-between text-xs">
+                      <div>
+                        <p className="font-bold text-neutral-900">{log.card_name}</p>
+                        <p className="text-[11px] text-neutral-500">
+                          {log.logged_date} · {log.units_completed} {t('drawer.units', 'units')}
+                        </p>
+                      </div>
+                      <span className="font-mono font-extrabold text-sm text-[#F37021]">
+                        RM {log.total_earned.toFixed(2)}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>
