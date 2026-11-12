@@ -191,6 +191,22 @@ export async function dbFetchBookings(): Promise<TransitBooking[] | null> {
       }
     }
 
+    if (row.rating_feedback && row.rating_feedback.includes('[journey:return]')) {
+      cleanFeedback = (cleanFeedback || '').replace(/\[journey:return\]\s?/, '').trim() || undefined;
+    }
+
+    // Fallbacks to ensure pickup time and drop off time are always recorded when status reached
+    if (row.status === 'dropped_off' && !parsedTimestamps.dropped_off) {
+      parsedTimestamps.dropped_off = row.updated_at || row.created_at;
+    }
+    if ((row.status === 'dropped_off' || row.status === 'picked_up' || row.status === 'en_route_hospital') && !parsedTimestamps.picked_up) {
+      parsedTimestamps.picked_up = row.updated_at || row.created_at;
+    }
+
+    const isReturn = (row.clinic_department || '').toLowerCase().includes('return') ||
+                     Boolean(row.rating_feedback && row.rating_feedback.includes('[journey:return]'));
+    const journey_type: 'outbound' | 'return' = isReturn ? 'return' : 'outbound';
+
     return {
       id: row.id,
       passenger_id: row.passenger_id || row.id,
@@ -200,12 +216,13 @@ export async function dbFetchBookings(): Promise<TransitBooking[] | null> {
       mobility_type: row.mobility_type,
       pickup_address: row.pickup_address,
       hospital_name: row.hospital_name,
-      clinic_department: row.clinic_department || 'General Outpatient / Clinic',
+      clinic_department: row.clinic_department || (isReturn ? 'Return: Hospital → Home' : 'General Outpatient / Clinic'),
       date: row.date,
       appointment_time: row.appointment_time,
       status: row.status,
       assigned_space: row.assigned_space,
       assigned_driver: row.assigned_driver || 'Assigned Driver',
+      journey_type,
       assigned_vehicle: {
         plate: row.vehicle_plate || 'NDC 9751',
         brand: row.vehicle_brand || 'Toyota',
@@ -233,6 +250,14 @@ export async function dbFetchBookings(): Promise<TransitBooking[] | null> {
 
 export async function dbInsertBooking(booking: TransitBooking): Promise<boolean> {
   if (!supabase) return false;
+  let embeddedFeedback = booking.feedback || '';
+  if (booking.journey_type === 'return') {
+    embeddedFeedback = `[journey:return] ${embeddedFeedback}`.trim();
+  }
+  if (booking.timestamps) {
+    embeddedFeedback = `[ts:${JSON.stringify(booking.timestamps)}] ${embeddedFeedback}`.trim();
+  }
+
   const payload = {
     id: booking.id,
     passenger_name: booking.passenger_name,
@@ -241,7 +266,7 @@ export async function dbInsertBooking(booking: TransitBooking): Promise<boolean>
     mobility_type: booking.mobility_type,
     pickup_address: booking.pickup_address,
     hospital_name: booking.hospital_name,
-    clinic_department: booking.clinic_department || 'General Outpatient / Clinic',
+    clinic_department: booking.clinic_department || (booking.journey_type === 'return' ? 'Return: Hospital → Home' : 'General Outpatient / Clinic'),
     date: booking.date || 'Today',
     appointment_time: booking.appointment_time,
     status: booking.status,
@@ -253,7 +278,7 @@ export async function dbInsertBooking(booking: TransitBooking): Promise<boolean>
     vehicle_color: booking.assigned_vehicle?.color || null,
     driver_avatar: null,
     rating: booking.rating ?? null,
-    rating_feedback: booking.feedback ?? null,
+    rating_feedback: embeddedFeedback || null,
     donation_amount: booking.donation?.amount ?? null,
     donation_method: booking.donation?.method ?? null,
     donation_status: booking.donation?.status === 'paid' ? 'verified' : 'pending_verification',

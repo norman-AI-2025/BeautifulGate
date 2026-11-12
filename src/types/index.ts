@@ -109,6 +109,8 @@ export interface TransitBooking {
   feedback?: string;
   rated_at?: string;
   created_at?: string;
+  journey_type?: 'outbound' | 'return';
+  linked_booking_id?: string;
   donation?: {
     amount: number;
     method: 'cash' | 'qr';

@@ -730,6 +730,15 @@ export default function AdminPage() {
                     <span className="font-mono text-xs font-extrabold bg-white/10 text-orange-200 border border-white/10 px-2.5 py-0.5 rounded-lg">
                       {currentActiveDispatch.appointment_time}
                     </span>
+                    <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${
+                      currentActiveDispatch.journey_type === 'return' || (currentActiveDispatch.clinic_department || '').toLowerCase().includes('return')
+                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                        : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                    }`}>
+                      {currentActiveDispatch.journey_type === 'return' || (currentActiveDispatch.clinic_department || '').toLowerCase().includes('return')
+                        ? t('admin.returnTrip', 'Return: Hospital → Home')
+                        : t('admin.goTrip', 'Go: Home → Hospital')}
+                    </span>
 
                     {/* Multi-Ride Switcher (Clean & Minimalist) */}
                     {activeDispatchesList.length > 1 && (
@@ -839,6 +848,22 @@ export default function AdminPage() {
                         >
                           {currentActiveDispatch.hospital_name}
                         </a>
+                      </div>
+                    </div>
+
+                    {/* Time Records Bar: Pickup Time & Drop-off Time */}
+                    <div className="flex items-center gap-4 pt-2 border-t border-white/10 text-[11px]">
+                      <div>
+                        <span className="text-neutral-400 block text-[9px] uppercase font-bold">{t('admin.timePickup', 'Time Pickup')}</span>
+                        <span className="font-mono font-bold text-emerald-400">
+                          {formatTimestampTime(currentActiveDispatch.timestamps?.picked_up)}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-neutral-400 block text-[9px] uppercase font-bold">{t('admin.timeDropOff', 'Time Drop Off')}</span>
+                        <span className="font-mono font-bold text-emerald-400">
+                          {formatTimestampTime(currentActiveDispatch.timestamps?.dropped_off)}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -1115,6 +1140,7 @@ export default function AdminPage() {
                             <thead className="bg-neutral-50/60 border-b border-neutral-200 text-neutral-600 uppercase tracking-wider font-bold">
                               <tr>
                                 <th className="py-3 px-4">{t('admin.name', 'Name')}</th>
+                                <th className="py-3 px-4">{t('admin.journey', 'Journey')}</th>
                                 <th className="py-3 px-4">{t('admin.timePickup', 'Time Pickup')}</th>
                                 <th className="py-3 px-4">{t('admin.timeDropOff', 'Time Drop Off')}</th>
                                 <th className="py-3 px-4 text-right">{t('admin.action', 'Approval Action')}</th>
@@ -1124,6 +1150,7 @@ export default function AdminPage() {
                               {group.bookings.map((b) => {
                                 const isPending = b.status === 'pending';
                                 const isExpanded = expandedBookingId === b.id;
+                                const isReturn = b.journey_type === 'return' || (b.clinic_department || '').toLowerCase().includes('return');
                                 const timePickup = formatTimestampTime(b.timestamps.picked_up);
                                 const timeDropOff = formatTimestampTime(b.timestamps.dropped_off);
 
@@ -1162,17 +1189,54 @@ export default function AdminPage() {
                                         </div>
                                       </td>
 
-                                      {/* 2. Time Pickup */}
-                                      <td className="py-3.5 px-4 font-mono font-semibold text-neutral-700 whitespace-nowrap">
-                                        {timePickup}
+                                      {/* 2. Journey (Go vs Return) */}
+                                      <td className="py-3.5 px-4 whitespace-nowrap">
+                                        {isReturn ? (
+                                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black bg-amber-100 text-amber-950 border border-amber-300 shadow-2xs">
+                                            <RotateCcw className="h-3 w-3 text-amber-700 stroke-[2.5]" />
+                                            <span>{t('admin.returnTrip', 'Return: Hospital → Home')}</span>
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-black bg-blue-50 text-blue-950 border border-blue-200 shadow-2xs">
+                                            <ArrowRight className="h-3 w-3 text-blue-600 stroke-[2.5]" />
+                                            <span>{t('admin.goTrip', 'Go: Home → Hospital')}</span>
+                                          </span>
+                                        )}
                                       </td>
 
-                                      {/* 3. Time Drop Off */}
-                                      <td className="py-3.5 px-4 font-mono font-semibold text-neutral-700 whitespace-nowrap">
-                                        {timeDropOff}
+                                      {/* 3. Time Pickup */}
+                                      <td className="py-3.5 px-4 font-mono font-semibold whitespace-nowrap">
+                                        {timePickup !== '—' ? (
+                                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-900 border border-emerald-200 font-bold">
+                                            <Clock className="h-3 w-3 text-emerald-600" />
+                                            {timePickup}
+                                          </span>
+                                        ) : b.status === 'en_route_pickup' ? (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-orange-50 text-orange-800 text-[11px] font-bold animate-pulse">
+                                            {t('admin.enRoutePickup', 'En Route to Pickup')}
+                                          </span>
+                                        ) : (
+                                          <span className="text-neutral-400 font-mono">—</span>
+                                        )}
                                       </td>
 
-                                      {/* 4. Approval Action */}
+                                      {/* 4. Time Drop Off */}
+                                      <td className="py-3.5 px-4 font-mono font-semibold whitespace-nowrap">
+                                        {timeDropOff !== '—' ? (
+                                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-950 border border-emerald-300 font-bold">
+                                            <CheckCircle2 className="h-3 w-3 text-emerald-700" />
+                                            {timeDropOff}
+                                          </span>
+                                        ) : b.status === 'picked_up' || b.status === 'en_route_hospital' ? (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 text-blue-800 text-[11px] font-bold animate-pulse">
+                                            {t('admin.inTransit', 'In Transit')}
+                                          </span>
+                                        ) : (
+                                          <span className="text-neutral-400 font-mono">—</span>
+                                        )}
+                                      </td>
+
+                                      {/* 5. Approval Action */}
                                       <td className="py-3.5 px-4 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                                         {isPending ? (
                                           <div className="flex items-center justify-end gap-1.5">
@@ -1212,12 +1276,23 @@ export default function AdminPage() {
                                     {/* EXPANDED RECORD DETAILS */}
                                     {isExpanded && (
                                       <tr className="bg-neutral-50/80">
-                                        <td colSpan={4} className="p-4 sm:p-5 border-t border-neutral-200">
+                                        <td colSpan={5} className="p-4 sm:p-5 border-t border-neutral-200">
                                           <div className="rounded-2xl border border-neutral-200 bg-white p-4 space-y-4 shadow-xs">
                                             <div className="flex items-center justify-between pb-2.5 border-b border-neutral-100">
-                                              <span className="text-xs font-black uppercase tracking-wider text-neutral-900">
-                                                {t('adminTable.bookingManifestDetails', 'Booking Manifest Details')} · {b.id}
-                                              </span>
+                                              <div className="flex items-center gap-2">
+                                                <span className="text-xs font-black uppercase tracking-wider text-neutral-900">
+                                                  {t('adminTable.bookingManifestDetails', 'Booking Manifest Details')} · {b.id}
+                                                </span>
+                                                {isReturn ? (
+                                                  <span className="text-[10px] font-black uppercase bg-amber-100 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-md">
+                                                    {t('admin.returnTrip', 'Return: Hospital → Home')}
+                                                  </span>
+                                                ) : (
+                                                  <span className="text-[10px] font-black uppercase bg-blue-50 text-blue-900 border border-blue-200 px-2 py-0.5 rounded-md">
+                                                    {t('admin.goTrip', 'Go: Home → Hospital')}
+                                                  </span>
+                                                )}
+                                              </div>
                                               <span className="font-mono text-xs font-bold text-neutral-500">
                                                 OKU: {b.oku_id}
                                               </span>
@@ -1379,6 +1454,55 @@ export default function AdminPage() {
                                                     {t('admin.noDonationPledged', 'Passenger did not submit a voluntary donation for this trip.')}
                                                   </p>
                                                 )}
+                                              </div>
+                                            </div>
+
+                                            {/* Transit Journey & Timing Audit Record */}
+                                            <div className="rounded-xl border border-neutral-200 bg-neutral-50/70 p-3.5 space-y-2.5">
+                                              <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-neutral-200 text-xs">
+                                                <div className="flex items-center gap-2">
+                                                  <Clock className="h-4 w-4 text-[#F37021]" />
+                                                  <span className="font-extrabold uppercase text-neutral-800 text-[11px] tracking-wider">
+                                                    {t('admin.timingAudit', 'Transit Timing Audit')}
+                                                  </span>
+                                                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                                    isReturn
+                                                      ? 'bg-amber-100 text-amber-900 border-amber-300'
+                                                      : 'bg-blue-100 text-blue-900 border-blue-200'
+                                                  }`}>
+                                                    {isReturn ? t('admin.returnTrip', 'Return: Hospital → Home') : t('admin.goTrip', 'Go: Home → Hospital')}
+                                                  </span>
+                                                </div>
+
+                                                {timePickup !== '—' && timeDropOff !== '—' ? (
+                                                  <span className="text-[10px] font-black text-emerald-800 bg-emerald-100 border border-emerald-300 px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                                                    <Check className="h-3 w-3 text-emerald-700" />
+                                                    {t('admin.allTimesRecorded', 'All Times Recorded')}
+                                                  </span>
+                                                ) : (
+                                                  <span className="text-[10px] font-semibold text-neutral-500">
+                                                    Status: {b.status.replace(/_/g, ' ')}
+                                                  </span>
+                                                )}
+                                              </div>
+
+                                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                                <div className="bg-white p-2 rounded-lg border border-neutral-200">
+                                                  <span className="text-[10px] font-bold uppercase text-neutral-400 block">{t('admin.timePickup', 'Time Pickup')}</span>
+                                                  <span className="font-mono font-black text-neutral-900 text-sm">{timePickup}</span>
+                                                </div>
+                                                <div className="bg-white p-2 rounded-lg border border-neutral-200">
+                                                  <span className="text-[10px] font-bold uppercase text-neutral-400 block">{t('admin.timeDropOff', 'Time Drop Off')}</span>
+                                                  <span className="font-mono font-black text-neutral-900 text-sm">{timeDropOff}</span>
+                                                </div>
+                                                <div className="bg-white p-2 rounded-lg border border-neutral-200">
+                                                  <span className="text-[10px] font-bold uppercase text-neutral-400 block">{t('adminTable.requestedAt', 'Requested')}</span>
+                                                  <span className="font-mono font-bold text-neutral-700 text-xs">{formatTimestampTime(b.timestamps?.requested)}</span>
+                                                </div>
+                                                <div className="bg-white p-2 rounded-lg border border-neutral-200">
+                                                  <span className="text-[10px] font-bold uppercase text-neutral-400 block">{t('adminTable.approvedAt', 'Approved')}</span>
+                                                  <span className="font-mono font-bold text-neutral-700 text-xs">{formatTimestampTime(b.timestamps?.approved)}</span>
+                                                </div>
                                               </div>
                                             </div>
 

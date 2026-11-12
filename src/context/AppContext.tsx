@@ -83,6 +83,8 @@ interface AppContextType {
     passenger_name?: string;
     oku_id?: string;
     phone?: string;
+    journey_type?: 'outbound' | 'return';
+    linked_booking_id?: string;
   }) => Promise<TransitBooking> | TransitBooking;
   updateBookingStatus: (bookingId: string, newStatus: TransitStatus) => void;
   approveBooking: (bookingId: string) => void;
@@ -771,12 +773,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     passenger_name?: string;
     oku_id?: string;
     phone?: string;
+    journey_type?: 'outbound' | 'return';
+    linked_booking_id?: string;
   }): Promise<TransitBooking> => {
     // Find active AND approved driver if one exists in the roster
     const activeDriver = profiles.find(p => p.role === 'driver' && p.is_approved !== false && p.driver_status !== 'on_leave');
 
     const newBooking: TransitBooking = {
-      id: `bk-${Date.now()}`,
+      id: `bk-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       passenger_id: currentUser?.id || 'guest',
       passenger_name: data.passenger_name || currentUser?.full_name || 'Passenger',
       oku_id: formatICNumber(data.oku_id || currentUser?.ic_or_oku_number || ''),
@@ -788,6 +792,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       mobility_type: data.mobility_type || currentUser?.mobility_type || 'Manual Wheelchair',
       assigned_space: data.assigned_space,
       assigned_driver: activeDriver?.full_name || 'Assigned Driver',
+      journey_type: data.journey_type || 'outbound',
+      linked_booking_id: data.linked_booking_id,
       assigned_vehicle: activeDriver?.assigned_vehicle_plate ? {
         plate: activeDriver.assigned_vehicle_plate,
         brand: vehicles?.[0]?.brand || 'Toyota',

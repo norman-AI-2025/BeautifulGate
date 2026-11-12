@@ -899,6 +899,20 @@ export default function DriverPage() {
                                   {booking.passenger_name}
                                 </h4>
                                 <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                  {/* Journey Badge (Go vs Return) */}
+                                  {(() => {
+                                    const isReturn = booking.journey_type === 'return' || (booking.clinic_department || '').toLowerCase().includes('return');
+                                    return (
+                                      <span className={`inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${
+                                        isReturn 
+                                          ? 'bg-amber-100 text-amber-950 border-amber-300' 
+                                          : 'bg-blue-100 text-blue-950 border-blue-300'
+                                      }`}>
+                                        {isReturn ? `🛬 ${t('admin.returnTrip', 'Return: Hospital → Home')}` : `🛫 ${t('admin.goTrip', 'Go: Home → Hospital')}`}
+                                      </span>
+                                    );
+                                  })()}
+
                                   <span className="inline-flex items-center gap-1 font-mono text-xs font-bold px-2 py-0.5 rounded-md bg-orange-50 text-orange-950 border border-orange-200">
                                     {isWheelchair ? (
                                       <Accessibility className="h-3.5 w-3.5 text-[#F37021]" />

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   X, 
   Lock, 
@@ -12,11 +12,16 @@ import {
   User, 
   Building2, 
   CheckCircle2,
-  AlertCircle 
+  AlertCircle,
+  RotateCcw,
+  ArrowRight,
+  Clock,
+  Check
 } from 'lucide-react';
 import { AssignedSpace, TransitBooking, MobilityType } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
+import { TIME_SLOTS_TABLE, parseSlotStartMinutes } from './WeeklyTimetable';
 
 interface VanFloorPlanModalProps {
   isOpen: boolean;
@@ -170,12 +175,16 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
   existingBookingsForSlot,
   onBookingSuccess,
 }) => {
-  const { currentUser, createBooking, isDateBlockedByLeave, vehicles } = useApp();
+  const { currentUser, createBooking, isDateBlockedByLeave, vehicles, bookings } = useApp();
   const activeVehicle = vehicles?.[0];
   const { t } = useLanguage();
 
   // USER SPEC: "each booking can book up to 2 seats"
   const [selectedSeats, setSelectedSeats] = useState<AssignedSpace[]>([]);
+
+  // USER SPEC: "add booking for return also , book transportation to go destination and return home should be the same day"
+  const [isBookingReturn, setIsBookingReturn] = useState<boolean>(true);
+  const [selectedReturnSlot, setSelectedReturnSlot] = useState<string | null>(null);
 
   // USER SPEC: Pickup address automatically filled with account information
   const defaultAccountPickup = currentUser?.address || '';
@@ -203,6 +212,111 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
       setPickupAddress(currentUser.address);
     }
   }, [currentUser]);
+
+  // Seat Breakdown: Count how many wheelchair bays vs regular seats are needed
+  const wheelchairCount = useMemo(() => {
+    return selectedSeats.filter(s => s.includes('Wheelchair Bay')).length;
+  }, [selectedSeats]);
+
+  const regularCount = useMemo(() => {
+    return selectedSeats.filter(s => !s.includes('Wheelchair Bay')).length;
+  }, [selectedSeats]);
+
+  // Candidate return timeslots: Must be later than go timeslot on the SAME day!
+  const goStartMinutes = useMemo(() => {
+    return parseSlotStartMinutes(selectedTimeSlot);
+  }, [selectedTimeSlot]);
+
+  const candidateReturnSlots = useMemo(() => {
+    return TIME_SLOTS_TABLE.filter(slot => parseSlotStartMinutes(slot) > goStartMinutes);
+  }, [goStartMinutes]);
+
+  // Seat availability check for suggested return slots following user requirement:
+  // "the suggested should follow the seats booked. exp : if user book one wheelchair seat and one normal seat , the suggested time slot should have both type of seats available"
+  const getReturnSlotAvailability = (slot: string) => {
+    const normSelectedDay = (selectedDay || '').split(',').slice(0, 2).join(',').trim().toLowerCase();
+    const bookingsInSlot = bookings.filter(b => {
+      if (b.status === 'declined') return false;
+      const bDateNorm = (b.date || '').split(',').slice(0, 2).join(',').trim().toLowerCase();
+      const isSameDate = bDateNorm === normSelectedDay || (b.date && selectedDay && b.date.includes(selectedDay.split(',')[0]));
+      const isSameSlot = b.appointment_time.toLowerCase().includes(slot.toLowerCase());
+      return isSameDate && isSameSlot;
+    });
+
+    const occupied = new Set<string>();
+    bookingsInSlot.forEach(b => {
+      b.assigned_space.split(' + ').forEach(s => occupied.add(s.trim()));
+    });
+
+    const freeWheelchairs = (['Row 3: Wheelchair Bay 1', 'Row 3: Wheelchair Bay 2'] as AssignedSpace[])
+      .filter(s => !occupied.has(s));
+
+    const freeRegulars = ([
+      'Row 1: Front Passenger Seat',
+      'Row 2: Passenger Seat 1',
+      'Row 2: Passenger Seat 2',
+      'Row 2: Passenger Seat 3',
+      'Row 2: Passenger Seat 4',
+    ] as AssignedSpace[]).filter(s => !occupied.has(s));
+
+    // If no seats selected yet, check if any seats are free
+    if (selectedSeats.length === 0) {
+      const hasAny = (freeWheelchairs.length + freeRegulars.length) > 0;
+      return {
+        isAvailable: hasAny,
+        freeWheelchairsCount: freeWheelchairs.length,
+        freeRegularsCount: freeRegulars.length,
+        suggestedReturnSeats: [] as AssignedSpace[],
+        reason: hasAny ? t('vanModal.seatsAvailable', 'Available') : t('vanModal.vanFull', 'Van Full'),
+      };
+    }
+
+    const hasWheelchair = freeWheelchairs.length >= wheelchairCount;
+    const hasRegular = freeRegulars.length >= regularCount;
+    const isAvailable = hasWheelchair && hasRegular;
+
+    const suggestedReturnSeats: AssignedSpace[] = [
+      ...freeWheelchairs.slice(0, wheelchairCount),
+      ...freeRegulars.slice(0, regularCount),
+    ];
+
+    let reason = '';
+    if (!hasWheelchair && wheelchairCount > 0) {
+      reason = t('vanModal.noWheelchairBay', 'No Wheelchair Bay');
+    } else if (!hasRegular && regularCount > 0) {
+      reason = t('vanModal.noRegularSeat', 'No Passenger Seat');
+    } else if (!isAvailable) {
+      reason = t('vanModal.vanFull', 'Van Full');
+    }
+
+    return {
+      isAvailable,
+      freeWheelchairsCount: freeWheelchairs.length,
+      freeRegularsCount: freeRegulars.length,
+      suggestedReturnSeats,
+      reason,
+    };
+  };
+
+  // Re-verify or auto-suggest return slot when selected seats change
+  useEffect(() => {
+    if (selectedReturnSlot) {
+      const avail = getReturnSlotAvailability(selectedReturnSlot);
+      if (!avail.isAvailable) {
+        setSelectedReturnSlot(null);
+      }
+    }
+  }, [selectedSeats, selectedReturnSlot]);
+
+  // Auto-select first available candidate return slot
+  useEffect(() => {
+    if (isBookingReturn && !selectedReturnSlot && selectedSeats.length > 0 && candidateReturnSlots.length > 0) {
+      const firstAvail = candidateReturnSlots.find(slot => getReturnSlotAvailability(slot).isAvailable);
+      if (firstAvail) {
+        setSelectedReturnSlot(firstAvail);
+      }
+    }
+  }, [isBookingReturn, selectedSeats, candidateReturnSlots, selectedReturnSlot]);
 
   // Debounced search for destination suggestions
   useEffect(() => {
@@ -243,7 +357,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Occupied spaces calculation
+  // Occupied spaces calculation for outbound go slot
   const occupiedSpaces = new Set<string>();
   existingBookingsForSlot.forEach(b => {
     if (b.status !== 'declined') {
@@ -289,7 +403,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (isDateBlockedByLeave(selectedDay)) {
@@ -313,25 +427,64 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
     }
 
     const assignedSpaceString = selectedSeats.join(' + ') as AssignedSpace;
+    const destinationHospitalName = selectedDestinationItem ? selectedDestinationItem.name : destQuery;
 
-    Promise.resolve(createBooking({
-      passenger_name: passengerName || 'Passenger',
-      oku_id: okuId,
-      phone: phone,
-      hospital_name: selectedDestinationItem ? selectedDestinationItem.name : destQuery,
-      clinic_department: 'Main Specialist Clinic & Rehabilitation',
-      appointment_time: selectedTimeSlot,
-      date: selectedDay,
-      assigned_space: assignedSpaceString,
-      pickup_address: pickupAddress,
-      mobility_type: (mobilityType as MobilityType) || 'Manual Wheelchair',
-    })).then((newBooking) => {
-      onBookingSuccess(newBooking.id);
-    }).catch(err => {
+    // Check return booking validity if enabled
+    let returnSeatsToAssign: AssignedSpace[] = [];
+    if (isBookingReturn) {
+      if (!selectedReturnSlot) {
+        setErrorMsg(t('vanModal.noReturnSlotSelected', 'Please select a suggested return timeslot, or uncheck the return journey option.'));
+        return;
+      }
+      const returnAvail = getReturnSlotAvailability(selectedReturnSlot);
+      if (!returnAvail.isAvailable) {
+        setErrorMsg(t('vanModal.returnSlotUnavailableError', 'The selected return timeslot does not have matching seats available. Please choose another return slot.'));
+        return;
+      }
+      returnSeatsToAssign = returnAvail.suggestedReturnSeats;
+    }
+
+    try {
+      // 1. Outbound / Go Booking (Home -> Hospital)
+      const outboundBooking = await Promise.resolve(createBooking({
+        passenger_name: passengerName || 'Passenger',
+        oku_id: okuId,
+        phone: phone,
+        hospital_name: destinationHospitalName,
+        clinic_department: isBookingReturn ? 'Outbound: Home → Hospital' : 'Main Specialist Clinic & Rehabilitation',
+        appointment_time: selectedTimeSlot,
+        date: selectedDay,
+        assigned_space: assignedSpaceString,
+        pickup_address: pickupAddress,
+        mobility_type: (mobilityType as MobilityType) || 'Manual Wheelchair',
+        journey_type: 'outbound',
+      }));
+
+      // 2. Return Booking (Hospital -> Home) on SAME DAY
+      if (isBookingReturn && selectedReturnSlot) {
+        const returnSpaceString = (returnSeatsToAssign.length > 0 ? returnSeatsToAssign.join(' + ') : assignedSpaceString) as AssignedSpace;
+        await Promise.resolve(createBooking({
+          passenger_name: passengerName || 'Passenger',
+          oku_id: okuId,
+          phone: phone,
+          hospital_name: pickupAddress, // Destination on return is passenger's home!
+          clinic_department: 'Return: Hospital → Home',
+          appointment_time: selectedReturnSlot,
+          date: selectedDay, // Same day!
+          assigned_space: returnSpaceString,
+          pickup_address: destinationHospitalName, // Pickup on return is the hospital!
+          mobility_type: (mobilityType as MobilityType) || 'Manual Wheelchair',
+          journey_type: 'return',
+          linked_booking_id: outboundBooking.id,
+        }));
+      }
+
+      onBookingSuccess(outboundBooking.id);
+      onClose();
+    } catch (err) {
       console.warn('Booking create error', err);
-    });
-
-    onClose();
+      setErrorMsg('Failed to process booking. Please try again.');
+    }
   };
 
   return (
@@ -707,6 +860,117 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* USER SPEC: RETURN JOURNEY (SAME DAY) & SUGGESTED RETURN TIMESLOTS */}
+              <div className="rounded-2xl border-2 border-orange-200 bg-orange-50/50 p-4 space-y-3.5">
+                <div className="flex items-center justify-between">
+                  <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={isBookingReturn}
+                      onChange={(e) => setIsBookingReturn(e.target.checked)}
+                      className="h-4 w-4 rounded border-neutral-300 text-[#F37021] focus:ring-[#F37021] accent-[#F37021] cursor-pointer"
+                    />
+                    <span className="font-black text-xs text-neutral-900 flex items-center gap-1.5">
+                      <RotateCcw className="h-3.5 w-3.5 text-[#F37021]" />
+                      {t('vanModal.bookReturnTrip', 'Book Return Transportation (Hospital → Home)')}
+                    </span>
+                  </label>
+                  <span className="text-[10px] font-bold text-orange-950 bg-orange-100 border border-orange-300 px-2 py-0.5 rounded-md">
+                    {t('vanModal.sameDayNotice', 'Same-day return journey')}
+                  </span>
+                </div>
+
+                {isBookingReturn && (
+                  <div className="space-y-3 pt-1 border-t border-orange-200/80">
+                    <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-neutral-600">
+                      <span className="font-bold flex items-center gap-1 text-neutral-800">
+                        <Clock className="h-3 w-3 text-[#F37021]" />
+                        {t('vanModal.suggestedReturnSlots', 'Suggested Return Time Slots')}
+                      </span>
+                      {selectedSeats.length > 0 && (
+                        <span className="text-[10px] font-semibold text-neutral-500">
+                          {wheelchairCount > 0 && `${wheelchairCount} ${t('vanModal.wheelchairBay', 'Wheelchair')}`}
+                          {wheelchairCount > 0 && regularCount > 0 && ' + '}
+                          {regularCount > 0 && `${regularCount} ${t('vanModal.regularSeat', 'Normal Seat')}`}
+                        </span>
+                      )}
+                    </div>
+
+                    {selectedSeats.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-orange-300 bg-white/80 p-3 text-center text-xs text-neutral-500 font-medium">
+                        {t('vanModal.selectSeatsPrompt', 'Select van seat(s) on the floor plan to view available return slots')}
+                      </div>
+                    ) : candidateReturnSlots.length === 0 ? (
+                      <div className="rounded-xl bg-neutral-100 border border-neutral-200 p-3 text-center text-xs text-neutral-500">
+                        {t('vanModal.noReturnSlotsAvailable', 'No matching return slots available later today')}
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {candidateReturnSlots.map((slot) => {
+                          const { isAvailable, reason } = getReturnSlotAvailability(slot);
+                          const isSelected = selectedReturnSlot === slot;
+
+                          return (
+                            <button
+                              key={slot}
+                              type="button"
+                              disabled={!isAvailable}
+                              onClick={() => {
+                                setSelectedReturnSlot(slot);
+                                setErrorMsg('');
+                              }}
+                              className={`p-2.5 rounded-xl border text-left transition-all tap-target flex flex-col justify-between ${
+                                isSelected
+                                  ? 'bg-[#F37021] border-[#F37021] text-white shadow-sm ring-2 ring-orange-300'
+                                  : isAvailable
+                                  ? 'bg-white border-neutral-200 hover:border-[#F37021] text-neutral-800 hover:bg-orange-50/50'
+                                  : 'bg-neutral-100 border-neutral-200 text-neutral-400 cursor-not-allowed opacity-60'
+                              }`}
+                            >
+                              <span className="font-mono text-xs font-bold leading-tight block truncate">
+                                {slot}
+                              </span>
+                              <span className={`text-[10px] font-bold mt-1 block truncate ${
+                                isSelected
+                                  ? 'text-white/90'
+                                  : isAvailable
+                                  ? 'text-emerald-700'
+                                  : 'text-neutral-400'
+                              }`}>
+                                {isAvailable ? `✓ ${t('vanModal.seatsAvailable', 'Available')}` : reason}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Selected Return Route & Seat Summary */}
+                    {selectedReturnSlot && (
+                      <div className="rounded-xl border border-emerald-300 bg-emerald-50/90 p-2.5 text-xs text-emerald-950 flex flex-wrap items-center justify-between gap-2 shadow-2xs animate-in fade-in-50">
+                        <div className="space-y-0.5">
+                          <p className="font-black flex items-center gap-1.5 text-emerald-900">
+                            <Check className="h-3.5 w-3.5 text-emerald-600" />
+                            <span>{t('vanModal.returnRoute', 'Return Route')}:</span>
+                            <span className="truncate font-bold text-neutral-800">
+                              {selectedDestinationItem ? selectedDestinationItem.name : (destQuery || 'Hospital')} → {pickupAddress.slice(0, 24)}...
+                            </span>
+                          </p>
+                          <p className="text-[11px] font-medium text-emerald-800">
+                            {selectedDay.split(',')[0]} · {selectedReturnSlot}
+                          </p>
+                        </div>
+                        {selectedSeats.length > 0 && (
+                          <span className="text-[10px] font-mono font-bold bg-white px-2 py-0.5 rounded border border-emerald-200 text-emerald-900 shrink-0">
+                            {getReturnSlotAvailability(selectedReturnSlot).suggestedReturnSeats.map(s => s.replace('Row ', 'R')).join(' + ')}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -714,9 +978,9 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
           <div className="pt-2 border-t border-neutral-200">
             <button
               type="submit"
-              disabled={selectedSeats.length === 0 || !destQuery.trim() || isDateBlockedByLeave(selectedDay)}
+              disabled={selectedSeats.length === 0 || !destQuery.trim() || isDateBlockedByLeave(selectedDay) || (isBookingReturn && !selectedReturnSlot)}
               className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-md tap-target transition-all active:scale-[0.99] ${
-                selectedSeats.length === 0 || !destQuery.trim() || isDateBlockedByLeave(selectedDay)
+                selectedSeats.length === 0 || !destQuery.trim() || isDateBlockedByLeave(selectedDay) || (isBookingReturn && !selectedReturnSlot)
                   ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed shadow-none'
                   : 'bg-[#F37021] hover:bg-[#D9530F] text-white shadow-orange-500/20'
               }`}
@@ -724,7 +988,9 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
               <span>
                 {isDateBlockedByLeave(selectedDay) 
                   ? t('timetable.bookingUnavailableDriverLeave', 'Booking Unavailable (Driver On Leave)') 
-                  : t('portal.bookService', 'Book')}
+                  : isBookingReturn && selectedReturnSlot
+                  ? `${t('vanModal.bookRoundtrip', 'Book Roundtrip')} (${selectedTimeSlot} · ${selectedReturnSlot})`
+                  : `${t('vanModal.bookOneWay', 'Book One-Way')} (${selectedTimeSlot})`}
               </span>
             </button>
           </div>

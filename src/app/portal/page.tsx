@@ -316,6 +316,18 @@ export default function MobileArtisanPortalPage() {
                             <span className="text-xs font-bold text-neutral-600 bg-neutral-100 border border-neutral-200 px-2.5 py-1 rounded-lg">
                               {b.date || t('common.today', 'Today')}
                             </span>
+                            {(() => {
+                              const isReturn = b.journey_type === 'return' || (b.clinic_department || '').toLowerCase().includes('return');
+                              return (
+                                <span className={`text-[11px] font-extrabold px-2.5 py-0.5 rounded-lg border ${
+                                  isReturn
+                                    ? 'bg-amber-100 text-amber-950 border-amber-300'
+                                    : 'bg-blue-100 text-blue-950 border-blue-300'
+                                }`}>
+                                  {isReturn ? `🛬 ${t('admin.returnTrip', 'Return: Hospital → Home')}` : `🛫 ${t('admin.goTrip', 'Go: Home → Hospital')}`}
+                                </span>
+                              );
+                            })()}
                           </div>
                           <div>
                             <h3 className="text-xl font-black text-neutral-900 tracking-tight">
@@ -437,6 +449,18 @@ export default function MobileArtisanPortalPage() {
                               <p className="text-[11px] text-neutral-600">
                                 {b.clinic_department} · {t('admin.timeSlot', 'Slot')}: {b.appointment_time}
                               </p>
+                              {(() => {
+                                const isReturn = b.journey_type === 'return' || (b.clinic_department || '').toLowerCase().includes('return');
+                                return (
+                                  <span className={`inline-block mt-1 text-[10px] font-extrabold px-2 py-0.5 rounded-md border ${
+                                    isReturn
+                                      ? 'bg-amber-100 text-amber-950 border-amber-300'
+                                      : 'bg-blue-100 text-blue-950 border-blue-300'
+                                  }`}>
+                                    {isReturn ? `🛬 ${t('admin.returnTrip', 'Return: Hospital → Home')}` : `🛫 ${t('admin.goTrip', 'Go: Home → Hospital')}`}
+                                  </span>
+                                );
+                              })()}
                             </div>
                           </div>
 
@@ -510,10 +534,24 @@ export default function MobileArtisanPortalPage() {
                           >
                             <div className="flex items-center justify-between">
                               <div>
-                                <span className="text-[10px] font-mono text-neutral-400">
-                                  {t('portalStatus.completedRide', 'Completed Ride')} · {b.date || t('common.today', 'Today')} · {b.appointment_time}
-                                </span>
-                                <h4 className="text-base font-bold text-neutral-900">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-[10px] font-mono text-neutral-400">
+                                    {t('portalStatus.completedRide', 'Completed Ride')} · {b.date || t('common.today', 'Today')} · {b.appointment_time}
+                                  </span>
+                                  {(() => {
+                                    const isReturn = b.journey_type === 'return' || (b.clinic_department || '').toLowerCase().includes('return');
+                                    return (
+                                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
+                                        isReturn
+                                          ? 'bg-amber-100 text-amber-950 border-amber-300'
+                                          : 'bg-blue-100 text-blue-950 border-blue-300'
+                                      }`}>
+                                        {isReturn ? `🛬 ${t('admin.returnTrip', 'Return')}` : `🛫 ${t('admin.goTrip', 'Go')}`}
+                                      </span>
+                                    );
+                                  })()}
+                                </div>
+                                <h4 className="text-base font-bold text-neutral-900 mt-0.5">
                                   {b.hospital_name}
                                 </h4>
                                 <p className="text-[11px] text-neutral-600">
