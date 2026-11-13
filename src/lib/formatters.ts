@@ -44,3 +44,34 @@ export function formatICNumber(ic: string | null | undefined): string {
   return ic.trim();
 }
 
+/**
+ * Escapes a cell value for standard CSV formatting.
+ * Properly wraps values with quotes, escapes double quotes, and preserves leading zeros / symbols.
+ */
+export function escapeCSVCell(val: string | number | null | undefined): string {
+  if (val === null || val === undefined) return '""';
+  const str = String(val);
+  return `"${str.replace(/"/g, '""')}"`;
+}
+
+/**
+ * Generates and triggers download of a clean, professionally formatted CSV table with UTF-8 BOM.
+ * BOM (\uFEFF) ensures Excel and spreadsheet readers render characters, currencies, and Chinese text properly.
+ */
+export function downloadCSV(filename: string, rows: (string | number | null | undefined)[][]): void {
+  const csvBody = rows
+    .map(row => row.map(cell => escapeCSVCell(cell)).join(','))
+    .join('\r\n');
+
+  const blob = new Blob(['\uFEFF' + csvBody], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', filename);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+

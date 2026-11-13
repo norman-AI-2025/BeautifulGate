@@ -1380,7 +1380,7 @@ export default function AdminPage() {
                     setSelectedProductForEdit(null);
                     setProductFormName('');
                     setProductFormResort('');
-                    setProductFormRate('1.75');
+                    setProductFormRate('0.001');
                     setProductSaveFeedback(null);
                     setIsProductModalOpen(true);
                   }}
@@ -1431,7 +1431,7 @@ export default function AdminPage() {
                         {t('adminTable.pricePerPiece', 'Price / Piece')}
                       </span>
                       <span className="font-mono font-black text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl shadow-2xs">
-                        RM {p.piece_rate.toFixed(2)} <span className="text-[10px] font-medium text-emerald-700">/ piece</span>
+                        RM {p.piece_rate.toFixed(3)} <span className="text-[10px] font-medium text-emerald-700">/ piece</span>
                       </span>
                     </div>
                   </div>
@@ -2713,13 +2713,13 @@ export default function AdminPage() {
                 </label>
                 <input
                   type="number"
-                  step="0.05"
-                  min="0.05"
+                  step="0.001"
+                  min="0.001"
                   max="100.00"
                   required
                   value={productFormRate}
                   onChange={(e) => setProductFormRate(e.target.value)}
-                  placeholder="1.75"
+                  placeholder="0.001"
                   className="apple-input w-full font-mono font-bold text-xs"
                 />
                 <p className="text-[11px] text-neutral-500 mt-1">

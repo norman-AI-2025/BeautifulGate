@@ -26,7 +26,7 @@ import {
   INITIAL_DRIVER_LEAVES, 
   getTodayDateString 
 } from '@/lib/mockData';
-import { formatPhoneNumber, formatICNumber } from '@/lib/formatters';
+import { formatPhoneNumber, formatICNumber, downloadCSV } from '@/lib/formatters';
 import {
   isSupabaseConfigured,
   supabase,
@@ -983,94 +983,107 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const cashMonth = monthDonations.filter(b => b.donation?.method === 'cash');
     const totalCashMonth = cashMonth.reduce((sum, b) => sum + (b.donation?.amount || 0), 0);
 
-    const rows = [
-      ['"BEAUTIFUL GATE FOUNDATION FOR THE DISABLED"'],
-      ['"TRANSIT DONATION & ACCESSIBLE TRANSPORT SUBSIDY AUDIT"'],
-      ['"Generated At"', `"${new Date().toLocaleString()}"`],
-      ['"Audit Period Scope"', '"Month-to-Date Audit"'],
-      ['""'],
-      ['"=== MONTHLY AUDIT SUMMARY TOTALS ==="'],
-      ['"Metric Description"', '"Amount (MYR)"', '"Contributions Count"'],
-      ['"Total in a Month"', `"RM ${totalMonth.toFixed(2)}"`, `"${monthDonations.length} contributions"`],
-      ['"Total from QR in a Month"', `"RM ${totalQrMonth.toFixed(2)}"`, `"${qrMonth.length} contributions"`],
-      ['"Total from Cash to Driver in a Month"', `"RM ${totalCashMonth.toFixed(2)}"`, `"${cashMonth.length} contributions"`],
-      ['""'],
-      ['"=== DETAILED TRANSACTION AUDIT LEDGER ==="'],
+    const rows: (string | number)[][] = [
+      ['BEAUTIFUL GATE FOUNDATION FOR THE DISABLED'],
+      ['TRANSIT DONATION & ACCESSIBLE TRANSPORT SUBSIDY AUDIT REPORT'],
+      ['Generated At', new Date().toLocaleString()],
+      ['Audit Scope', 'Month-to-Date Audit'],
+      [''],
+      ['--- MONTHLY AUDIT SUMMARY TOTALS ---'],
+      ['Metric Description', 'Amount (MYR)', 'Contributions Count'],
+      ['Total Transit Donations (MTD)', `RM ${totalMonth.toFixed(2)}`, `${monthDonations.length} contributions`],
+      ['Total from DuitNow QR (MTD)', `RM ${totalQrMonth.toFixed(2)}`, `${qrMonth.length} contributions`],
+      ['Total from Cash to Driver (MTD)', `RM ${totalCashMonth.toFixed(2)}`, `${cashMonth.length} contributions`],
+      [''],
+      ['--- DETAILED TRANSACTION AUDIT LEDGER ---'],
       [
-        'Time Slot',
+        'Reference ID',
         'Date',
+        'Time Slot',
         'Passenger Name',
+        'OKU Number',
+        'Contact Phone',
+        'Destination Hospital',
         'Assigned Driver',
+        'Vehicle Plate',
         'Payment Method',
         'Amount (MYR)',
         'Status',
-        'Destination Hospital',
-        'Reference ID',
-        'OKU Number',
-        'Contact Phone',
-        'Timestamp'
+        'Transaction Timestamp'
       ],
     ];
 
     donatedBookings.forEach(b => {
       const d = b.donation!;
       rows.push([
-        `"${b.appointment_time}"`,
-        `"${b.date}"`,
-        `"${b.passenger_name}"`,
-        `"${b.assigned_driver || 'Unassigned'} (${b.assigned_vehicle?.plate || vehicles?.[0]?.plate || 'NDC 9751'})"`,
-        `"${d.method === 'cash' ? 'Cash to Driver' : 'DuitNow QR'}"`,
-        `"${d.amount.toFixed(2)}"`,
-        `"${d.status === 'paid' ? 'Paid / Reconciled' : 'Pledged to Driver'}"`,
-        `"${b.hospital_name}"`,
-        `"BG-TR-${b.id.toUpperCase()}"`,
-        `"${b.oku_id}"`,
-        `"${b.phone}"`,
-        `"${d.timestamp}"`
+        `BG-TR-${b.id.toUpperCase()}`,
+        b.date || '',
+        b.appointment_time || '',
+        b.passenger_name || '',
+        formatICNumber(b.oku_id) || '',
+        formatPhoneNumber(b.phone) || '',
+        b.hospital_name || '',
+        b.assigned_driver || 'Unassigned',
+        b.assigned_vehicle?.plate || vehicles?.[0]?.plate || 'NDC 9751',
+        d.method === 'cash' ? 'Cash to Driver' : 'DuitNow QR',
+        `RM ${d.amount.toFixed(2)}`,
+        d.status === 'paid' ? 'Paid / Reconciled' : 'Pledged to Driver',
+        d.timestamp || ''
       ]);
     });
 
     // Summary totals at bottom of spreadsheet
-    rows.push(['""']);
-    rows.push(['"--- MONTHLY LEDGER TOTALS ---"']);
+    rows.push(['']);
+    rows.push(['--- MONTHLY LEDGER TOTALS ---']);
     rows.push([
-      '""',
-      '""',
-      '""',
-      '""',
-      '"TOTAL IN A MONTH"',
-      `"RM ${totalMonth.toFixed(2)}"`,
-      `"${monthDonations.length} records"`
+      'TOTAL IN A MONTH',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      `RM ${totalMonth.toFixed(2)}`,
+      `${monthDonations.length} records`,
+      ''
     ]);
     rows.push([
-      '""',
-      '""',
-      '""',
-      '""',
-      '"TOTAL FROM QR IN A MONTH"',
-      `"RM ${totalQrMonth.toFixed(2)}"`,
-      `"${qrMonth.length} records"`
+      'TOTAL FROM QR IN A MONTH',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      `RM ${totalQrMonth.toFixed(2)}`,
+      `${qrMonth.length} records`,
+      ''
     ]);
     rows.push([
-      '""',
-      '""',
-      '""',
-      '""',
-      '"TOTAL FROM CASH TO DRIVER IN A MONTH"',
-      `"RM ${totalCashMonth.toFixed(2)}"`,
-      `"${cashMonth.length} records"`
+      'TOTAL FROM CASH TO DRIVER IN A MONTH',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      `RM ${totalCashMonth.toFixed(2)}`,
+      `${cashMonth.length} records`,
+      ''
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
     const today = getTodayDateString();
-    link.setAttribute('download', `BeautifulGate_Transit_Donations_${today}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }, [bookings]);
+    downloadCSV(`BeautifulGate_Transit_Donations_${today}.csv`, rows);
+  }, [bookings, vehicles]);
 
   // Add work log
   const addWorkLog = useCallback((units: number, cardId: string, workerId?: string): CardWorkLog => {
@@ -1200,30 +1213,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Export Payroll CSV for direct bank disbursement
   const exportPayrollCSV = useCallback(() => {
     const customers = profiles.filter(p => p.role === 'customer');
-    const rows = [
-      ['Worker Full Name', 'Malaysian IC / OKU Card', 'Phone', 'Month-to-Date Cards', 'MTD Disbursable Amount (MYR)'],
-    ];
+    const now = new Date();
+    const monthName = now.toLocaleString('en-MY', { month: 'long', year: 'numeric' });
 
-    customers.forEach(c => {
+    let totalArtisanCards = 0;
+    let totalArtisanDisbursable = 0;
+
+    const artisanData = customers.map((c, index) => {
       const stats = getArtisanStats(c.id);
-      rows.push([
-        `"${c.full_name}"`,
-        `"${c.ic_or_oku_number}"`,
-        `"${c.phone}"`,
-        stats.monthUnits.toString(),
-        `"RM ${stats.monthEarned.toFixed(2)}"`,
-      ]);
+      totalArtisanCards += stats.monthUnits;
+      totalArtisanDisbursable += stats.monthEarned;
+
+      return [
+        index + 1,
+        c.full_name || '',
+        formatICNumber(c.ic_or_oku_number) || '',
+        formatPhoneNumber(c.phone) || '',
+        c.mobility_type || 'wheelchair',
+        c.beneficiary_type || 'daycare',
+        stats.monthUnits,
+        `RM ${stats.monthEarned.toFixed(2)}`
+      ];
     });
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + rows.map(e => e.join(',')).join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    const rows: (string | number)[][] = [
+      ['BEAUTIFUL GATE FOUNDATION FOR THE DISABLED'],
+      ['OKU ARTISAN WORKSHOP PAYROLL & DISBURSEMENT LEDGER'],
+      ['Payroll Period', monthName],
+      ['Generated At', new Date().toLocaleString()],
+      ['Beneficiary Artisans Count', `${customers.length} Registered Artisans`],
+      ['Total Units Completed (MTD)', `${totalArtisanCards} cards`],
+      ['Total Disbursable Wages (MTD)', `RM ${totalArtisanDisbursable.toFixed(2)}`],
+      [''],
+      ['--- ARTISAN DISBURSEMENT SCHEDULE ---'],
+      [
+        'No.',
+        'Artisan Full Name',
+        'Malaysian IC / OKU Card',
+        'Contact Phone',
+        'Mobility Profile',
+        'Beneficiary Category',
+        'Cards Completed (MTD)',
+        'Disbursable Payout (MYR)'
+      ],
+      ...artisanData,
+      [''],
+      [
+        'TOTAL',
+        '',
+        '',
+        '',
+        '',
+        '',
+        totalArtisanCards,
+        `RM ${totalArtisanDisbursable.toFixed(2)}`
+      ]
+    ];
+
     const today = getTodayDateString();
-    link.setAttribute('download', `BeautifulGate_Artisan_Payroll_${today}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadCSV(`BeautifulGate_Artisan_Payroll_${today}.csv`, rows);
   }, [profiles, getArtisanStats]);
 
   const value = useMemo(() => ({

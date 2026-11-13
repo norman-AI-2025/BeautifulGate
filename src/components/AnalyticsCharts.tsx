@@ -352,7 +352,7 @@ export const AnalyticsCharts: React.FC<AnalyticsChartsProps> = ({
                     </div>
 
                     <div className="flex justify-between text-[11px] text-neutral-500">
-                      <span>{t('analytics.pieceRate', 'Piece Rate')}: RM {item.pieceRate.toFixed(2)}</span>
+                      <span>{t('analytics.pieceRate', 'Piece Rate')}: RM {item.pieceRate.toFixed(3)}</span>
                       <span className="font-semibold text-neutral-800">
                         {t('analytics.disbursed', 'Disbursed')}: RM {item.revenue.toFixed(2)}
                       </span>

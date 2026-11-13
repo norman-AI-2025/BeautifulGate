@@ -193,7 +193,7 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                     >
                       {products.map(p => (
                         <option key={p.id} value={p.id}>
-                          {p.name} (RM {p.piece_rate.toFixed(2)})
+                          {p.name} (RM {p.piece_rate.toFixed(3)})
                         </option>
                       ))}
                     </select>
@@ -249,7 +249,7 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                             {log.card_name || 'DIY Eco Card'}
                           </p>
                           <span className="text-[10px] font-mono text-neutral-400">
-                            RM {log.piece_rate_snapshot.toFixed(2)}/{t('portal.perCard', 'card')}
+                            RM {log.piece_rate_snapshot.toFixed(3)}/{t('portal.perCard', 'card')}
                           </span>
                         </div>
                         <p className="text-[11px] font-medium text-neutral-500 mt-0.5">
