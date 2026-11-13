@@ -84,6 +84,7 @@ export interface Profile {
   notes?: string;
   chinese_name?: string;
   epf_number?: string;
+  welfare_number?: string;
   password_hash?: string;
 }
 

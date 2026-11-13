@@ -37,10 +37,11 @@ export async function dbFetchProfiles(): Promise<Profile[] | null> {
     return null;
   }
 
-  // Parse beneficiary_type and password_hash from notes tag if the column does not exist in Supabase table
+  // Parse beneficiary_type, password_hash, and welfare_number from notes tag if the column does not exist in Supabase table
   const mapped = (data as Profile[]).map((p) => {
     let beneficiaryType = p.beneficiary_type;
     let passwordHash = p.password_hash;
+    let welfareNumber = p.welfare_number;
     let cleanNotes = p.notes || '';
 
     if (p.notes) {
@@ -58,6 +59,13 @@ export async function dbFetchProfiles(): Promise<Profile[] | null> {
           cleanNotes = cleanNotes.replace(/\[pwd:.+?\]\s?/, '').trim();
         }
       }
+      if (!welfareNumber) {
+        const welfMatch = p.notes.match(/\[welfare:(.+?)\]/);
+        if (welfMatch) {
+          welfareNumber = welfMatch[1];
+          cleanNotes = cleanNotes.replace(/\[welfare:.+?\]\s?/, '').trim();
+        }
+      }
     }
 
     // Default to 'resident' for beneficiaries if not specified
@@ -71,6 +79,7 @@ export async function dbFetchProfiles(): Promise<Profile[] | null> {
       ic_or_oku_number: formatICNumber(p.ic_or_oku_number),
       beneficiary_type: beneficiaryType,
       password_hash: passwordHash,
+      welfare_number: welfareNumber,
       notes: cleanNotes || undefined,
     };
   });
@@ -114,9 +123,9 @@ export async function dbUpsertProfile(profile: Partial<Profile> & { id: string }
   }
 
   // Graceful Fallback: For Supabase instances without native columns,
-  // embed [beneficiary:TYPE] and [pwd:HASH] into notes so it persists safely across all devices!
+  // embed [beneficiary:TYPE], [pwd:HASH], and [welfare:NUM] into notes so it persists safely across all devices!
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { beneficiary_type, password_hash, ...profileWithoutCol } = profile;
+  const { beneficiary_type, password_hash, welfare_number, ...profileWithoutCol } = profile;
   
   let mergedNotes = profile.notes || '';
   if (beneficiaryType) {
@@ -126,6 +135,12 @@ export async function dbUpsertProfile(profile: Partial<Profile> & { id: string }
   if (profile.password_hash) {
     mergedNotes = mergedNotes.replace(/\[pwd:.+?\]\s?/, '').trim();
     mergedNotes = `[pwd:${profile.password_hash}] ${mergedNotes}`.trim();
+  }
+  if (profile.welfare_number !== undefined) {
+    mergedNotes = mergedNotes.replace(/\[welfare:.+?\]\s?/, '').trim();
+    if (profile.welfare_number.trim()) {
+      mergedNotes = `[welfare:${profile.welfare_number.trim()}] ${mergedNotes}`.trim();
+    }
   }
 
   const { error: fallbackError } = await supabase

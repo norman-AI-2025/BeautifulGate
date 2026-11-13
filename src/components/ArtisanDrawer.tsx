@@ -59,9 +59,15 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                 {profile.mobility_type}
               </span>
             </div>
-            <p className="text-xs font-mono text-neutral-500 mt-0.5">
-              OKU: {formatICNumber(profile.ic_or_oku_number)}
-            </p>
+            <div className="text-xs font-mono text-neutral-500 mt-0.5 flex items-center gap-2 flex-wrap">
+              <span>OKU: {formatICNumber(profile.ic_or_oku_number)}</span>
+              {profile.welfare_number && (
+                <>
+                  <span>•</span>
+                  <span className="text-[#F37021] font-semibold">{t('profile.welfareNumber', 'Welfare No')}: {profile.welfare_number}</span>
+                </>
+              )}
+            </div>
           </div>
           <button
             onClick={onClose}
@@ -91,6 +97,11 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                   <p className="font-mono text-xs text-neutral-600">
                     {formatICNumber(profile.ic_or_oku_number)}
                   </p>
+                  {profile.welfare_number && (
+                    <p className="font-mono text-xs text-orange-700 font-semibold mt-0.5">
+                      {t('profile.welfareNumber', 'Welfare')}: {profile.welfare_number}
+                    </p>
+                  )}
                 </div>
               </div>
 

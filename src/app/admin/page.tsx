@@ -313,6 +313,7 @@ export default function AdminPage() {
         p.full_name.toLowerCase().includes(q) ||
         (p.chinese_name && p.chinese_name.toLowerCase().includes(q)) ||
         (p.epf_number && p.epf_number.toLowerCase().includes(q)) ||
+        (p.welfare_number && p.welfare_number.toLowerCase().includes(q)) ||
         p.ic_or_oku_number.toLowerCase().includes(q) ||
         p.email.toLowerCase().includes(q) ||
         p.phone.toLowerCase().includes(q) ||
@@ -462,6 +463,7 @@ export default function AdminPage() {
     return registeredArtisans.filter(a => 
       a.profile.full_name.toLowerCase().includes(q) ||
       a.profile.ic_or_oku_number.toLowerCase().includes(q) ||
+      (a.profile.welfare_number && a.profile.welfare_number.toLowerCase().includes(q)) ||
       a.profile.phone.includes(q)
     );
   }, [registeredArtisans, searchQuery]);
@@ -1489,8 +1491,13 @@ export default function AdminPage() {
                           </p>
                         </td>
 
-                        <td className="py-4 px-5 font-mono text-neutral-700 font-bold">
-                          {formatICNumber(artisan.profile.ic_or_oku_number)}
+                        <td className="py-4 px-5 font-mono text-neutral-700">
+                          <p className="font-bold">{formatICNumber(artisan.profile.ic_or_oku_number)}</p>
+                          {artisan.profile.welfare_number && (
+                            <p className="text-[10px] text-orange-700 font-semibold mt-0.5">
+                              {t('profile.welfareNumber', 'Welfare')}: {artisan.profile.welfare_number}
+                            </p>
+                          )}
                         </td>
 
                         <td className="py-4 px-5">
@@ -2336,6 +2343,11 @@ export default function AdminPage() {
                               <p className="font-mono text-xs text-neutral-700 font-semibold">
                                 {formatICNumber(p.ic_or_oku_number)}
                               </p>
+                              {p.welfare_number && (
+                                <p className="font-mono text-[10px] text-orange-700 font-semibold">
+                                  {t('profile.welfareNumber', 'Welfare')}: {p.welfare_number}
+                                </p>
+                              )}
                             </div>
                           </td>
 

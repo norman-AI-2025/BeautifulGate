@@ -20,6 +20,7 @@ export default function SignUpPage() {
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [welfareNumber, setWelfareNumber] = useState('');
   const [mobilityProfile, setMobilityProfile] = useState<MobilityType>('Manual Wheelchair');
   const [beneficiaryType, setBeneficiaryType] = useState<BeneficiaryType>('resident');
   const [errorMsg, setErrorMsg] = useState('');
@@ -58,6 +59,7 @@ export default function SignUpPage() {
         role: role,
         mobility_type: role === 'driver' ? 'None' : mobilityProfile,
         beneficiary_type: role === 'customer' ? beneficiaryType : undefined,
+        welfare_number: role === 'customer' && welfareNumber.trim() ? welfareNumber.trim() : undefined,
       }));
 
       if (role === 'customer') {
@@ -252,6 +254,24 @@ export default function SignUpPage() {
                     : t('profile.residentDaycareSignupNote', 'Includes workshop earnings tracking & van transit')}
                 </p>
               </div>
+
+              {beneficiaryType !== 'non_resident' && (
+                <div>
+                  <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
+                    {t('profile.welfareNumber', 'Welfare Number (JKM)')} <span className="text-neutral-400 font-normal">({t('common.optional', 'Optional')})</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={welfareNumber}
+                    onChange={(e) => setWelfareNumber(e.target.value)}
+                    placeholder="e.g. WLF-89210-PJ / JKM-0941"
+                    className="apple-input w-full font-mono text-xs"
+                  />
+                  <p className="text-[11px] text-neutral-500 mt-1">
+                    {t('profile.welfareDesc', 'JKM registration number for artisan allowance subsidy.')}
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-semibold text-neutral-700 mb-2">

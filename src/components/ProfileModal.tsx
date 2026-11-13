@@ -76,6 +76,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
+  const [welfareNumber, setWelfareNumber] = useState('');
   const [mobilityType, setMobilityType] = useState<MobilityType>('Manual Wheelchair');
   const [beneficiaryType, setBeneficiaryType] = useState<BeneficiaryType>('resident');
   const [emergencyContact, setEmergencyContact] = useState('');
@@ -106,6 +107,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setPhone(profile.phone || '');
       setEmail(profile.email || '');
       setAddress(profile.address || '');
+      setWelfareNumber(profile.welfare_number || '');
       setMobilityType(profile.mobility_type || 'Manual Wheelchair');
       setBeneficiaryType(profile.beneficiary_type || 'resident');
       setEmergencyContact(profile.emergency_contact || '');
@@ -218,6 +220,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     if (profile.role === 'customer') {
       updates.mobility_type = mobilityType;
       updates.beneficiary_type = beneficiaryType;
+      updates.welfare_number = welfareNumber.trim();
     }
 
     if (profile.role === 'driver') {
@@ -524,6 +527,23 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                     <option key={m} value={m}>{getLocalizedMobilityOption(m)}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-neutral-700 mb-1">
+                  {t('profile.welfareNumber', 'Welfare Number (JKM)')}
+                </label>
+                <input
+                  type="text"
+                  disabled={isReadOnly}
+                  value={welfareNumber}
+                  onChange={(e) => setWelfareNumber(e.target.value)}
+                  placeholder="e.g. WLF-89210-PJ / JKM-0941"
+                  className="apple-input w-full font-mono disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed font-medium"
+                />
+                <p className="text-[11px] text-neutral-500 mt-1">
+                  Social Welfare Department (Jabatan Kebajikan Masyarakat) registration number for artisan subsidy.
+                </p>
               </div>
 
               <div>

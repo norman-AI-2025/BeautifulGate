@@ -14,6 +14,7 @@ alter table public.profiles add column if not exists assigned_vehicle_plate text
 alter table public.profiles add column if not exists notes text;
 alter table public.profiles add column if not exists chinese_name text;
 alter table public.profiles add column if not exists epf_number text;
+alter table public.profiles add column if not exists welfare_number text;
 alter table public.profiles add column if not exists avatar_url text;
 alter table public.profiles add column if not exists bank_name text;
 alter table public.profiles add column if not exists bank_account_number text;

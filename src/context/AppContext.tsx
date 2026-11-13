@@ -66,6 +66,7 @@ interface AppContextType {
     role: UserRole;
     mobility_type: MobilityType;
     beneficiary_type?: BeneficiaryType;
+    welfare_number?: string;
     password?: string;
   }) => Promise<Profile> | Profile;
   logout: () => void;
@@ -463,6 +464,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     role: UserRole;
     mobility_type: MobilityType;
     beneficiary_type?: BeneficiaryType;
+    welfare_number?: string;
     password?: string;
   }): Promise<Profile> => {
     // If staff/driver signs up, they require administrator approval before active duty
@@ -478,6 +480,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       role: userData.role,
       mobility_type: userData.mobility_type,
       beneficiary_type: userData.role === 'customer' ? (userData.beneficiary_type || 'resident') : undefined,
+      welfare_number: userData.welfare_number ? userData.welfare_number.trim() : undefined,
       password_hash: passwordHash,
       is_approved: isStaffOrDriver ? false : true,
       driver_status: userData.role === 'driver' ? 'standby' : undefined,
@@ -1228,6 +1231,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         index + 1,
         c.full_name || '',
         formatICNumber(c.ic_or_oku_number) || '',
+        c.welfare_number || '-',
         formatPhoneNumber(c.phone) || '',
         c.mobility_type || 'wheelchair',
         c.beneficiary_type || 'daycare',
@@ -1250,6 +1254,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         'No.',
         'Artisan Full Name',
         'Malaysian IC / OKU Card',
+        'Welfare Number (JKM)',
         'Contact Phone',
         'Mobility Profile',
         'Beneficiary Category',
@@ -1260,6 +1265,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       [''],
       [
         'TOTAL',
+        '',
         '',
         '',
         '',
