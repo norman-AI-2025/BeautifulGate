@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Plus, Edit2, Check, Phone, Accessibility } from 'lucide-react';
+import { X, Edit2, Check, CheckCircle2, Phone, Accessibility } from 'lucide-react';
 import { ArtisanSummary } from '@/types';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
@@ -13,13 +13,17 @@ interface ArtisanDrawerProps {
 }
 
 export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }) => {
-  const { products, addWorkLog, overrideWorkLog } = useApp();
+  const { products, addWorkLog, overrideWorkLog, getArtisanStats } = useApp();
   const { t } = useLanguage();
+
+  // Always compute live stats and logs so newly logged items show immediately
+  const liveArtisan = getArtisanStats ? getArtisanStats(artisan.profile.id) : artisan;
 
   // Manual entry / override state
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState(products[0]?.id || '');
   const [newUnits, setNewUnits] = useState(25);
+  const [showSuccessTick, setShowSuccessTick] = useState(false);
 
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
   const [editUnitsValue, setEditUnitsValue] = useState(0);
@@ -28,7 +32,11 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
     e.preventDefault();
     if (newUnits <= 0) return;
     addWorkLog(newUnits, selectedProductId, artisan.profile.id);
-    setIsAddingNew(false);
+    setShowSuccessTick(true);
+    setTimeout(() => {
+      setShowSuccessTick(false);
+      setIsAddingNew(false);
+    }, 1500);
   };
 
   const handleStartEdit = (logId: string, currentUnits: number) => {
@@ -129,10 +137,10 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                   {t('drawer.today', 'Today')}
                 </p>
                 <p className="text-lg font-bold text-neutral-900 mt-1">
-                  RM {artisan.todayEarned.toFixed(2)}
+                  RM {liveArtisan.todayEarned.toFixed(2)}
                 </p>
                 <p className="text-xs text-neutral-500 mt-0.5">
-                  {artisan.todayUnits} {t('drawer.cards', 'cards')}
+                  {liveArtisan.todayUnits} {t('drawer.cards', 'cards')}
                 </p>
               </div>
 
@@ -141,10 +149,10 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                   {t('drawer.week', 'This Week')}
                 </p>
                 <p className="text-lg font-bold text-neutral-900 mt-1">
-                  RM {artisan.weekEarned.toFixed(2)}
+                  RM {liveArtisan.weekEarned.toFixed(2)}
                 </p>
                 <p className="text-xs text-neutral-500 mt-0.5">
-                  {artisan.weekUnits} {t('drawer.cards', 'cards')}
+                  {liveArtisan.weekUnits} {t('drawer.cards', 'cards')}
                 </p>
               </div>
 
@@ -153,10 +161,10 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                   {t('drawer.month', 'This Month')}
                 </p>
                 <p className="text-lg font-bold text-white mt-1">
-                  RM {artisan.monthEarned.toFixed(2)}
+                  RM {liveArtisan.monthEarned.toFixed(2)}
                 </p>
                 <p className="text-xs text-orange-200 mt-0.5">
-                  {artisan.monthUnits} {t('drawer.cards', 'cards')}
+                  {liveArtisan.monthUnits} {t('drawer.cards', 'cards')}
                 </p>
               </div>
 
@@ -165,10 +173,10 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                   {t('drawer.year', 'This Year')}
                 </p>
                 <p className="text-lg font-bold text-neutral-900 mt-1">
-                  RM {artisan.yearEarned.toFixed(2)}
+                  RM {liveArtisan.yearEarned.toFixed(2)}
                 </p>
                 <p className="text-xs text-neutral-500 mt-0.5">
-                  {artisan.yearUnits} {t('drawer.cards', 'cards')}
+                  {liveArtisan.yearUnits} {t('drawer.cards', 'cards')}
                 </p>
               </div>
             </div>
@@ -185,10 +193,17 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                 onClick={() => setIsAddingNew(!isAddingNew)}
                 className="apple-btn-secondary text-xs py-1.5 px-3 min-h-[36px]"
               >
-                <Plus className="h-3.5 w-3.5 mr-1" />
                 {isAddingNew ? t('drawer.cancel', 'Cancel') : t('drawer.logOnBehalf', 'Log Cards on Behalf')}
               </button>
             </div>
+
+            {/* Green Tick Confirmation Banner */}
+            {showSuccessTick && (
+              <div className="mb-3 p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center gap-2 animate-in fade-in-50">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
+                <span>{t('drawer.recordSuccess', 'Production work log recorded successfully!')}</span>
+              </div>
+            )}
 
             {isAddingNew && (
               <form onSubmit={handleCreateManualLog} className="space-y-3 pt-2 border-t border-neutral-100">
@@ -226,9 +241,21 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
 
                 <button
                   type="submit"
-                  className="apple-btn-primary w-full text-xs py-2 min-h-[40px]"
+                  disabled={showSuccessTick}
+                  className={`w-full text-xs py-2 min-h-[40px] rounded-xl font-bold flex items-center justify-center gap-2 transition-all tap-target ${
+                    showSuccessTick 
+                      ? 'bg-emerald-600 text-white shadow-xs' 
+                      : 'apple-btn-primary'
+                  }`}
                 >
-                  {t('drawer.recordWorkLog', 'Record Work Log')}
+                  {showSuccessTick ? (
+                    <>
+                      <CheckCircle2 className="h-4 w-4 text-white" />
+                      <span>{t('drawer.recorded', 'Recorded!')}</span>
+                    </>
+                  ) : (
+                    <span>{t('drawer.recordWorkLog', 'Record Work Log')}</span>
+                  )}
                 </button>
               </form>
             )}
@@ -238,17 +265,17 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-                {t('drawer.historicalLogs', 'Historical Work Logs')} ({artisan.logs.length})
+                {t('drawer.historicalLogs', 'Historical Work Logs')} ({liveArtisan.logs.length})
               </h3>
             </div>
 
             <div className="border border-neutral-200 rounded-xl divide-y divide-neutral-200 overflow-hidden bg-white">
-              {artisan.logs.length === 0 ? (
+              {liveArtisan.logs.length === 0 ? (
                 <div className="p-6 text-center text-xs text-neutral-500">
                   {t('drawer.noLogs', 'No logged card production history found.')}
                 </div>
               ) : (
-                artisan.logs.map((log) => {
+                liveArtisan.logs.map((log) => {
                   const isEditing = editingLogId === log.id;
 
                   return (
