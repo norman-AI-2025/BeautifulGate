@@ -436,3 +436,4 @@ on conflict (id) do update set
   notes = excluded.notes,
   is_approved = excluded.is_approved,
   updated_at = timezone('utc'::text, now());
+
