@@ -1282,7 +1282,7 @@ export default function DriverPage() {
                 <span>
                   {cashDonationModalBooking.donation?.status === 'paid'
                     ? t('donation.received', 'Received')
-                    : t('donation.btnReceived', 'Received')}
+                    : t('donation.markReceived', 'Mark as Received')}
                 </span>
               </button>
             </div>

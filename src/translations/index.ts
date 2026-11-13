@@ -244,6 +244,7 @@ export const translations = {
       completed: 'Trip Completed',
       allTasksDone: 'All transit runs completed for today.',
       collectCashDonation: 'Collect Cash: RM {amount}',
+      collectCash: 'Collect Cash',
       qrDonated: 'QR Donated: RM {amount}',
       noCurrentJob: 'No Current Job',
       noCurrentJobDesc: 'No active runs scheduled for this day.',
@@ -585,6 +586,10 @@ export const translations = {
       scanDuitNowQR: 'Scan DuitNow QR with Bank or e-Wallet',
       viewReceipt: 'View',
       close: 'Close',
+      cashHandoverTitle: 'Cash Collection',
+      received: 'Received',
+      markReceived: 'Mark as Received',
+      donationReceived: 'Donation Received',
     },
     // Artisan Drawer
     drawer: {
@@ -1043,6 +1048,7 @@ export const translations = {
       completed: '本次行程已圆满完成',
       allTasksDone: '本日所有接送任务已圆满完成。',
       collectCashDonation: '代收现金捐款: RM {amount}',
+      collectCash: '代收现金',
       qrDonated: '已通过二维码捐款: RM {amount}',
       noCurrentJob: '暂无当前任务',
       noCurrentJobDesc: '该日暂无待执行接送任务。',
@@ -1384,6 +1390,10 @@ export const translations = {
       scanDuitNowQR: '使用银行App或电子钱包扫描 DuitNow 二维码',
       viewReceipt: '查看',
       close: '关闭',
+      cashHandoverTitle: '代收现金善款',
+      received: '已收款',
+      markReceived: '确认已收到善款',
+      donationReceived: '已收到捐款',
     },
     // Artisan Drawer
     drawer: {
@@ -1842,6 +1852,7 @@ export const translations = {
       completed: 'Perjalanan Selesai',
       allTasksDone: 'Semua tugasan untuk hari ini telah selesai.',
       collectCashDonation: 'Kutip Sumbangan Tunai: RM {amount}',
+      collectCash: 'Kutip Tunai',
       qrDonated: 'Sumbangan Melalui QR: RM {amount}',
       noCurrentJob: 'Tiada Tugasan Semasa',
       noCurrentJobDesc: 'Tiada tugasan aktif dijadualkan untuk hari ini.',
@@ -2183,6 +2194,10 @@ export const translations = {
       scanDuitNowQR: 'Imbas DuitNow QR dengan Bank atau e-Dompet',
       viewReceipt: 'Lihat',
       close: 'Tutup',
+      cashHandoverTitle: 'Kutipan Wang Tunai',
+      received: 'Diterima',
+      markReceived: 'Tanda sebagai Diterima',
+      donationReceived: 'Sumbangan Diterima',
     },
     // Artisan Drawer
     drawer: {
