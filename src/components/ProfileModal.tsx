@@ -445,9 +445,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
             <div>
               <label className="block text-xs font-bold text-neutral-700 mb-1">
-                {profile.role === 'customer' 
-                  ? t('profile.okuCardNo', 'OKU Card / IC Number') 
-                  : t('profile.staffId', 'Staff ID / IC Number')}
+                {t('profile.malaysianIc', 'Malaysian IC')}
               </label>
               <input
                 type="text"

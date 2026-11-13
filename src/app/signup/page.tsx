@@ -48,6 +48,10 @@ export default function SignUpPage() {
       setErrorMsg('Please complete all required fields.');
       return;
     }
+    if (role === 'customer' && beneficiaryType !== 'non_resident' && !welfareNumber.trim()) {
+      setErrorMsg('Please enter your Welfare Number (JKM).');
+      return;
+    }
 
     try {
       await Promise.resolve(signup({
@@ -161,9 +165,7 @@ export default function SignUpPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                {role === 'customer' 
-                  ? t('auth.customerOkuLabel', 'Malaysian IC / OKU Card No.') 
-                  : t('auth.driverStaffLabel', 'Staff ID / Malaysian IC')}
+                {t('auth.malaysianIc', 'Malaysian IC')}
               </label>
               <input
                 type="text"
@@ -258,10 +260,11 @@ export default function SignUpPage() {
               {beneficiaryType !== 'non_resident' && (
                 <div>
                   <label className="block text-xs font-semibold text-neutral-700 mb-1.5">
-                    {t('profile.welfareNumber', 'Welfare Number (JKM)')} <span className="text-neutral-400 font-normal">({t('common.optional', 'Optional')})</span>
+                    {t('profile.welfareNumber', 'Welfare Number (JKM)')} <span className="text-[#F37021] font-bold">*</span>
                   </label>
                   <input
                     type="text"
+                    required
                     value={welfareNumber}
                     onChange={(e) => setWelfareNumber(e.target.value)}
                     placeholder="e.g. WLF-89210-PJ / JKM-0941"
