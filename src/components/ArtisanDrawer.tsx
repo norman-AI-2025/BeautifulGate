@@ -217,7 +217,6 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                     <input
                       type="number"
                       min="1"
-                      max="1000"
                       value={newUnits}
                       onChange={(e) => setNewUnits(parseInt(e.target.value) || 0)}
                       className="apple-input w-full text-xs"
