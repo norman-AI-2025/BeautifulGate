@@ -195,16 +195,16 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-neutral-700 mb-1">
-                      {t('drawer.cardProduct', 'Card Product')}
+                      {t('drawer.collaboratorCard', 'Collaborator / Resort Client · Card')}
                     </label>
                     <select
                       value={selectedProductId}
                       onChange={(e) => setSelectedProductId(e.target.value)}
-                      className="apple-input w-full text-xs"
+                      className="apple-input w-full text-xs font-medium"
                     >
                       {products.map(p => (
                         <option key={p.id} value={p.id}>
-                          {p.name} (RM {p.piece_rate.toFixed(3)})
+                          {p.resort_client ? `${p.resort_client} — ${p.name}` : p.name} (RM {p.piece_rate.toFixed(3)})
                         </option>
                       ))}
                     </select>
