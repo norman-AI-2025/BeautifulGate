@@ -14,7 +14,6 @@ import {
   Sparkles, 
   HeartHandshake, 
   Users, 
-  Search, 
   Bell, 
   ChevronLeft, 
   ChevronRight, 
@@ -44,23 +43,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
   const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'year'>('month');
 
-  const searchInputRef = useRef<HTMLInputElement>(null);
   const notifRef = useRef<HTMLDivElement>(null);
-
-  // Keyboard shortcut Cmd+K / Ctrl+K to focus search
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
 
   // Close notifications dropdown on outside click
   useEffect(() => {
@@ -180,12 +165,12 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'
         } ${isCollapsed ? 'md:w-20' : 'md:w-64'}`}
       >
-        <div className="p-4 sm:p-5 flex flex-col space-y-6">
+        <div className={`flex flex-col space-y-6 ${isCollapsed ? 'p-3 items-center' : 'p-4 sm:p-5'}`}>
           {/* Brand Header */}
-          <div className="flex items-center justify-between gap-3">
+          <div className={`flex w-full ${isCollapsed ? 'flex-col items-center gap-2.5' : 'items-center justify-between gap-3'}`}>
             <Link 
               href="/admin" 
-              className="flex items-center gap-3 overflow-hidden group focus:outline-none"
+              className="flex items-center justify-center focus:outline-none shrink-0 group"
             >
               <div className="h-10 w-10 rounded-xl bg-orange-50 border border-orange-200/80 p-1 flex items-center justify-center shrink-0 shadow-xs">
                 <Image
@@ -197,7 +182,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 />
               </div>
               {!isCollapsed && (
-                <div className="min-w-0">
+                <div className="min-w-0 ml-3">
                   <h1 className="text-sm font-black tracking-tight text-neutral-900 truncate leading-none">
                     {t('brand.name', 'Beautiful Gate')}
                   </h1>
@@ -212,7 +197,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <button
               type="button"
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden md:flex h-7 w-7 items-center justify-center rounded-lg text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
+              className="hidden md:flex h-7 w-7 items-center justify-center rounded-lg text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer shrink-0"
               aria-label={isCollapsed ? t('adminNav.expandSidebar', 'Expand Sidebar') : t('adminNav.collapseSidebar', 'Collapse Sidebar')}
               title={isCollapsed ? t('adminNav.expandSidebar', 'Expand Sidebar') : t('adminNav.collapseSidebar', 'Collapse Sidebar')}
             >
@@ -230,15 +215,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Navigation Groups */}
-          <nav className="space-y-6">
+          <nav className="space-y-6 w-full">
             {navItems.map((group, gIdx) => (
-              <div key={gIdx} className="space-y-1">
+              <div key={gIdx} className="space-y-1 w-full">
                 {!isCollapsed && (
                   <p className="px-3 text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-2">
                     {group.group}
                   </p>
                 )}
-                <div className="space-y-1">
+                <div className="space-y-1 w-full">
                   {group.items.map((item) => {
                     const Icon = item.icon;
                     return (
@@ -246,13 +231,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                         key={item.href}
                         href={item.href}
                         title={isCollapsed ? item.name : undefined}
-                        className={`group flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
+                        className={`group relative flex items-center ${
+                          isCollapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2.5'
+                        } rounded-xl text-xs font-semibold transition-all duration-150 ${
                           item.isActive
                             ? 'bg-[#F37021] text-white shadow-xs font-bold'
                             : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/80'
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 min-w-0'}`}>
                           <Icon className={`h-4 w-4 shrink-0 transition-colors ${
                             item.isActive ? 'text-white' : 'text-neutral-400 group-hover:text-neutral-800'
                           }`} />
@@ -269,7 +256,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                           </span>
                         )}
                         {item.badge !== null && isCollapsed && (
-                          <span className="h-2 w-2 rounded-full bg-[#F37021] shrink-0" />
+                          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-[#F37021] ring-2 ring-white" />
                         )}
                       </Link>
                     );
@@ -360,8 +347,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       {/* ================================================================ */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header Bar (Revello style) */}
-        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-neutral-200/90 px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3 shadow-2xs">
-          <div className="flex items-center gap-3 flex-1 min-w-0 max-w-xl">
+        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-neutral-200/90 px-4 sm:px-6 py-3 flex items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-center gap-3">
             {/* Mobile Menu Button */}
             <button
               type="button"
@@ -371,26 +358,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             >
               <Menu className="h-5 w-5" />
             </button>
-
-            {/* Global Quick Search Bar with Cmd+K pill */}
-            <div className="relative w-full">
-              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('adminNav.searchPlaceholder', 'Search passengers, IC, hospital, artisans...')}
-                className="w-full pl-9 pr-14 py-2 rounded-xl border border-neutral-200/90 bg-neutral-50/70 focus:bg-white text-neutral-900 text-xs placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-[#F37021] focus:border-[#F37021] transition-all"
-              />
-              <span className="hidden sm:inline-flex absolute right-2.5 top-1/2 -translate-y-1/2 items-center px-1.5 py-0.5 rounded border border-neutral-200 bg-white text-[10px] font-mono text-neutral-400 pointer-events-none">
-                ⌘K
-              </span>
-            </div>
           </div>
 
-          {/* Right Controls: Date Range, Notifications, Language, Profile */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Right Controls: Date Range, Notifications, Language */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
             {/* Date Range Selector Pill */}
             <div className="hidden lg:flex items-center rounded-xl bg-neutral-100 p-1 border border-neutral-200/80 text-xs">
               {(['today', 'week', 'month', 'year'] as const).map((r) => (
