@@ -16,7 +16,6 @@ import {
   Download, 
   ChevronRight, 
   MoreHorizontal, 
-  ExternalLink,
   Award,
   Layers,
   Banknote,
@@ -38,23 +37,27 @@ export default function AdminOverviewDashboard() {
     getArtisanStats, 
     exportDonationsCSV 
   } = useApp();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const [selectedArtisanForDrawer, setSelectedArtisanForDrawer] = useState<ArtisanSummary | null>(null);
   const [hoveredDonationMonth, setHoveredDonationMonth] = useState<number | null>(null);
+  const [hoveredPayoutMonth, setHoveredPayoutMonth] = useState<number | null>(null);
 
-  // Today's formatted date string
+  // Locale-aware formatted today string
   const formattedToday = useMemo(() => {
-    const today = new Date();
-    return today.toLocaleDateString('en-US', {
+    const localeCode = language === 'zh' ? 'zh-CN' : language === 'ms' ? 'ms-MY' : 'en-US';
+    return new Intl.DateTimeFormat(localeCode, {
       weekday: 'long',
       year: 'numeric',
       month: 'long',
       day: 'numeric'
-    });
-  }, []);
+    }).format(new Date());
+  }, [language]);
 
-  // 1. KPI Calculation: Total Donations (MTD)
+  // Current year
+  const currentYear = useMemo(() => new Date().getFullYear(), []);
+
+  // 1. KPI: Total Donations from Supabase bookings
   const donatedBookings = useMemo(() => bookings.filter(b => Boolean(b.donation)), [bookings]);
   const totalDonationsAmount = useMemo(() => {
     return donatedBookings.reduce((sum, b) => sum + (b.donation?.amount || 0), 0);
@@ -72,7 +75,7 @@ export default function AdminOverviewDashboard() {
       .reduce((sum, b) => sum + (b.donation?.amount || 0), 0);
   }, [donatedBookings]);
 
-  // 2. KPI Calculation: Dispatches & Runs
+  // 2. KPI: Dispatches & Runs from Supabase bookings
   const totalTripsCount = bookings.length;
   const activeTripsCount = useMemo(() => {
     return bookings.filter(b => ['en_route_pickup', 'picked_up', 'en_route_hospital'].includes(b.status)).length;
@@ -81,7 +84,7 @@ export default function AdminOverviewDashboard() {
     return bookings.filter(b => b.status === 'pending').length;
   }, [bookings]);
 
-  // 3. KPI Calculation: Artisan Workshop Production & RM Payout
+  // 3. KPI: Artisan Workshop Production & Payouts from Supabase workLogs
   const totalCardsProduced = useMemo(() => {
     return workLogs.reduce((sum, l) => sum + (l.units_completed || 0), 0);
   }, [workLogs]);
@@ -90,35 +93,203 @@ export default function AdminOverviewDashboard() {
     return workLogs.reduce((sum, l) => sum + (l.total_earned || (l.units_completed * (l.piece_rate_snapshot || 2.0))), 0);
   }, [workLogs]);
 
-  // 4. KPI Calculation: Community Members
+  // 4. KPI: Registered Community Members from Supabase profiles
   const totalMembersCount = profiles.length;
   const beneficiariesCount = useMemo(() => profiles.filter(p => p.role === 'customer').length, [profiles]);
   const driversCount = useMemo(() => profiles.filter(p => p.role === 'driver').length, [profiles]);
 
-  // Top OKU Artisans Ranking
+  // Dynamic monthly timeline aggregation strictly from Supabase data
+  const timelineMonths = useMemo(() => {
+    const monthNamesEn = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const monthNamesZh = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+    const monthNamesMs = ['Jan', 'Feb', 'Mac', 'Apr', 'Mei', 'Jun', 'Jul', 'Ogo', 'Sep', 'Okt', 'Nov', 'Dis'];
+    const labels = language === 'zh' ? monthNamesZh : language === 'ms' ? monthNamesMs : monthNamesEn;
+
+    // Up to current month (or all 12 months)
+    return labels.map((label, monthIndex) => {
+      // Filter bookings for this month
+      let cash = 0;
+      let qr = 0;
+      donatedBookings.forEach(b => {
+        const rawDate = b.donation?.timestamp || b.date || b.created_at;
+        if (rawDate) {
+          const d = new Date(rawDate);
+          if (!isNaN(d.getTime()) && d.getMonth() === monthIndex) {
+            if (b.donation?.method === 'cash') cash += b.donation.amount || 0;
+            if (b.donation?.method === 'qr') qr += b.donation.amount || 0;
+          }
+        }
+      });
+
+      // Filter worklogs for this month
+      let cards = 0;
+      let payout = 0;
+      workLogs.forEach(l => {
+        if (l.logged_date) {
+          const parts = l.logged_date.split('-');
+          const m = parseInt(parts[1], 10) - 1;
+          if (m === monthIndex) {
+            cards += l.units_completed || 0;
+            payout += l.total_earned || (l.units_completed * (l.piece_rate_snapshot || 2.0));
+          }
+        }
+      });
+
+      return {
+        name: label,
+        monthIndex,
+        cash,
+        qr,
+        totalDonations: cash + qr,
+        cards,
+        payout
+      };
+    });
+  }, [donatedBookings, workLogs, language]);
+
+  // Max values for chart scaling
+  const maxDonationMonth = useMemo(() => {
+    const max = Math.max(...timelineMonths.map(m => m.totalDonations), 100);
+    return max;
+  }, [timelineMonths]);
+
+  const maxCardsMonth = useMemo(() => {
+    return Math.max(...timelineMonths.map(m => m.cards), 50);
+  }, [timelineMonths]);
+
+  const maxPayoutMonth = useMemo(() => {
+    return Math.max(...timelineMonths.map(m => m.payout), 100);
+  }, [timelineMonths]);
+
+  // Month-over-Month calculation for Donations
+  const donationTrend = useMemo(() => {
+    const currentMonthIdx = new Date().getMonth();
+    const currentVal = timelineMonths[currentMonthIdx]?.totalDonations || 0;
+    const prevVal = currentMonthIdx > 0 ? timelineMonths[currentMonthIdx - 1]?.totalDonations || 0 : 0;
+    if (prevVal === 0) {
+      return { diff: currentVal > 0 ? 100 : 0, isUp: true };
+    }
+    const pct = Math.round(((currentVal - prevVal) / prevVal) * 100);
+    return { diff: Math.abs(pct), isUp: pct >= 0 };
+  }, [timelineMonths]);
+
+  // Month-over-Month calculation for Artisan Craft Cards
+  const cardsTrend = useMemo(() => {
+    const currentMonthIdx = new Date().getMonth();
+    const currentVal = timelineMonths[currentMonthIdx]?.cards || 0;
+    const prevVal = currentMonthIdx > 0 ? timelineMonths[currentMonthIdx - 1]?.cards || 0 : 0;
+    if (prevVal === 0) {
+      return { diff: currentVal > 0 ? 100 : 0, isUp: true };
+    }
+    const pct = Math.round(((currentVal - prevVal) / prevVal) * 100);
+    return { diff: Math.abs(pct), isUp: pct >= 0 };
+  }, [timelineMonths]);
+
+  // Top OKU Artisans Leaderboard derived strictly from Supabase profiles and logs
   const artisanLeaderboard = useMemo(() => {
     const artisanProfiles = profiles.filter(p => p.role === 'customer');
     const summaries = artisanProfiles.map(p => getArtisanStats(p.id));
-    // Sort descending by total units completed
     return summaries
-      .filter(s => s.yearUnits > 0 || s.monthEarned > 0)
+      .filter(s => s.yearUnits > 0 || s.monthEarned > 0 || s.todayUnits > 0)
       .sort((a, b) => b.yearUnits - a.yearUnits)
-      .slice(0, 5);
+      .slice(0, 6);
   }, [profiles, getArtisanStats]);
 
-  // Monthly timeline data for Donation & Production charts (Jan to Oct / 10 months)
-  const timelineMonths = [
-    { name: 'Jan', cash: 850, qr: 1200, cards: 180, payout: 360 },
-    { name: 'Feb', cash: 920, qr: 1450, cards: 240, payout: 480 },
-    { name: 'Mar', cash: 1100, qr: 1680, cards: 310, payout: 620 },
-    { name: 'Apr', cash: 980, qr: 1890, cards: 290, payout: 580 },
-    { name: 'May', cash: 1250, qr: 2100, cards: 420, payout: 840 },
-    { name: 'Jun', cash: 1400, qr: 2350, cards: 380, payout: 760 },
-    { name: 'Jul', cash: 1350, qr: 2500, cards: 460, payout: 920 },
-    { name: 'Aug', cash: 1600, qr: 2780, cards: 510, payout: 1020 },
-    { name: 'Sep', cash: 1750, qr: 2950, cards: 490, payout: 980 },
-    { name: 'Oct', cash: 1900, qr: 3200, cards: 580, payout: 1160 }
-  ];
+  // Top Products breakdown aggregated directly from Supabase workLogs
+  const productOutputBreakdown = useMemo(() => {
+    const map = new Map<string, { product: any; units: number; earnings: number }>();
+
+    products.forEach(p => {
+      map.set(p.id, { product: p, units: 0, earnings: 0 });
+    });
+
+    workLogs.forEach(l => {
+      const entry = map.get(l.card_id);
+      if (entry) {
+        entry.units += l.units_completed || 0;
+        entry.earnings += l.total_earned || (l.units_completed * (l.piece_rate_snapshot || 2.0));
+      } else {
+        // Uncatalogued or custom series
+        const fallbackProd = {
+          id: l.card_id,
+          name: l.card_name || 'Artisan Craft Series',
+          resort_client: 'Resort Partner',
+          piece_rate: l.piece_rate_snapshot || 2.0
+        };
+        map.set(l.card_id, {
+          product: fallbackProd,
+          units: l.units_completed || 0,
+          earnings: l.total_earned || (l.units_completed * (l.piece_rate_snapshot || 2.0))
+        });
+      }
+    });
+
+    return Array.from(map.values())
+      .filter(e => e.units > 0)
+      .sort((a, b) => b.units - a.units);
+  }, [products, workLogs]);
+
+  // Collaborator & Category Donut distribution derived strictly from Supabase
+  const collaboratorDonutData = useMemo(() => {
+    const totalUnits = productOutputBreakdown.reduce((sum, item) => sum + item.units, 0);
+    const colors = ['#0D9488', '#F37021', '#0284C7', '#8B5CF6', '#F59E0B', '#10B981', '#EC4899'];
+
+    if (totalUnits === 0) {
+      return { totalUnits: 0, segments: [] };
+    }
+
+    let cumulativePct = 0;
+    const circumference = 238.76; // 2 * PI * 38
+
+    const segments = productOutputBreakdown.slice(0, 5).map((item, idx) => {
+      const pct = (item.units / totalUnits) * 100;
+      const strokeDash = (pct / 100) * circumference;
+      const strokeOffset = -(cumulativePct / 100) * circumference;
+      cumulativePct += pct;
+
+      return {
+        id: item.product.id,
+        name: item.product.name,
+        resort: item.product.resort_client,
+        units: item.units,
+        percentage: Math.round(pct),
+        color: colors[idx % colors.length],
+        strokeDash: `${strokeDash} ${circumference}`,
+        strokeOffset
+      };
+    });
+
+    return { totalUnits, segments };
+  }, [productOutputBreakdown]);
+
+  // Compute SVG polyline/path points for area chart
+  const { cardsPath, payoutPath, fillPath } = useMemo(() => {
+    if (timelineMonths.length === 0) {
+      return { cardsPath: '', payoutPath: '', fillPath: '' };
+    }
+
+    const width = 480;
+    const height = 120;
+    const xStep = width / (timelineMonths.length - 1);
+
+    const cardsPoints = timelineMonths.map((m, i) => {
+      const x = 10 + i * xStep;
+      const y = 135 - (m.cards / maxCardsMonth) * height;
+      return `${x},${y}`;
+    });
+
+    const payoutPoints = timelineMonths.map((m, i) => {
+      const x = 10 + i * xStep;
+      const y = 135 - (m.payout / maxPayoutMonth) * height;
+      return `${x},${y}`;
+    });
+
+    const cPath = `M ${cardsPoints[0]} L ${cardsPoints.slice(1).join(' L ')}`;
+    const pPath = `M ${payoutPoints[0]} L ${payoutPoints.slice(1).join(' L ')}`;
+    const fPath = `${cPath} L 490,140 L 10,140 Z`;
+
+    return { cardsPath: cPath, payoutPath: pPath, fillPath: fPath };
+  }, [timelineMonths, maxCardsMonth, maxPayoutMonth]);
 
   return (
     <div className="space-y-6">
@@ -126,7 +297,7 @@ export default function AdminOverviewDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 tracking-tight">
-            {t('nav.dashboard', 'Dashboard')}
+            {t('admin.dashboardTitle', 'Dashboard')}
           </h1>
           <p className="text-xs text-neutral-400 font-semibold mt-0.5 capitalize">
             {formattedToday}
@@ -134,20 +305,13 @@ export default function AdminOverviewDashboard() {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          {/* Date Range Selector */}
+          {/* Current Period Label */}
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-neutral-200/90 bg-white text-xs font-bold text-neutral-700 shadow-2xs">
             <Calendar className="h-3.5 w-3.5 text-neutral-400" />
-            <span>{t('admin.currentPeriod', 'Jan 1, 2026 - Dec 31, 2026')}</span>
+            <span>
+              {t('admin.currentPeriod', 'Current Fiscal Year ({year})').replace('{year}', currentYear.toString())}
+            </span>
           </div>
-
-          {/* Filter Button */}
-          <button
-            type="button"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-neutral-200/90 bg-white text-xs font-bold text-neutral-700 hover:bg-neutral-50 shadow-2xs transition-colors"
-          >
-            <Filter className="h-3.5 w-3.5 text-neutral-400" />
-            <span>{t('common.filter', 'Filter')}</span>
-          </button>
 
           {/* Export Button */}
           <button
@@ -172,9 +336,11 @@ export default function AdminOverviewDashboard() {
                 {t('admin.kpiTotalDonations', 'Total Income / Donations')}
               </span>
             </div>
-            <div className="flex items-center gap-1 text-[11px] font-bold text-teal-600 mt-1">
-              <TrendingUp className="h-3 w-3" />
-              <span>↗ 43% {t('admin.comparedLastMonth', 'Compared to last month')}</span>
+            <div className={`flex items-center gap-1 text-[11px] font-bold mt-1 ${donationTrend.isUp ? 'text-teal-600' : 'text-rose-500'}`}>
+              {donationTrend.isUp ? <TrendingUp className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+              <span>
+                {donationTrend.isUp ? '↗' : '↘'} {donationTrend.diff}% {t('admin.comparedLastMonth', 'Compared to last month')}
+              </span>
             </div>
           </div>
           <div className="flex items-end justify-between mt-4">
@@ -183,18 +349,22 @@ export default function AdminOverviewDashboard() {
                 RM {totalDonationsAmount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
               </span>
               <p className="text-[10px] text-neutral-400 font-medium mt-0.5">
-                QR: RM {qrDonationsAmount} · Cash: RM {cashDonationsAmount}
+                {t('admin.onlineQr', 'QR')}: RM {qrDonationsAmount} · {t('admin.driverCash', 'Cash')}: RM {cashDonationsAmount}
               </p>
             </div>
-            {/* Sparkline Visualizer */}
+            {/* Sparkline Visualizer derived from Supabase monthly donations */}
             <div className="flex items-end gap-1 h-8">
-              {[40, 60, 45, 75, 55, 90, 70, 100].map((h, i) => (
-                <div 
-                  key={i} 
-                  style={{ height: `${h}%` }}
-                  className="w-1.5 rounded-full bg-teal-600/30 hover:bg-teal-600 transition-colors" 
-                />
-              ))}
+              {timelineMonths.slice(-8).map((m, i) => {
+                const h = Math.max(15, Math.round((m.totalDonations / maxDonationMonth) * 100));
+                return (
+                  <div 
+                    key={i} 
+                    style={{ height: `${h}%` }}
+                    title={`${m.name}: RM ${m.totalDonations}`}
+                    className="w-1.5 rounded-full bg-teal-600/30 hover:bg-teal-600 transition-colors cursor-pointer" 
+                  />
+                );
+              })}
             </div>
           </div>
         </div>
@@ -208,9 +378,11 @@ export default function AdminOverviewDashboard() {
                 {t('admin.kpiArtisanProduction', 'Artisan Craft Output')}
               </span>
             </div>
-            <div className="flex items-center gap-1 text-[11px] font-bold text-teal-600 mt-1">
-              <TrendingUp className="h-3 w-3" />
-              <span>↗ 32% {t('admin.comparedLastMonth', 'Compared to last month')}</span>
+            <div className={`flex items-center gap-1 text-[11px] font-bold mt-1 ${cardsTrend.isUp ? 'text-teal-600' : 'text-rose-500'}`}>
+              {cardsTrend.isUp ? <TrendingUp className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+              <span>
+                {cardsTrend.isUp ? '↗' : '↘'} {cardsTrend.diff}% {t('admin.comparedLastMonth', 'Compared to last month')}
+              </span>
             </div>
           </div>
           <div className="flex items-end justify-between mt-4">
@@ -222,19 +394,24 @@ export default function AdminOverviewDashboard() {
                 {t('admin.disbursed', 'Disbursed')}: RM {totalArtisanPayout.toFixed(2)}
               </p>
             </div>
+            {/* Sparkline Visualizer derived from Supabase monthly cards */}
             <div className="flex items-end gap-1 h-8">
-              {[30, 50, 40, 70, 60, 85, 75, 95].map((h, i) => (
-                <div 
-                  key={i} 
-                  style={{ height: `${h}%` }}
-                  className="w-1.5 rounded-full bg-[#F37021]/30 hover:bg-[#F37021] transition-colors" 
-                />
-              ))}
+              {timelineMonths.slice(-8).map((m, i) => {
+                const h = Math.max(15, Math.round((m.cards / maxCardsMonth) * 100));
+                return (
+                  <div 
+                    key={i} 
+                    style={{ height: `${h}%` }}
+                    title={`${m.name}: ${m.cards} ${t('admin.unitsLabel', 'Units')}`}
+                    className="w-1.5 rounded-full bg-[#F37021]/30 hover:bg-[#F37021] transition-colors cursor-pointer" 
+                  />
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* KPI 3: Transit Runs & Pending Orders */}
+        {/* KPI 3: Transit Runs & Bookings */}
         <div className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-xs flex flex-col justify-between hover:border-neutral-300 transition-colors">
           <div>
             <div className="flex items-center justify-between text-neutral-400 mb-1">
@@ -243,22 +420,22 @@ export default function AdminOverviewDashboard() {
                 {t('admin.kpiTransitTrips', 'Transit Runs / Bookings')}
               </span>
             </div>
-            <div className="flex items-center gap-1 text-[11px] font-bold text-rose-500 mt-1">
-              <ArrowDownRight className="h-3 w-3" />
-              <span>↘ 12% {t('admin.comparedLastMonth', 'Compared to last month')}</span>
+            <div className="flex items-center gap-1 text-[11px] font-bold text-teal-600 mt-1">
+              <CheckCircle2 className="h-3 w-3" />
+              <span>{bookings.filter(b => b.status === 'dropped_off').length} {t('common.verified', 'Completed')}</span>
             </div>
           </div>
           <div className="flex items-end justify-between mt-4">
             <div>
               <span className="text-2xl font-black text-neutral-900 font-mono tabular-nums tracking-tight">
-                {totalTripsCount}+
+                {totalTripsCount}
               </span>
               <p className="text-[10px] text-neutral-400 font-medium mt-0.5">
                 {activeTripsCount} {t('admin.activeNow', 'Active')} · {pendingBookingsCount} {t('admin.pendingApproval', 'Pending')}
               </p>
             </div>
             <div className="flex items-end gap-1 h-8">
-              {[50, 70, 60, 40, 80, 65, 70, 85].map((h, i) => (
+              {[40, 65, 50, 80, 60, 75, 90, 85].map((h, i) => (
                 <div 
                   key={i} 
                   style={{ height: `${h}%` }}
@@ -269,7 +446,7 @@ export default function AdminOverviewDashboard() {
           </div>
         </div>
 
-        {/* KPI 4: Registered Members */}
+        {/* KPI 4: Registered Community Members */}
         <div className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-xs flex flex-col justify-between hover:border-neutral-300 transition-colors">
           <div>
             <div className="flex items-center justify-between text-neutral-400 mb-1">
@@ -280,7 +457,7 @@ export default function AdminOverviewDashboard() {
             </div>
             <div className="flex items-center gap-1 text-[11px] font-bold text-teal-600 mt-1">
               <TrendingUp className="h-3 w-3" />
-              <span>↗ 15% {t('admin.comparedLastMonth', 'Compared to last month')}</span>
+              <span>{profiles.filter(p => p.role === 'admin').length} {t('admin.filterAdmins', 'Administrators')}</span>
             </div>
           </div>
           <div className="flex items-end justify-between mt-4">
@@ -305,45 +482,47 @@ export default function AdminOverviewDashboard() {
         </div>
       </div>
 
-      {/* Row 2: Dual Central Charts (Revenue Over Time & Revenue Breakdown) */}
+      {/* Row 2: Dual Central Charts (Donation Inflow & Production/Payout) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Left Chart: Revenue / Inflow Over Time (Dot Matrix style like Revello) */}
+        {/* Left Chart: Revenue / Inflow Over Time (Strictly from Supabase bookings) */}
         <div className="rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-teal-600" />
                 <h3 className="text-sm font-black text-neutral-900 tracking-tight">
-                  {t('admin.revenueOverTime', 'Revenue Over Time')}
+                  {t('admin.revenueOverTime', 'Donation Inflow Over Time')}
                 </h3>
               </div>
-              <div className="flex items-center gap-1">
-                <button type="button" className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100">
-                  <Filter className="h-3.5 w-3.5" />
-                </button>
-                <button type="button" className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100">
-                  <MoreHorizontal className="h-3.5 w-3.5" />
-                </button>
-              </div>
+              <Link 
+                href="/admin/donations" 
+                className="text-xs font-bold text-teal-700 hover:underline flex items-center gap-1"
+              >
+                <span>{t('admin.auditLedger', 'Audit Ledger')}</span>
+                <ChevronRight className="h-3 w-3" />
+              </Link>
             </div>
 
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-3xl font-black text-neutral-900 font-mono tabular-nums tracking-tight">
-                RM {totalDonationsAmount > 0 ? (totalDonationsAmount * 3.6).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '90,650,278'}
+                RM {totalDonationsAmount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
               </span>
-              <span className="text-xs font-bold text-teal-600 flex items-center gap-0.5">
-                <ArrowUpRight className="h-3.5 w-3.5" />
-                56% {t('admin.increasedVsLastMonth', 'Increased vs last month')}
+              <span className={`text-xs font-bold flex items-center gap-0.5 ${donationTrend.isUp ? 'text-teal-600' : 'text-rose-500'}`}>
+                {donationTrend.isUp ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
+                {donationTrend.diff}% {t('admin.increasedVsLastMonth', 'vs last month')}
               </span>
             </div>
           </div>
 
           {/* Dot Matrix Visual Chart */}
           <div className="mt-8 pt-4 border-t border-neutral-100">
-            <div className="grid grid-cols-10 gap-2 sm:gap-3 items-end h-44">
+            <div className="grid grid-cols-12 gap-1.5 sm:gap-2 items-end h-44">
               {timelineMonths.map((m, idx) => {
                 const totalUnits = 8;
-                const activeUnits = Math.min(8, Math.max(2, Math.round(((m.cash + m.qr) / 5100) * 8)));
+                // Proportional filled dots (1 to 8) based on actual donations in Supabase
+                const activeUnits = m.totalDonations > 0 
+                  ? Math.min(8, Math.max(1, Math.round((m.totalDonations / maxDonationMonth) * 8)))
+                  : 1;
                 const isHovered = hoveredDonationMonth === idx;
 
                 return (
@@ -356,20 +535,20 @@ export default function AdminOverviewDashboard() {
                     {/* Tooltip */}
                     {isHovered && (
                       <div className="absolute -top-12 z-20 px-2 py-1 rounded-lg bg-neutral-900 text-white text-[10px] font-mono whitespace-nowrap shadow-md pointer-events-none">
-                        <p className="font-bold">{m.name}: RM {m.cash + m.qr}</p>
-                        <p className="text-neutral-400 text-[9px]">QR: RM {m.qr} | Cash: RM {m.cash}</p>
+                        <p className="font-bold">{m.name}: RM {m.totalDonations}</p>
+                        <p className="text-neutral-400 text-[9px]">{t('admin.onlineQr', 'QR')}: RM {m.qr} | {t('admin.driverCash', 'Cash')}: RM {m.cash}</p>
                       </div>
                     )}
 
-                    {/* Dot Column (Stack of circular pills) */}
+                    {/* Dot Column */}
                     <div className="flex flex-col-reverse gap-1.5 w-full items-center">
                       {Array.from({ length: totalUnits }).map((_, dotIdx) => {
-                        const isFilled = dotIdx < activeUnits;
-                        const isTop = dotIdx === activeUnits - 1;
+                        const isFilled = dotIdx < activeUnits && m.totalDonations > 0;
+                        const isTop = isFilled && dotIdx === activeUnits - 1;
                         return (
                           <span
                             key={dotIdx}
-                            className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full transition-all duration-300 ${
+                            className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full transition-all duration-300 ${
                               isFilled 
                                 ? isTop
                                   ? 'bg-teal-500 shadow-xs'
@@ -381,7 +560,7 @@ export default function AdminOverviewDashboard() {
                       })}
                     </div>
                     {/* Month Label */}
-                    <span className={`text-[11px] font-semibold mt-2 transition-colors ${
+                    <span className={`text-[10px] font-semibold mt-2 transition-colors truncate ${
                       isHovered ? 'text-teal-700 font-bold' : 'text-neutral-400'
                     }`}>
                       {m.name}
@@ -393,47 +572,46 @@ export default function AdminOverviewDashboard() {
           </div>
         </div>
 
-        {/* Right Chart: Revenue Breakdown (Dual Smooth Spline Curves like Revello) */}
+        {/* Right Chart: Production & Payouts (Strictly from Supabase workLogs) */}
         <div className="rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="h-2 w-2 rounded-full bg-teal-600" />
+                <span className="h-2 w-2 rounded-full bg-[#F37021]" />
                 <h3 className="text-sm font-black text-neutral-900 tracking-tight">
-                  {t('admin.revenueBreakdown', 'Revenue Breakdown')}
+                  {t('admin.revenueBreakdown', 'Artisan Workshop Production & Payouts')}
                 </h3>
               </div>
-              <div className="flex items-center gap-1">
-                <button type="button" className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100">
-                  <Filter className="h-3.5 w-3.5" />
-                </button>
-                <button type="button" className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100">
-                  <MoreHorizontal className="h-3.5 w-3.5" />
-                </button>
-              </div>
+              <Link 
+                href="/admin/artisans" 
+                className="text-xs font-bold text-[#F37021] hover:underline flex items-center gap-1"
+              >
+                <span>{t('admin.viewWorkshop', 'View Workshop')}</span>
+                <ChevronRight className="h-3 w-3" />
+              </Link>
             </div>
 
             <div className="mt-3 flex items-baseline gap-2">
               <span className="text-3xl font-black text-neutral-900 font-mono tabular-nums tracking-tight">
-                RM {totalArtisanPayout > 0 ? (totalArtisanPayout * 12).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '4,650,278'}
+                RM {totalArtisanPayout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
-              <span className="text-xs font-bold text-rose-500 flex items-center gap-0.5">
-                <ArrowDownRight className="h-3.5 w-3.5" />
-                39% {t('admin.increasedVsLastMonth', 'Increased vs last month')}
+              <span className={`text-xs font-bold flex items-center gap-0.5 ${cardsTrend.isUp ? 'text-teal-600' : 'text-rose-500'}`}>
+                {cardsTrend.isUp ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowDownRight className="h-3.5 w-3.5" />}
+                {cardsTrend.diff}% {t('admin.increasedVsLastMonth', 'vs last month')}
               </span>
             </div>
           </div>
 
-          {/* SVG Smooth Dual Spline Curve with Gradient Fill */}
+          {/* SVG Smooth Curves with Gradient Fill strictly from Supabase data */}
           <div className="mt-6 pt-4 border-t border-neutral-100 relative">
             <div className="relative h-44 w-full">
               <svg className="w-full h-full overflow-visible" viewBox="0 0 500 150" preserveAspectRatio="none">
                 <defs>
-                  <linearGradient id="curveGrad1" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="payoutGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#0D9488" stopOpacity="0.25" />
                     <stop offset="100%" stopColor="#0D9488" stopOpacity="0.0" />
                   </linearGradient>
-                  <linearGradient id="curveGrad2" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="cardsGrad" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#F37021" stopOpacity="0.15" />
                     <stop offset="100%" stopColor="#F37021" stopOpacity="0.0" />
                   </linearGradient>
@@ -444,81 +622,78 @@ export default function AdminOverviewDashboard() {
                 <line x1="0" y1="75" x2="500" y2="75" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
                 <line x1="0" y1="120" x2="500" y2="120" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
 
-                {/* Area 1: Online / Digital QR Collections */}
-                <path
-                  d="M 0 110 Q 50 100, 100 85 T 200 95 T 300 70 T 400 45 T 500 30 L 500 150 L 0 150 Z"
-                  fill="url(#curveGrad1)"
-                />
-                {/* Stroke Line 1 */}
-                <path
-                  d="M 0 110 Q 50 100, 100 85 T 200 95 T 300 70 T 400 45 T 500 30"
-                  fill="none"
-                  stroke="#0D9488"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
+                {/* Real Data Curve: Cards Completed */}
+                {fillPath && (
+                  <path d={fillPath} fill="url(#payoutGrad)" />
+                )}
+                {cardsPath && (
+                  <path
+                    d={cardsPath}
+                    fill="none"
+                    stroke="#0D9488"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
 
-                {/* Area 2: Cash Handover Collections */}
-                <path
-                  d="M 0 130 Q 50 120, 100 115 T 200 125 T 300 100 T 400 80 T 500 70 L 500 150 L 0 150 Z"
-                  fill="url(#curveGrad2)"
-                />
-                {/* Stroke Line 2 */}
-                <path
-                  d="M 0 130 Q 50 120, 100 115 T 200 125 T 300 100 T 400 80 T 500 70"
-                  fill="none"
-                  stroke="#F37021"
-                  strokeWidth="2"
-                  strokeDasharray="4 3"
-                  strokeLinecap="round"
-                />
-
-                {/* Focus Indicator Pin (matching Revello screenshot at May/Jun) */}
-                <line x1="330" y1="10" x2="330" y2="145" stroke="#CBD5E1" strokeWidth="1.5" />
-                <circle cx="330" cy="62" r="4.5" fill="#0D9488" stroke="#FFFFFF" strokeWidth="2" />
-                <circle cx="330" cy="95" r="4.5" fill="#F37021" stroke="#FFFFFF" strokeWidth="2" />
+                {/* Real Data Curve: Payout Disbursed */}
+                {payoutPath && (
+                  <path
+                    d={payoutPath}
+                    fill="none"
+                    stroke="#F37021"
+                    strokeWidth="2"
+                    strokeDasharray="4 3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                )}
               </svg>
 
-              {/* Float Tooltip Card */}
-              <div className="absolute top-1 right-20 sm:right-32 bg-white/95 backdrop-blur-xs border border-neutral-200/90 rounded-xl p-2.5 shadow-md text-xs space-y-1">
-                <p className="text-[10px] font-bold text-neutral-400">May 15, 2026</p>
+              {/* Real Legend Badge */}
+              <div className="absolute top-1 right-2 bg-white/95 backdrop-blur-xs border border-neutral-200/90 rounded-xl p-2.5 shadow-xs text-xs space-y-1">
                 <div className="flex items-center justify-between gap-4">
                   <span className="flex items-center gap-1.5 text-neutral-600 text-[11px]">
                     <span className="h-2 w-2 rounded-full bg-teal-600" />
-                    {t('admin.onlineSales', 'Online QR')}
+                    {t('admin.cardsProduced', 'Cards Produced')}
                   </span>
-                  <span className="font-mono font-bold text-neutral-900 text-[11px]">812</span>
+                  <span className="font-mono font-bold text-neutral-900 text-[11px]">
+                    {totalCardsProduced}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <span className="flex items-center gap-1.5 text-neutral-600 text-[11px]">
                     <span className="h-2 w-2 rounded-full bg-[#F37021]" />
-                    {t('admin.offlineSales', 'Driver Cash')}
+                    {t('admin.payoutDisbursed', 'Payout Disbursed')}
                   </span>
-                  <span className="font-mono font-bold text-neutral-900 text-[11px]">127</span>
+                  <span className="font-mono font-bold text-neutral-900 text-[11px]">
+                    RM {totalArtisanPayout.toFixed(0)}
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Bottom Month Axis */}
-            <div className="flex items-center justify-between mt-3 text-[11px] font-semibold text-neutral-400 px-1">
-              {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'].map(m => (
-                <span key={m}>{m}</span>
+            <div className="flex items-center justify-between mt-3 text-[10px] font-semibold text-neutral-400 px-1">
+              {timelineMonths.map(m => (
+                <span key={m.name} className="truncate max-w-[30px]">{m.name}</span>
               ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Row 3: Product Sales (Leaderboard) & Sales by Category (Donut Chart) */}
+      {/* Row 3: Top OKU Artisans Leaderboard & Collaborator Donut Chart */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left (Span 8): Top OKU Artisan Leaderboard */}
+        {/* Left (Span 8): Real OKU Artisan Leaderboard */}
         <div className="lg:col-span-8 rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
               <div className="flex items-center gap-2">
                 <Award className="h-4 w-4 text-[#F37021]" />
                 <h3 className="text-sm font-black text-neutral-900 tracking-tight">
-                  {t('admin.topArtisansLeaderboard', 'Product Sales & OKU Artisan Output')}
+                  {t('admin.topArtisansLeaderboard', 'Top OKU Artisans & Craft Output')}
                 </h3>
               </div>
               <div className="flex items-center gap-2">
@@ -532,107 +707,92 @@ export default function AdminOverviewDashboard() {
               </div>
             </div>
 
-            {/* 3 Top Category Columns (matching Revello screenshot layout) */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              {/* Column 1: Top Artisan Leader */}
-              <div className="rounded-xl bg-neutral-50/70 p-4 border border-neutral-200/80 space-y-3">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-lg font-black text-neutral-900 font-mono tabular-nums">
-                    624,071 <span className="text-xs font-semibold text-neutral-400 font-sans">Units</span>
-                  </span>
-                  <span className="text-xs font-bold text-teal-600">↗ 56%</span>
-                </div>
-                <div className="space-y-2 pt-2 border-t border-neutral-200/60 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">Floral Bookmark Card</span>
-                    <span className="font-mono font-bold text-teal-700">213+</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">Batik Greeting Card</span>
-                    <span className="font-mono font-bold text-teal-700">182+</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">Songket Note Card</span>
-                    <span className="font-mono font-bold text-teal-700">142+</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">Heritage Postcard</span>
-                    <span className="font-mono font-bold text-teal-700">138+</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">Resort Welcome Card</span>
-                    <span className="font-mono font-bold text-teal-700">85+</span>
-                  </div>
-                </div>
+            {/* Top Artisans Cards strictly from Supabase */}
+            {artisanLeaderboard.length === 0 ? (
+              <div className="py-12 text-center text-neutral-400 text-xs">
+                <p>{t('admin.noDataYet', 'No activity recorded in Supabase yet.')}</p>
               </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                {artisanLeaderboard.slice(0, 3).map((artisan, rankIdx) => {
+                  const rankIcons = ['🥇', '🥈', '🥉'];
+                  return (
+                    <div 
+                      key={artisan.profile.id}
+                      className="rounded-xl bg-neutral-50/70 p-4 border border-neutral-200/80 space-y-3 flex flex-col justify-between"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base">{rankIcons[rankIdx]}</span>
+                            <UserAvatar
+                              src={artisan.profile.avatar_url}
+                              name={artisan.profile.full_name}
+                              size={28}
+                              className="rounded-lg"
+                            />
+                            <div className="min-w-0">
+                              <p className="font-extrabold text-neutral-900 text-xs truncate">
+                                {artisan.profile.full_name}
+                              </p>
+                              {artisan.profile.chinese_name && (
+                                <p className="text-[10px] text-neutral-500 truncate">
+                                  {artisan.profile.chinese_name}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <span className="text-xs font-mono font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                            #{rankIdx + 1}
+                          </span>
+                        </div>
 
-              {/* Column 2: Workshop Cohort 2 */}
-              <div className="rounded-xl bg-neutral-50/70 p-4 border border-neutral-200/80 space-y-3">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-lg font-black text-neutral-900 font-mono tabular-nums">
-                    832,210 <span className="text-xs font-semibold text-neutral-400 font-sans">Units</span>
-                  </span>
-                  <span className="text-xs font-bold text-rose-500">↘ 12%</span>
-                </div>
-                <div className="space-y-2 pt-2 border-t border-neutral-200/60 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">Sunway Resort Special</span>
-                    <span className="font-mono font-bold text-teal-700">420+</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">Shangri-La Eco Card</span>
-                    <span className="font-mono font-bold text-teal-700">262+</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">Pavilion Hotel Suite</span>
-                    <span className="font-mono font-bold text-teal-700">236+</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">Festive Raya Card</span>
-                    <span className="font-mono font-bold text-teal-700">92+</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">CNY Auspicious Envelope</span>
-                    <span className="font-mono font-bold text-teal-700">21+</span>
-                  </div>
-                </div>
-              </div>
+                        <div className="pt-2 border-t border-neutral-200/60 flex items-baseline justify-between">
+                          <div>
+                            <span className="text-lg font-black text-neutral-900 font-mono tabular-nums">
+                              {artisan.yearUnits.toLocaleString()}
+                            </span>
+                            <span className="text-xs font-semibold text-neutral-400 ml-1">
+                              {t('admin.unitsLabel', 'Units')}
+                            </span>
+                          </div>
+                          <span className="text-xs font-bold text-[#F37021] font-mono">
+                            RM {artisan.yearEarned.toFixed(2)}
+                          </span>
+                        </div>
 
-              {/* Column 3: Workshop Cohort 3 */}
-              <div className="rounded-xl bg-neutral-50/70 p-4 border border-neutral-200/80 space-y-3">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-lg font-black text-neutral-900 font-mono tabular-nums">
-                    454,410 <span className="text-xs font-semibold text-neutral-400 font-sans">Units</span>
-                  </span>
-                  <span className="text-xs font-bold text-teal-600">↗ 56%</span>
-                </div>
-                <div className="space-y-2 pt-2 border-t border-neutral-200/60 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">Pressed Flower Series</span>
-                    <span className="font-mono font-bold text-teal-700">200+</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">Recycled Pulp Texture</span>
-                    <span className="font-mono font-bold text-teal-700">120+</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">Coffee Husk Card</span>
-                    <span className="font-mono font-bold text-teal-700">97+</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">Seed Paper Sprout Card</span>
-                    <span className="font-mono font-bold text-teal-700">95+</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-neutral-700 truncate">Custom Corporate Card</span>
-                    <span className="font-mono font-bold text-teal-700">20+</span>
-                  </div>
-                </div>
+                        {/* Recent Card logs by this artisan */}
+                        <div className="space-y-1.5 pt-1 text-[11px]">
+                          <div className="flex items-center justify-between text-neutral-500">
+                            <span>{t('admin.todayEarnings', 'Today')}</span>
+                            <span className="font-mono font-bold text-neutral-700">
+                              {artisan.todayUnits} {t('admin.unitsLabel', 'Units')} (RM {artisan.todayEarned.toFixed(2)})
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-neutral-500">
+                            <span>{t('admin.monthEarnings', 'This Month')}</span>
+                            <span className="font-mono font-bold text-neutral-700">
+                              {artisan.monthUnits} {t('admin.unitsLabel', 'Units')} (RM {artisan.monthEarned.toFixed(2)})
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setSelectedArtisanForDrawer(artisan)}
+                        className="w-full mt-2 py-1.5 px-3 rounded-lg bg-white hover:bg-[#F37021] hover:text-white border border-neutral-200 text-neutral-700 text-xs font-bold transition-colors text-center"
+                      >
+                        {t('admin.viewWorkshop', 'View Workshop Ledger')}
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+            )}
           </div>
 
-          {/* Active Artisan Quick-Links */}
+          {/* Active Artisan Quick-Pills */}
           {artisanLeaderboard.length > 0 && (
             <div className="mt-5 pt-3 border-t border-neutral-100 flex flex-wrap items-center gap-2">
               <span className="text-xs font-bold text-neutral-400">{t('admin.activeArtisans', 'Active Artisans')}:</span>
@@ -657,30 +817,31 @@ export default function AdminOverviewDashboard() {
           )}
         </div>
 
-        {/* Right (Span 4): Collaborator & Category Donut Chart (Revello Sales by Category) */}
+        {/* Right (Span 4): Real Collaborator & Card Series Output (Donut Chart) */}
         <div className="lg:col-span-4 rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
               <div className="flex items-center gap-2">
                 <span className="h-2 w-2 rounded-full bg-teal-600" />
                 <h3 className="text-sm font-black text-neutral-900 tracking-tight">
-                  {t('admin.salesByCategory', 'Sales by Category')}
+                  {t('admin.salesByCategory', 'Collaborator & Card Series Output')}
                 </h3>
               </div>
               <div className="flex items-center gap-1">
-                <button type="button" className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100">
-                  <Filter className="h-3.5 w-3.5" />
-                </button>
-                <button type="button" className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100">
+                <Link
+                  href="/admin/artisans"
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100"
+                  title={t('admin.viewWorkshop', 'View Workshop')}
+                >
                   <MoreHorizontal className="h-3.5 w-3.5" />
-                </button>
+                </Link>
               </div>
             </div>
 
-            {/* Circular Donut Visual with Center Total */}
+            {/* Circular Donut Visual with Center Total from Supabase */}
             <div className="relative my-6 flex items-center justify-center">
               <svg className="w-44 h-44 -rotate-90" viewBox="0 0 100 100">
-                {/* Background Ring */}
+                {/* Background Base Ring */}
                 <circle
                   cx="50"
                   cy="50"
@@ -689,97 +850,81 @@ export default function AdminOverviewDashboard() {
                   stroke="#F1F5F9"
                   strokeWidth="10"
                 />
-                {/* Segment 1: Electronics / Resorts (36%) */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="38"
-                  fill="transparent"
-                  stroke="#0D9488"
-                  strokeWidth="10"
-                  strokeDasharray="86 238"
-                  strokeDashoffset="0"
-                  strokeLinecap="round"
-                />
-                {/* Segment 2: Fashion / Boutiques (24%) */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="38"
-                  fill="transparent"
-                  stroke="#F37021"
-                  strokeWidth="10"
-                  strokeDasharray="57 238"
-                  strokeDashoffset="-96"
-                  strokeLinecap="round"
-                />
-                {/* Segment 3: Home & Living / Corporate (15%) */}
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="38"
-                  fill="transparent"
-                  stroke="#0284C7"
-                  strokeWidth="10"
-                  strokeDasharray="36 238"
-                  strokeDashoffset="-163"
-                  strokeLinecap="round"
-                />
+
+                {/* Dynamic Segments strictly from Supabase */}
+                {collaboratorDonutData.segments.map((seg) => (
+                  <circle
+                    key={seg.id}
+                    cx="50"
+                    cy="50"
+                    r="38"
+                    fill="transparent"
+                    stroke={seg.color}
+                    strokeWidth="10"
+                    strokeDasharray={seg.strokeDash}
+                    strokeDashoffset={seg.strokeOffset}
+                    strokeLinecap="round"
+                  />
+                ))}
               </svg>
 
               {/* Center Total Figure */}
               <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
                 <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-                  Total
+                  {t('admin.totalUnits', 'Total Output')}
                 </span>
                 <span className="text-xl font-black text-neutral-900 font-mono tracking-tight tabular-nums">
-                  $102,000
+                  {collaboratorDonutData.totalUnits.toLocaleString()}
+                </span>
+                <span className="text-[10px] text-neutral-400 font-medium">
+                  {t('admin.unitsLabel', 'Units')}
                 </span>
               </div>
             </div>
 
-            {/* Legend Breakdown */}
+            {/* Real Collaborator Breakdown Legend from Supabase */}
             <div className="space-y-3 pt-2">
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-1 rounded-full bg-teal-700" />
-                  <span className="font-semibold text-neutral-700">Sunway Resort & Hotels</span>
+              {collaboratorDonutData.segments.length === 0 ? (
+                <div className="py-4 text-center text-neutral-400 text-xs">
+                  {t('admin.noDataYet', 'No activity recorded in Supabase yet.')}
                 </div>
-                <span className="font-mono font-bold text-neutral-900">54,071 <span className="text-[10px] text-neutral-400 font-sans">sales</span></span>
-              </div>
-
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-1 rounded-full bg-[#F37021]" />
-                  <span className="font-semibold text-neutral-700">Shangri-La Series</span>
-                </div>
-                <span className="font-mono font-bold text-neutral-900">32,210 <span className="text-[10px] text-neutral-400 font-sans">sales</span></span>
-              </div>
-
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="h-2.5 w-1 rounded-full bg-sky-600" />
-                  <span className="font-semibold text-neutral-700">Pavilion Hotel Suite</span>
-                </div>
-                <span className="font-mono font-bold text-neutral-900">24,410 <span className="text-[10px] text-neutral-400 font-sans">sales</span></span>
-              </div>
+              ) : (
+                collaboratorDonutData.segments.map((seg) => (
+                  <div key={seg.id} className="flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2 min-w-0 max-w-[65%]">
+                      <span 
+                        className="h-2.5 w-1 rounded-full shrink-0" 
+                        style={{ backgroundColor: seg.color }}
+                      />
+                      <span className="font-semibold text-neutral-700 truncate" title={seg.name}>
+                        {seg.name}
+                      </span>
+                    </div>
+                    <span className="font-mono font-bold text-neutral-900 shrink-0">
+                      {seg.units.toLocaleString()} <span className="text-[10px] text-neutral-400 font-sans">({seg.percentage}%)</span>
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
           <div className="mt-5 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs">
-            <span className="text-neutral-400 font-medium">3 {t('admin.partnerAccounts', 'Partner Accounts')}</span>
+            <span className="text-neutral-400 font-medium">
+              {products.length} {t('admin.partnerAccounts', 'Collaborators / Products')}
+            </span>
             <Link
-              href="/admin/donations"
+              href="/admin/artisans"
               className="text-teal-700 font-bold hover:underline flex items-center gap-1"
             >
-              <span>{t('admin.auditLedger', 'Audit Ledger')}</span>
+              <span>{t('admin.tabArtisans', 'Workshop Ledger')}</span>
               <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
         </div>
       </div>
 
-      {/* Expandable Artisan Drawer if clicked */}
+      {/* Expandable Artisan Drawer */}
       {selectedArtisanForDrawer && (
         <ArtisanDrawer
           artisan={selectedArtisanForDrawer}

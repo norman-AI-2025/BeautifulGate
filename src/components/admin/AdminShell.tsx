@@ -118,7 +118,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           isActive: pathname === '/admin',
         },
         {
-          name: t('admin.tabDispatch', 'Transit Dispatch'),
+          name: t('adminNav.dispatch', 'Transit Dispatch'),
           href: '/admin/dispatch',
           icon: Car,
           badge: pendingBookingsCount > 0 ? pendingBookingsCount : null,
@@ -126,7 +126,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           isActive: pathname === '/admin/dispatch',
         },
         {
-          name: t('admin.tabArtisans', 'Workshop & Artisans'),
+          name: t('adminNav.workshop', 'Workshop & Artisans'),
           href: '/admin/artisans',
           icon: Sparkles,
           badge: null,
@@ -138,7 +138,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       group: t('adminNav.finance', 'FINANCE & AUDIT'),
       items: [
         {
-          name: t('admin.tabDonations', 'Donation Tracker'),
+          name: t('adminNav.donations', 'Donation Tracker'),
           href: '/admin/donations',
           icon: HeartHandshake,
           badge: pendingDonationsCount > 0 ? pendingDonationsCount : null,
@@ -151,7 +151,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       group: t('adminNav.management', 'MANAGEMENT'),
       items: [
         {
-          name: t('admin.tabDirectory', 'User Directory & Fleet'),
+          name: t('adminNav.directory', 'User Directory & Fleet'),
           href: '/admin/directory',
           icon: Users,
           badge: pendingLeavesCount > 0 ? pendingLeavesCount : null,
@@ -199,10 +199,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               {!isCollapsed && (
                 <div className="min-w-0">
                   <h1 className="text-sm font-black tracking-tight text-neutral-900 truncate leading-none">
-                    Beautiful Gate
+                    {t('brand.name', 'Beautiful Gate')}
                   </h1>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#F37021] block mt-1">
-                    Control Tower
+                    {t('adminNav.controlTower', 'Control Tower')}
                   </span>
                 </div>
               )}
@@ -213,8 +213,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               type="button"
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="hidden md:flex h-7 w-7 items-center justify-center rounded-lg text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
-              aria-label={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
-              title={isCollapsed ? 'Expand Sidebar' : 'Collapse Sidebar'}
+              aria-label={isCollapsed ? t('adminNav.expandSidebar', 'Expand Sidebar') : t('adminNav.collapseSidebar', 'Collapse Sidebar')}
+              title={isCollapsed ? t('adminNav.expandSidebar', 'Expand Sidebar') : t('adminNav.collapseSidebar', 'Collapse Sidebar')}
             >
               {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </button>
@@ -380,7 +380,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={t('admin.searchGlobalPlaceholder', 'Search passengers, IC, hospital, artisans...')}
+                placeholder={t('adminNav.searchPlaceholder', 'Search passengers, IC, hospital, artisans...')}
                 className="w-full pl-9 pr-14 py-2 rounded-xl border border-neutral-200/90 bg-neutral-50/70 focus:bg-white text-neutral-900 text-xs placeholder:text-neutral-400 focus:outline-none focus:ring-1 focus:ring-[#F37021] focus:border-[#F37021] transition-all"
               />
               <span className="hidden sm:inline-flex absolute right-2.5 top-1/2 -translate-y-1/2 items-center px-1.5 py-0.5 rounded border border-neutral-200 bg-white text-[10px] font-mono text-neutral-400 pointer-events-none">
@@ -404,7 +404,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                       : 'text-neutral-500 hover:text-neutral-900'
                   }`}
                 >
-                  {r === 'today' ? t('common.today', 'Today') : r === 'week' ? t('admin.week', 'Week') : r === 'month' ? t('admin.month', 'Month') : t('admin.year', 'Year')}
+                  {r === 'today' ? t('common.today', 'Today') : r === 'week' ? t('common.week', 'Week') : r === 'month' ? t('common.month', 'Month') : t('common.year', 'Year')}
                 </button>
               ))}
             </div>
@@ -448,10 +448,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <div className="absolute right-0 mt-2 w-72 rounded-2xl border border-neutral-200 bg-white p-3 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-150 space-y-2">
                   <div className="flex items-center justify-between pb-2 border-b border-neutral-100">
                     <span className="text-xs font-bold text-neutral-900">
-                      {t('admin.notifications', 'Action Items')}
+                      {t('adminNav.actionItems', 'Action Items')}
                     </span>
                     <span className="text-[10px] font-mono text-[#F37021] font-bold">
-                      {totalAlertsCount} {t('admin.pending', 'Pending')}
+                      {totalAlertsCount} {t('adminNav.pendingAlert', 'Pending')}
                     </span>
                   </div>
 
@@ -467,7 +467,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                           <p className="font-bold text-neutral-900">
                             {pendingBookingsCount} {t('admin.pendingBookingsAlert', 'Pending Transit Bookings')}
                           </p>
-                          <p className="text-[10px] text-neutral-500">Requires supervisor assignment</p>
+                          <p className="text-[10px] text-neutral-500">
+                            {t('admin.requiresAssignment', 'Requires supervisor assignment')}
+                          </p>
                         </div>
                       </Link>
                     )}
@@ -483,7 +485,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                           <p className="font-bold text-neutral-900">
                             {pendingLeavesCount} {t('admin.pendingLeavesAlert', 'Driver Leave Requests')}
                           </p>
-                          <p className="text-[10px] text-neutral-500">Requires review before scheduling</p>
+                          <p className="text-[10px] text-neutral-500">
+                            {t('admin.requiresReview', 'Requires review before scheduling')}
+                          </p>
                         </div>
                       </Link>
                     )}
@@ -499,7 +503,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                           <p className="font-bold text-neutral-900">
                             {pendingDonationsCount} {t('admin.pendingDonationsAlert', 'Driver Cash Collections')}
                           </p>
-                          <p className="text-[10px] text-neutral-500">Awaiting supervisor receipt confirmation</p>
+                          <p className="text-[10px] text-neutral-500">
+                            {t('admin.awaitingConfirmation', 'Awaiting supervisor receipt confirmation')}
+                          </p>
                         </div>
                       </Link>
                     )}
@@ -507,7 +513,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                     {totalAlertsCount === 0 && (
                       <div className="py-6 text-center text-neutral-400 text-xs">
                         <CheckCircle2 className="h-5 w-5 mx-auto text-emerald-500 mb-1" />
-                        <span>All operational items are up to date!</span>
+                        <span>{t('adminNav.allCaughtUp', 'All operational items are up to date!')}</span>
                       </div>
                     )}
                   </div>
