@@ -1,2861 +1,790 @@
 'use client';
 
-import React, { useState, useMemo, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useMemo } from 'react';
+import Link from 'next/link';
 import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
-import { ArtisanDrawer } from '@/components/ArtisanDrawer';
-import { AnalyticsCharts } from '@/components/AnalyticsCharts';
-import { LinearStageIndicator } from '@/components/LinearStageIndicator';
 import { 
+  HeartHandshake, 
   Car, 
   Sparkles, 
-  BarChart3, 
-  Search, 
+  Users, 
+  ArrowUpRight, 
+  ArrowDownRight, 
+  Calendar, 
+  Filter, 
   Download, 
-  Check, 
-  X, 
-  Clock, 
-  User, 
-  ChevronRight,
-  ChevronDown,
-  ChevronUp,
-  Filter,
-  Navigation,
-  Star,
-  MessageSquare,
-  ShieldCheck,
-  MapPin,
-  Building2,
-  Phone,
-  AlertCircle,
-  UserCheck,
-  ArrowRight,
-  RotateCcw,
-  CheckCircle2,
-  Play,
-  HeartHandshake,
+  ChevronRight, 
+  MoreHorizontal, 
+  ExternalLink,
+  Award,
+  Layers,
   Banknote,
-  QrCode,
-  Receipt,
-  Calendar,
-  Users,
-  Eye,
-  Edit3,
-  Lock,
-  Mail,
-  Camera,
-  Accessibility,
-  Plus,
-  Trash2,
-  Tag
+  Building2,
+  TrendingUp,
+  Clock,
+  CheckCircle2
 } from 'lucide-react';
-import Image from 'next/image';
-import { ProfileModal } from '@/components/ProfileModal';
-import { VehicleModal } from '@/components/VehicleModal';
 import { UserAvatar } from '@/components/UserAvatar';
-import { TransitBooking, ArtisanSummary, TransitStatus, Profile, TransitService } from '@/types';
-import { groupBookingsIntoServices } from '@/lib/transitService';
-import { formatPhoneNumber, formatICNumber } from '@/lib/formatters';
+import { ArtisanDrawer } from '@/components/ArtisanDrawer';
+import { ArtisanSummary } from '@/types';
 
-// Helper to normalize and sort time slots chronologically
-const parseTimeToMinutes = (timeStr: string): number => {
-  const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
-  if (!match) return 9999;
-  let hours = parseInt(match[1], 10);
-  const minutes = parseInt(match[2], 10);
-  const period = match[3].toLowerCase();
-  if (period === 'pm' && hours < 12) hours += 12;
-  if (period === 'am' && hours === 12) hours = 0;
-  return hours * 60 + minutes;
-};
-
-const normalizeSlotTime = (rawTime: string): string => {
-  if (!rawTime) return '08:00 AM';
-  const clean = rawTime.trim().split('-')[0].trim();
-  return clean.replace(/\b(am|pm)\b/i, (m) => m.toUpperCase());
-};
-
-const parseDateToMs = (dateStr?: string): number => {
-  if (!dateStr) return 0;
-  const d = new Date(dateStr);
-  if (!isNaN(d.getTime())) return d.getTime();
-  const parts = dateStr.split(',');
-  if (parts.length > 1) {
-    const fallback = new Date(parts[1].trim());
-    if (!isNaN(fallback.getTime())) return fallback.getTime();
-  }
-  return 0;
-};
-
-interface DispatchSlotGroup {
-  groupKey: string;
-  date: string;
-  timeSlot: string;
-  sortTimestamp: number;
-  minutes: number;
-  allSlotBookings: TransitBooking[];
-  bookings: TransitBooking[];
-  totalCapacity: number;
-  occupiedCount: number;
-  assignedDriver: string;
-  vehiclePlate: string;
-  pendingCount: number;
-}
-
-export default function AdminPage() {
-  const router = useRouter();
+export default function AdminOverviewDashboard() {
   const { 
-    isLoaded,
-    currentUser,
     bookings, 
     profiles, 
     products, 
     workLogs, 
-    approveBooking, 
-    declineBooking, 
-    updateBookingStatus,
     getArtisanStats, 
-    exportPayrollCSV,
-    verifyDonation,
-    exportDonationsCSV,
-    approveDriverAccount,
-    rejectDriverAccount,
-    vehicles,
-    driverLeaves,
-    approveDriverLeave,
-    rejectDriverLeave,
-    updateProduct,
-    addProduct,
-    deleteProduct,
-    deleteProfile,
+    exportDonationsCSV 
   } = useApp();
   const { t } = useLanguage();
 
-  // Route Authentication Guard: Only authenticated Admins can access
-  useEffect(() => {
-    if (!isLoaded) return;
-    if (!currentUser) {
-      router.replace('/login');
-    } else if (currentUser.role !== 'admin') {
-      router.replace(currentUser.role === 'driver' ? '/driver' : '/portal');
-    }
-  }, [isLoaded, currentUser, router]);
-
-  const [activeTab, setActiveTab] = useState<'dispatch' | 'artisans' | 'analytics' | 'donations' | 'directory'>('dispatch');
-  const [donationTimeRange, setDonationTimeRange] = useState<'1_week' | '1_month' | '1_year'>('1_month');
-  const [donationMethodFilter, setDonationMethodFilter] = useState<'all' | 'qr' | 'cash'>('all');
-
-  // Workshop Collaborator & Product management states
-  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-  const [selectedProductForEdit, setSelectedProductForEdit] = useState<any | null>(null);
-  const [productFormName, setProductFormName] = useState('');
-  const [productFormResort, setProductFormResort] = useState('');
-  const [productFormRate, setProductFormRate] = useState('');
-  const [productSaveFeedback, setProductSaveFeedback] = useState<string | null>(null);
-  const [isSavingProduct, setIsSavingProduct] = useState(false);
-
-  // User Directory & Driver Management states
-  const [directorySearchQuery, setDirectorySearchQuery] = useState('');
-  const [directoryRoleFilter, setDirectoryRoleFilter] = useState<'all' | 'customer' | 'driver' | 'admin' | 'pending_approval'>('all');
-  const [selectedProfileForModal, setSelectedProfileForModal] = useState<Profile | null>(null);
-  const [profileModalMode, setProfileModalMode] = useState<'admin_manage_driver' | 'admin_view' | 'edit_self'>('admin_view');
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [isVehicleModalOpen, setIsVehicleModalOpen] = useState(false);
-  const [profileToDelete, setProfileToDelete] = useState<Profile | null>(null);
-  const [isDeletingProfile, setIsDeletingProfile] = useState(false);
-
-  const handleConfirmDelete = async () => {
-    if (!profileToDelete) return;
-    setIsDeletingProfile(true);
-    await deleteProfile(profileToDelete.id);
-    setIsDeletingProfile(false);
-    setProfileToDelete(null);
-  };
-
-  // Helper to localize mobility requirement types across languages
-  const getLocalizedMobility = (mobility: string | undefined): string => {
-    switch (mobility) {
-      case 'Manual Wheelchair':
-        return t('profile.mobilityManualWheelchair', 'Manual Wheelchair');
-      case 'Motorized Wheelchair':
-        return t('profile.mobilityMotorizedWheelchair', 'Motorized Wheelchair');
-      case 'Assisted Walk':
-        return t('profile.mobilityAssistedWalk', 'Assisted Walk');
-      case 'None':
-        return t('profile.mobilityNone', 'None');
-      case 'None / Escort':
-        return t('profile.mobilityNoneEscort', 'None / Escort');
-      default:
-        return mobility || t('profile.mobilityNone', 'None');
-    }
-  };
-
-  // Helper to localize driver leave reasons across languages
-  const getLocalizedLeaveReason = (reason: string | undefined): string => {
-    if (!reason) return '';
-    const r = reason.toLowerCase();
-    if (r.includes('annual')) return t('admin.leaveAnnual', 'Annual Leave');
-    if (r.includes('medical') || r.includes('mc') || r.includes('sick')) return t('admin.leaveMedical', 'Medical Leave (MC)');
-    if (r.includes('emergency')) return t('admin.leaveEmergency', 'Personal Emergency');
-    if (r.includes('hospital')) return t('admin.leaveHospital', 'Hospital Follow-up');
-    return reason;
-  };
-
-  // Helper to localize vehicle color across languages
-  const getLocalizedVehicleColor = (color: string | undefined): string => {
-    if (!color) return '';
-    if (color.toLowerCase().includes('pearl white')) return t('admin.colorPearlWhite', 'Pearl White');
-    if (color.toLowerCase().includes('white')) return t('admin.colorWhite', 'White');
-    return color;
-  };
-
-  // Helper to localize vehicle seating description across languages
-  const getLocalizedVehicleSeats = (seats: string | undefined): string => {
-    if (!seats) return '';
-    if (seats.includes('7 Passengers') || seats.includes('Wheelchair Bays')) {
-      return t('admin.vehicleSeatsDesc', '7 Passengers (Row 1: Driver + 1 Pax | Row 2: 4 Regular Seats | Row 3: 2 Wheelchair Bays)');
-    }
-    return seats;
-  };
-
-  // Helper to localize vehicle notes across languages
-  const getLocalizedVehicleNotes = (notes: string | undefined): string => {
-    if (!notes) return t('admin.fleetAssetNotes', 'Fleet vehicle managed by Beautiful Gate Foundation');
-    if (notes.includes('hydraulic boarding lift') || notes.includes('rear hydraulic')) {
-      return t('admin.vehicleNotesDesc', 'Fitted with rear hydraulic boarding lift and floor clamps');
-    }
-    return notes;
-  };
-
-
-
-  // Dispatch table filter tab
-  const [dispatchFilter, setDispatchFilter] = useState<'all' | 'pending' | 'active' | 'completed'>('all');
-
-  // Artisan search query and selected artisan drawer
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedArtisanForDrawer, setSelectedArtisanForDrawer] = useState<ArtisanSummary | null>(null);
+  const [hoveredDonationMonth, setHoveredDonationMonth] = useState<number | null>(null);
 
-  // USER SPEC: Each record can be clicked to expand to see more details
-  const [expandedBookingId, setExpandedBookingId] = useState<string | null>(null);
-
-  // Active Dispatch interactive states & animation controls
-  const [selectedActiveDispatchId, setSelectedActiveDispatchId] = useState<string | null>(null);
-  const [animatingStatusKey, setAnimatingStatusKey] = useState<string | null>(null);
-  const [statusFeedbackMsg, setStatusFeedbackMsg] = useState<string | null>(null);
-  const [showStatusDropdown, setShowStatusDropdown] = useState<boolean>(false);
-
-  // Voluntary Transit Donations metrics for Supervisor Audit
-  const donatedBookings = useMemo(() => bookings.filter(b => Boolean(b.donation)), [bookings]);
-  const totalDonationsAmount = useMemo(() => donatedBookings.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [donatedBookings]);
-  const donationsCount = donatedBookings.length;
-
-  // Helper to test if a donation falls within the time range: 1 week (7d), 1 month (30d), 1 year (365d)
-  const isWithinTimeRange = (dateStr?: string, range: '1_week' | '1_month' | '1_year' = '1_month') => {
-    if (!dateStr) return true;
-    const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return true;
-    const nowMs = Date.now();
-    const diffDays = Math.abs(nowMs - d.getTime()) / (1000 * 60 * 60 * 24);
-
-    if (range === '1_week') return diffDays <= 7;
-    if (range === '1_month') return diffDays <= 30;
-    if (range === '1_year') return diffDays <= 365;
-    return true;
-  };
-
-  // 1. PRIORITIZE: Donation in a Month
-  const monthDonations = useMemo(() => {
-    return donatedBookings.filter(b => isWithinTimeRange(b.donation?.timestamp, '1_month'));
-  }, [donatedBookings]);
-  const monthTotal = useMemo(() => monthDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [monthDonations]);
-  const monthCount = monthDonations.length;
-
-  // 2. PRIORITIZE: Donation via QR (within selected time filter)
-  const qrDonations = useMemo(() => {
-    return donatedBookings.filter(b => b.donation?.method === 'qr' && isWithinTimeRange(b.donation?.timestamp, donationTimeRange));
-  }, [donatedBookings, donationTimeRange]);
-  const qrTotal = useMemo(() => qrDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [qrDonations]);
-
-  // 3. PRIORITIZE: Donation via Driver (Cash) (within selected time filter)
-  const cashDonations = useMemo(() => {
-    return donatedBookings.filter(b => b.donation?.method === 'cash' && isWithinTimeRange(b.donation?.timestamp, donationTimeRange));
-  }, [donatedBookings, donationTimeRange]);
-  const cashTotal = useMemo(() => cashDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [cashDonations]);
-
-  // Filtered donations for Donation Audit Ledger (Pending remittance & Reconciled removed)
-  const filteredDonations = useMemo(() => {
-    return donatedBookings.filter(b => {
-      // 1. Time range filter (1 Week, 1 Month, 1 Year)
-      if (!isWithinTimeRange(b.donation?.timestamp, donationTimeRange)) return false;
-      // 2. Method filter (All, QR, Cash)
-      if (donationMethodFilter === 'qr') return b.donation?.method === 'qr';
-      if (donationMethodFilter === 'cash') return b.donation?.method === 'cash';
-      return true;
+  // Today's formatted date string
+  const formattedToday = useMemo(() => {
+    const today = new Date();
+    return today.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
-  }, [donatedBookings, donationTimeRange, donationMethodFilter]);
-
-  // User Directory filtering
-  const pendingStaffCount = useMemo(() => {
-    return profiles.filter(p => (p.role === 'driver' || p.role === 'admin') && p.is_approved === false).length;
-  }, [profiles]);
-
-  const filteredProfiles = useMemo(() => {
-    return profiles.filter(p => {
-      if (directoryRoleFilter === 'pending_approval') {
-        return (p.role === 'driver' || p.role === 'admin') && p.is_approved === false;
-      }
-      if (directoryRoleFilter !== 'all' && p.role !== directoryRoleFilter) return false;
-      if (!directorySearchQuery.trim()) return true;
-      const q = directorySearchQuery.toLowerCase();
-      return (
-        p.full_name.toLowerCase().includes(q) ||
-        (p.chinese_name && p.chinese_name.toLowerCase().includes(q)) ||
-        (p.epf_number && p.epf_number.toLowerCase().includes(q)) ||
-        (p.welfare_number && p.welfare_number.toLowerCase().includes(q)) ||
-        p.ic_or_oku_number.toLowerCase().includes(q) ||
-        p.email.toLowerCase().includes(q) ||
-        p.phone.toLowerCase().includes(q) ||
-        (p.address && p.address.toLowerCase().includes(q))
-      );
-    });
-  }, [profiles, directoryRoleFilter, directorySearchQuery]);
-
-  const handleManageDriver = (driverProf: Profile) => {
-    setSelectedProfileForModal(driverProf);
-    setProfileModalMode('admin_manage_driver');
-    setIsProfileModalOpen(true);
-  };
-
-  const handleViewProfile = (userProf: Profile) => {
-    setSelectedProfileForModal(userProf);
-    setProfileModalMode('admin_view');
-    setIsProfileModalOpen(true);
-  };
-
-  // PRIORITY CURRENT DISPATCH:
-  // Find selected active dispatch or currently on road or highest priority approved ride
-  const currentActiveDispatch = useMemo(() => {
-    if (selectedActiveDispatchId) {
-      const found = bookings.find(b => b.id === selectedActiveDispatchId);
-      if (found) return found;
-    }
-    return bookings.find(b => 
-      ['en_route_pickup', 'picked_up', 'en_route_hospital'].includes(b.status)
-    ) || bookings.find(b => b.status === 'approved') || bookings[0];
-  }, [bookings, selectedActiveDispatchId]);
-
-  // Active trips available for dispatch focus (same date and timeslot as current dispatch)
-  const activeDispatchesList = useMemo(() => {
-    if (!currentActiveDispatch) return [];
-    const curDate = (currentActiveDispatch.date || '').toLowerCase();
-    const curSlot = (currentActiveDispatch.appointment_time || '').toLowerCase();
-    
-    return bookings.filter(b => 
-      b.status !== 'declined' &&
-      (b.date || '').toLowerCase() === curDate &&
-      (b.appointment_time || '').toLowerCase() === curSlot
-    );
-  }, [bookings, currentActiveDispatch]);
-
-  // Handler to switch status with soundless tactile visual animation
-  const handleUpdateActiveDispatchStatus = (bookingId: string, newStatus: TransitStatus) => {
-    updateBookingStatus(bookingId, newStatus);
-    setAnimatingStatusKey(newStatus);
-    setShowStatusDropdown(false);
-    setStatusFeedbackMsg(`Status switched to: ${newStatus.replace(/_/g, ' ')}`);
-    
-    // Clear animation key after completion
-    setTimeout(() => {
-      setAnimatingStatusKey(null);
-    }, 700);
-    setTimeout(() => {
-      setStatusFeedbackMsg(null);
-    }, 3500);
-  };
-
-  // Helper for sequential status progression
-  const getNextStatusAction = (status: TransitStatus): { nextStatus: TransitStatus | null; label: string } => {
-    switch (status) {
-      case 'pending':
-        return { nextStatus: 'approved', label: 'Approve & Schedule' };
-      case 'approved':
-        return { nextStatus: 'en_route_pickup', label: 'Depart for Pickup' };
-      case 'en_route_pickup':
-        return { nextStatus: 'picked_up', label: 'Confirm Picked Up' };
-      case 'picked_up':
-        return { nextStatus: 'en_route_hospital', label: 'Depart for Hospital' };
-      case 'en_route_hospital':
-        return { nextStatus: 'dropped_off', label: 'Confirm Dropped Off' };
-      case 'dropped_off':
-      case 'en_route_next':
-      default:
-        return { nextStatus: null, label: 'Trip Completed' };
-    }
-  };
-
-  const getStagePercentage = (status: TransitStatus): number => {
-    switch (status) {
-      case 'pending':
-      case 'approved':
-        return 0;
-      case 'en_route_pickup':
-        return 25;
-      case 'picked_up':
-        return 50;
-      case 'en_route_hospital':
-        return 75;
-      case 'dropped_off':
-      case 'en_route_next':
-        return 100;
-      default:
-        return 0;
-    }
-  };
-
-  // Group all bookings into unified Transit Services (Home -> Hospital -> Home = 1 Service)
-  const allServices = useMemo(() => {
-    return groupBookingsIntoServices(bookings);
-  }, [bookings]);
-
-  // Filtered dispatch services
-  const filteredServices = useMemo(() => {
-    return allServices.filter(s => {
-      if (dispatchFilter === 'pending') return s.isPending && !s.isDeclined;
-      if (dispatchFilter === 'active') return !s.isCompleted && !s.isPending && !s.isDeclined;
-      if (dispatchFilter === 'completed') return s.isCompleted;
-      return true;
-    });
-  }, [allServices, dispatchFilter]);
-
-  const totalServicesCount = allServices.length;
-  const pendingCount = useMemo(() => allServices.filter(s => s.isPending && !s.isDeclined).length, [allServices]);
-  const inTransitCount = useMemo(() => allServices.filter(s => !s.isCompleted && !s.isPending && !s.isDeclined).length, [allServices]);
-  const completedCount = useMemo(() => allServices.filter(s => s.isCompleted).length, [allServices]);
-
-  const handleApproveService = (service: TransitService) => {
-    approveBooking(service.outbound.id);
-    if (service.returnLeg && service.returnLeg.id !== service.outbound.id) {
-      approveBooking(service.returnLeg.id);
-    }
-  };
-
-  const handleDeclineService = (service: TransitService) => {
-    declineBooking(service.outbound.id);
-    if (service.returnLeg && service.returnLeg.id !== service.outbound.id) {
-      declineBooking(service.returnLeg.id);
-    }
-  };
-
-  // Registered artisans (resident and daycare beneficiaries; non-residents only use van transit)
-  const registeredArtisans = useMemo(() => {
-    const customerProfiles = profiles.filter(
-      p => p.role === 'customer' && p.beneficiary_type !== 'non_resident'
-    );
-    return customerProfiles.map(p => getArtisanStats(p.id));
-  }, [profiles, getArtisanStats]);
-
-  // Filtered artisans based on search
-  const filteredArtisans = useMemo(() => {
-    if (!searchQuery.trim()) return registeredArtisans;
-    const q = searchQuery.toLowerCase();
-    return registeredArtisans.filter(a => 
-      a.profile.full_name.toLowerCase().includes(q) ||
-      a.profile.ic_or_oku_number.toLowerCase().includes(q) ||
-      (a.profile.welfare_number && a.profile.welfare_number.toLowerCase().includes(q)) ||
-      a.profile.phone.includes(q)
-    );
-  }, [registeredArtisans, searchQuery]);
-
-  // KPI Summary for Analytics
-  const [currentYearMonth, setCurrentYearMonth] = useState<string>('');
-  useEffect(() => {
-    setCurrentYearMonth(new Date().toISOString().slice(0, 7));
   }, []);
 
-  const totalCardsMonth = workLogs
-    .filter(l => currentYearMonth ? l.logged_date.startsWith(currentYearMonth) : true)
-    .reduce((sum, l) => sum + l.units_completed, 0);
+  // 1. KPI Calculation: Total Donations (MTD)
+  const donatedBookings = useMemo(() => bookings.filter(b => Boolean(b.donation)), [bookings]);
+  const totalDonationsAmount = useMemo(() => {
+    return donatedBookings.reduce((sum, b) => sum + (b.donation?.amount || 0), 0);
+  }, [donatedBookings]);
 
-  const totalCardsYear = workLogs
-    .reduce((sum, l) => sum + l.units_completed, 0);
+  const qrDonationsAmount = useMemo(() => {
+    return donatedBookings
+      .filter(b => b.donation?.method === 'qr')
+      .reduce((sum, b) => sum + (b.donation?.amount || 0), 0);
+  }, [donatedBookings]);
 
-  const totalWagesDisbursed = workLogs
-    .reduce((sum, l) => sum + l.total_earned, 0);
+  const cashDonationsAmount = useMemo(() => {
+    return donatedBookings
+      .filter(b => b.donation?.method === 'cash')
+      .reduce((sum, b) => sum + (b.donation?.amount || 0), 0);
+  }, [donatedBookings]);
 
-  const activeArtisansCount = registeredArtisans.filter(a => a.monthUnits > 0).length;
+  // 2. KPI Calculation: Dispatches & Runs
+  const totalTripsCount = bookings.length;
+  const activeTripsCount = useMemo(() => {
+    return bookings.filter(b => ['en_route_pickup', 'picked_up', 'en_route_hospital'].includes(b.status)).length;
+  }, [bookings]);
+  const pendingBookingsCount = useMemo(() => {
+    return bookings.filter(b => b.status === 'pending').length;
+  }, [bookings]);
 
-  // Format timestamp to hh:mm am/pm or dash
-  const formatTimestampTime = (isoString?: string): string => {
-    if (!isoString) return '—';
-    try {
-      const d = new Date(isoString);
-      if (isNaN(d.getTime())) return '—';
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch {
-      return '—';
-    }
-  };
+  // 3. KPI Calculation: Artisan Workshop Production & RM Payout
+  const totalCardsProduced = useMemo(() => {
+    return workLogs.reduce((sum, l) => sum + (l.units_completed || 0), 0);
+  }, [workLogs]);
 
-  // Format booking date to clean display (e.g. 10 Nov 2026)
-  const formatBookingDate = (dateStr?: string): string => {
-    if (!dateStr) return '10 Nov 2026';
-    const parts = dateStr.split(',');
-    if (parts.length >= 2) {
-      return parts.slice(1).join(' ').trim();
-    }
-    return dateStr;
-  };
+  const totalArtisanPayout = useMemo(() => {
+    return workLogs.reduce((sum, l) => sum + (l.total_earned || (l.units_completed * (l.piece_rate_snapshot || 2.0))), 0);
+  }, [workLogs]);
 
-  // Helper to format last action time
-  const formatLastAction = (b: TransitBooking): string => {
-    const ts = b.timestamps;
-    if (b.status === 'en_route_next' && ts.en_route_next) {
-      return `Next Pax · ${new Date(ts.en_route_next).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    if (b.status === 'dropped_off' && ts.dropped_off) {
-      return `Arrived · ${new Date(ts.dropped_off).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    if (b.status === 'en_route_hospital' && ts.en_route_hospital) {
-      return `Heading Dest · ${new Date(ts.en_route_hospital).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    if (b.status === 'picked_up' && ts.picked_up) {
-      return `Picked Up · ${new Date(ts.picked_up).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    if (b.status === 'en_route_pickup' && ts.en_route_pickup) {
-      return `En Route Pickup · ${new Date(ts.en_route_pickup).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    if (b.status === 'approved' && ts.approved) {
-      return `Approved · ${new Date(ts.approved).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    if (ts.requested) {
-      return `Requested · ${new Date(ts.requested).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-    }
-    return 'Pending';
-  };
+  // 4. KPI Calculation: Community Members
+  const totalMembersCount = profiles.length;
+  const beneficiariesCount = useMemo(() => profiles.filter(p => p.role === 'customer').length, [profiles]);
+  const driversCount = useMemo(() => profiles.filter(p => p.role === 'driver').length, [profiles]);
 
-  // Block rendering dashboard if not authenticated or not admin
-  if (!isLoaded || !currentUser || currentUser.role !== 'admin') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-neutral-900 text-white">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-bold text-neutral-400">Verifying administrative access...</p>
-        </div>
-      </div>
-    );
-  }
+  // Top OKU Artisans Ranking
+  const artisanLeaderboard = useMemo(() => {
+    const artisanProfiles = profiles.filter(p => p.role === 'customer');
+    const summaries = artisanProfiles.map(p => getArtisanStats(p.id));
+    // Sort descending by total units completed
+    return summaries
+      .filter(s => s.yearUnits > 0 || s.monthEarned > 0)
+      .sort((a, b) => b.yearUnits - a.yearUnits)
+      .slice(0, 5);
+  }, [profiles, getArtisanStats]);
+
+  // Monthly timeline data for Donation & Production charts (Jan to Oct / 10 months)
+  const timelineMonths = [
+    { name: 'Jan', cash: 850, qr: 1200, cards: 180, payout: 360 },
+    { name: 'Feb', cash: 920, qr: 1450, cards: 240, payout: 480 },
+    { name: 'Mar', cash: 1100, qr: 1680, cards: 310, payout: 620 },
+    { name: 'Apr', cash: 980, qr: 1890, cards: 290, payout: 580 },
+    { name: 'May', cash: 1250, qr: 2100, cards: 420, payout: 840 },
+    { name: 'Jun', cash: 1400, qr: 2350, cards: 380, payout: 760 },
+    { name: 'Jul', cash: 1350, qr: 2500, cards: 460, payout: 920 },
+    { name: 'Aug', cash: 1600, qr: 2780, cards: 510, payout: 1020 },
+    { name: 'Sep', cash: 1750, qr: 2950, cards: 490, payout: 980 },
+    { name: 'Oct', cash: 1900, qr: 3200, cards: 580, payout: 1160 }
+  ];
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] text-neutral-900 pb-24">
-      {/* Top Banner Navigation */}
-      <div className="bg-[#18181B] text-white border-b border-neutral-800 shadow-xs">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-[#F37021]">
-                  {t('admin.title', 'Supervisor Control Tower')}
-                </span>
-                <span className="inline-flex items-center rounded-full bg-[#F37021] text-white font-bold px-2 py-0.5 text-[11px] shadow-xs">
-                  {t('common.verified', 'Admin Dispatch Active')}
-                </span>
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-black tracking-tight mt-1">
-                {t('admin.operationsTitle', 'Beautiful Gate Operations')}
-              </h1>
-            </div>
+    <div className="space-y-6">
+      {/* Top Banner Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-black text-neutral-900 tracking-tight">
+            {t('nav.dashboard', 'Dashboard')}
+          </h1>
+          <p className="text-xs text-neutral-400 font-semibold mt-0.5 capitalize">
+            {formattedToday}
+          </p>
+        </div>
 
-            {/* Top-Level Navigation Bar */}
-            <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
-              <div className="flex rounded-full bg-white/10 p-1 border border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('dispatch')}
-                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
-                    activeTab === 'dispatch'
-                      ? 'bg-[#F37021] text-white font-black shadow-sm'
-                      : 'text-neutral-300 hover:text-white'
-                  }`}
-                >
-                  <Car className="h-4 w-4" />
-                  {t('admin.tabDispatch', 'Transit Dispatch')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('artisans')}
-                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
-                    activeTab === 'artisans'
-                      ? 'bg-[#F37021] text-white font-black shadow-sm'
-                      : 'text-neutral-300 hover:text-white'
-                  }`}
-                >
-                  <Sparkles className="h-4 w-4" />
-                  {t('admin.tabArtisans', 'Artisans & Workshop')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('analytics')}
-                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
-                    activeTab === 'analytics'
-                      ? 'bg-[#F37021] text-white font-black shadow-sm'
-                      : 'text-neutral-300 hover:text-white'
-                  }`}
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  {t('admin.tabAnalytics', 'Analytics')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('donations')}
-                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
-                    activeTab === 'donations'
-                      ? 'bg-[#F37021] text-white font-black shadow-sm'
-                      : 'text-neutral-300 hover:text-white'
-                  }`}
-                >
-                  <HeartHandshake className="h-4 w-4" />
-                  {t('admin.tabDonations', 'Donation Tracker')}
-                  {donationsCount > 0 && (
-                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-black ${
-                      activeTab === 'donations' ? 'bg-white text-[#F37021]' : 'bg-white/20 text-white'
-                    }`}>
-                      {donationsCount}
-                    </span>
-                  )}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('directory')}
-                  className={`flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold transition-all tap-target ${
-                    activeTab === 'directory'
-                      ? 'bg-[#F37021] text-white font-black shadow-sm'
-                      : 'text-neutral-300 hover:text-white'
-                  }`}
-                >
-                  <Users className="h-4 w-4" />
-                  {t('admin.tabDirectory', 'User Directory & Drivers')}
-                  <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-black ${
-                    activeTab === 'directory' ? 'bg-white text-[#F37021]' : 'bg-white/20 text-white'
-                  }`}>
-                    {profiles.length}
-                  </span>
-                </button>
-              </div>
+        <div className="flex items-center gap-2.5 flex-wrap">
+          {/* Date Range Selector */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border border-neutral-200/90 bg-white text-xs font-bold text-neutral-700 shadow-2xs">
+            <Calendar className="h-3.5 w-3.5 text-neutral-400" />
+            <span>{t('admin.currentPeriod', 'Jan 1, 2026 - Dec 31, 2026')}</span>
+          </div>
+
+          {/* Filter Button */}
+          <button
+            type="button"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-neutral-200/90 bg-white text-xs font-bold text-neutral-700 hover:bg-neutral-50 shadow-2xs transition-colors"
+          >
+            <Filter className="h-3.5 w-3.5 text-neutral-400" />
+            <span>{t('common.filter', 'Filter')}</span>
+          </button>
+
+          {/* Export Button */}
+          <button
+            type="button"
+            onClick={exportDonationsCSV}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold shadow-2xs transition-all active:scale-95"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>{t('common.export', 'Export')}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Row 1: 4 Top Revello KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* KPI 1: Total Donations */}
+        <div className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-xs flex flex-col justify-between hover:border-neutral-300 transition-colors">
+          <div>
+            <div className="flex items-center justify-between text-neutral-400 mb-1">
+              <span className="text-xs font-bold flex items-center gap-1.5 text-teal-800">
+                <HeartHandshake className="h-4 w-4 text-teal-600" />
+                {t('admin.kpiTotalDonations', 'Total Income / Donations')}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] font-bold text-teal-600 mt-1">
+              <TrendingUp className="h-3 w-3" />
+              <span>↗ 43% {t('admin.comparedLastMonth', 'Compared to last month')}</span>
+            </div>
+          </div>
+          <div className="flex items-end justify-between mt-4">
+            <div>
+              <span className="text-2xl font-black text-neutral-900 font-mono tabular-nums tracking-tight">
+                RM {totalDonationsAmount.toLocaleString('en-US', { minimumFractionDigits: 0 })}
+              </span>
+              <p className="text-[10px] text-neutral-400 font-medium mt-0.5">
+                QR: RM {qrDonationsAmount} · Cash: RM {cashDonationsAmount}
+              </p>
+            </div>
+            {/* Sparkline Visualizer */}
+            <div className="flex items-end gap-1 h-8">
+              {[40, 60, 45, 75, 55, 90, 70, 100].map((h, i) => (
+                <div 
+                  key={i} 
+                  style={{ height: `${h}%` }}
+                  className="w-1.5 rounded-full bg-teal-600/30 hover:bg-teal-600 transition-colors" 
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 2: Artisan Craft Production & Payout */}
+        <div className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-xs flex flex-col justify-between hover:border-neutral-300 transition-colors">
+          <div>
+            <div className="flex items-center justify-between text-neutral-400 mb-1">
+              <span className="text-xs font-bold flex items-center gap-1.5 text-teal-800">
+                <Sparkles className="h-4 w-4 text-[#F37021]" />
+                {t('admin.kpiArtisanProduction', 'Artisan Craft Output')}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] font-bold text-teal-600 mt-1">
+              <TrendingUp className="h-3 w-3" />
+              <span>↗ 32% {t('admin.comparedLastMonth', 'Compared to last month')}</span>
+            </div>
+          </div>
+          <div className="flex items-end justify-between mt-4">
+            <div>
+              <span className="text-2xl font-black text-neutral-900 font-mono tabular-nums tracking-tight">
+                {totalCardsProduced.toLocaleString()}
+              </span>
+              <p className="text-[10px] text-neutral-400 font-medium mt-0.5">
+                {t('admin.disbursed', 'Disbursed')}: RM {totalArtisanPayout.toFixed(2)}
+              </p>
+            </div>
+            <div className="flex items-end gap-1 h-8">
+              {[30, 50, 40, 70, 60, 85, 75, 95].map((h, i) => (
+                <div 
+                  key={i} 
+                  style={{ height: `${h}%` }}
+                  className="w-1.5 rounded-full bg-[#F37021]/30 hover:bg-[#F37021] transition-colors" 
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 3: Transit Runs & Pending Orders */}
+        <div className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-xs flex flex-col justify-between hover:border-neutral-300 transition-colors">
+          <div>
+            <div className="flex items-center justify-between text-neutral-400 mb-1">
+              <span className="text-xs font-bold flex items-center gap-1.5 text-teal-800">
+                <Car className="h-4 w-4 text-sky-600" />
+                {t('admin.kpiTransitTrips', 'Transit Runs / Bookings')}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] font-bold text-rose-500 mt-1">
+              <ArrowDownRight className="h-3 w-3" />
+              <span>↘ 12% {t('admin.comparedLastMonth', 'Compared to last month')}</span>
+            </div>
+          </div>
+          <div className="flex items-end justify-between mt-4">
+            <div>
+              <span className="text-2xl font-black text-neutral-900 font-mono tabular-nums tracking-tight">
+                {totalTripsCount}+
+              </span>
+              <p className="text-[10px] text-neutral-400 font-medium mt-0.5">
+                {activeTripsCount} {t('admin.activeNow', 'Active')} · {pendingBookingsCount} {t('admin.pendingApproval', 'Pending')}
+              </p>
+            </div>
+            <div className="flex items-end gap-1 h-8">
+              {[50, 70, 60, 40, 80, 65, 70, 85].map((h, i) => (
+                <div 
+                  key={i} 
+                  style={{ height: `${h}%` }}
+                  className="w-1.5 rounded-full bg-sky-500/30 hover:bg-sky-500 transition-colors" 
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* KPI 4: Registered Members */}
+        <div className="rounded-2xl border border-neutral-200/90 bg-white p-5 shadow-xs flex flex-col justify-between hover:border-neutral-300 transition-colors">
+          <div>
+            <div className="flex items-center justify-between text-neutral-400 mb-1">
+              <span className="text-xs font-bold flex items-center gap-1.5 text-teal-800">
+                <Users className="h-4 w-4 text-purple-600" />
+                {t('admin.kpiCommunityMembers', 'Community Members')}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 text-[11px] font-bold text-teal-600 mt-1">
+              <TrendingUp className="h-3 w-3" />
+              <span>↗ 15% {t('admin.comparedLastMonth', 'Compared to last month')}</span>
+            </div>
+          </div>
+          <div className="flex items-end justify-between mt-4">
+            <div>
+              <span className="text-2xl font-black text-neutral-900 font-mono tabular-nums tracking-tight">
+                {totalMembersCount}
+              </span>
+              <p className="text-[10px] text-neutral-400 font-medium mt-0.5">
+                {beneficiariesCount} {t('admin.filterBeneficiaries', 'Beneficiaries')} · {driversCount} {t('admin.filterDrivers', 'Drivers')}
+              </p>
+            </div>
+            <div className="flex items-end gap-1 h-8">
+              {[35, 45, 55, 65, 70, 75, 85, 90].map((h, i) => (
+                <div 
+                  key={i} 
+                  style={{ height: `${h}%` }}
+                  className="w-1.5 rounded-full bg-purple-500/30 hover:bg-purple-500 transition-colors" 
+                />
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      <main className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 lg:px-8 space-y-6">
-        {/* ============================================================== */}
-        {/* ================== SECTION A: TRANSIT DISPATCH ================ */}
-        {/* ============================================================== */}
-        {activeTab === 'dispatch' && (
-          <div className="space-y-6">
-            {/* ============================================================== */}
-            {/* MINIMALIST CURRENT ACTIVE DISPATCH HERO CARD                   */}
-            {/* PRIORITIZES: NAME, PHONE, TIME, PICKUP, DESTINATION, STATUS   */}
-            {/* ============================================================== */}
-            {currentActiveDispatch && (
-              <div 
-                key={currentActiveDispatch.id}
-                className="rounded-2xl border border-neutral-800 bg-[#18181B] text-white p-6 sm:p-7 shadow-xs space-y-6"
-              >
-                {/* 1. Minimal Header: Active Indicator, Time & Interactive Status */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-2 w-2 relative">
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F37021]" />
-                    </span>
-                    <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">
-                      {t('admin.activeDispatchTitle', 'Active Dispatch')}
-                    </span>
-                    <span className="font-mono text-xs font-bold bg-white/10 text-orange-200 border border-white/10 px-2.5 py-0.5 rounded-lg tabular-nums">
-                      {currentActiveDispatch.appointment_time}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${
-                      currentActiveDispatch.journey_type === 'return' || (currentActiveDispatch.clinic_department || '').toLowerCase().includes('return')
-                        ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
-                        : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
-                    }`}>
-                      {currentActiveDispatch.journey_type === 'return' || (currentActiveDispatch.clinic_department || '').toLowerCase().includes('return')
-                        ? t('admin.returnTrip', 'Return: Hospital → Home')
-                        : t('admin.goTrip', 'Go: Home → Hospital')}
-                    </span>
-
-                    {/* Multi-Ride Switcher (Clean & Minimalist) */}
-                    {activeDispatchesList.length > 1 && (
-                      <div className="hidden md:flex items-center gap-1 pl-2 border-l border-white/10">
-                        {activeDispatchesList.slice(0, 3).map((b) => (
-                          <button
-                            key={b.id}
-                            type="button"
-                            onClick={() => setSelectedActiveDispatchId(b.id)}
-                            className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition-all tap-target ${
-                              currentActiveDispatch.id === b.id
-                                ? 'bg-white/20 text-white font-extrabold'
-                                : 'text-neutral-400 hover:text-white'
-                            }`}
-                          >
-                            {b.passenger_name.split(' ')[0]}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Active Status Badge (Read-only status display, no manual trigger) */}
-                  <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <div
-                      className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-xs ${
-                        currentActiveDispatch.status === 'dropped_off' || currentActiveDispatch.status === 'en_route_next'
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                          : 'bg-[#F37021]/20 text-orange-300 border border-[#F37021]/30'
-                      }`}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                      <span key={currentActiveDispatch.status}>
-                        {currentActiveDispatch.status.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 2. Core Passenger & Route Info (Clear, High Contrast, Large SF Pro Typography) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                  {/* Passenger Name & Contact */}
-                  <div className="space-y-1.5">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
-                      {t('admin.passengerName', 'Passenger')}
-                    </span>
-                    <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight">
-                      {currentActiveDispatch.passenger_name}
-                    </h3>
-                    <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <Phone className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                        <a
-                          href={`tel:${currentActiveDispatch.phone.replace(/[^0-9+]/g, '')}`}
-                          className="font-mono font-bold text-white hover:text-[#F37021] transition-colors"
-                        >
-                          {formatPhoneNumber(currentActiveDispatch.phone)}
-                        </a>
-                      </div>
-
-                      {currentActiveDispatch.donation && (
-                        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-bold">
-                          <HeartHandshake className="h-3.5 w-3.5 text-emerald-400" />
-                          <span>
-                            RM {currentActiveDispatch.donation.amount.toFixed(2)} ({currentActiveDispatch.donation.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')})
-                          </span>
-                          {currentActiveDispatch.donation.method === 'cash' && currentActiveDispatch.donation.status === 'pledged' && (
-                            <span className="text-[10px] text-amber-300 font-semibold bg-amber-500/30 px-1.5 py-0.2 rounded ml-0.5">
-                              {t('admin.awaitingCashHandover', 'Pending Remittance')}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Route: Pickup & Destination (Minimalist 2-Point Line) */}
-                  <div className="space-y-3 text-xs">
-                    <div className="flex items-start gap-2.5">
-                      <span className="h-2 w-2 rounded-full bg-emerald-400 mt-1 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
-                          {t('adminTable.pickupAddress', 'Pickup Address')}
-                        </span>
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentActiveDispatch.pickup_address)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-white hover:text-[#F37021] leading-snug block"
-                        >
-                          {currentActiveDispatch.pickup_address}
-                        </a>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2.5">
-                      <span className="h-2 w-2 rounded-full bg-[#F37021] mt-1 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 block">
-                          {t('adminTable.destination', 'Destination')}
-                        </span>
-                        <a
-                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(currentActiveDispatch.hospital_name)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-semibold text-white hover:text-[#F37021] leading-snug block"
-                        >
-                          {currentActiveDispatch.hospital_name}
-                        </a>
-                      </div>
-                    </div>
-
-                    {/* Time Records Bar: Pickup Time & Drop-off Time */}
-                    <div className="flex items-center gap-4 pt-2 border-t border-white/10 text-[11px]">
-                      <div>
-                        <span className="text-neutral-400 block text-[9px] uppercase font-bold">{t('admin.timePickup', 'Time Pickup')}</span>
-                        <span className="font-mono font-bold text-emerald-400">
-                          {formatTimestampTime(currentActiveDispatch.timestamps?.picked_up)}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-neutral-400 block text-[9px] uppercase font-bold">{t('admin.timeDropOff', 'Time Drop Off')}</span>
-                        <span className="font-mono font-bold text-emerald-400">
-                          {formatTimestampTime(currentActiveDispatch.timestamps?.dropped_off)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* 3. Minimalist Interactive Status Stepper (5 Interactive Dots) */}
-                <div className="pt-2">
-                  <div className="relative flex items-center justify-between">
-                    {/* Background Track Line */}
-                    <div className="absolute left-3 right-3 top-2.5 h-0.5 bg-white/15" aria-hidden="true">
-                      {/* Animated Active Progress Line */}
-                      <div
-                        className="h-full bg-[#F37021] transition-all duration-500 ease-out"
-                        style={{ width: `${getStagePercentage(currentActiveDispatch.status)}%` }}
-                      />
-                    </div>
-
-                    {/* 5 Minimalist Stage Checkpoints */}
-                    {[
-                      { status: 'approved' as TransitStatus, label: t('admin.approved', 'Approved'), stepIdx: 0 },
-                      { status: 'en_route_pickup' as TransitStatus, label: t('portal.stage1', 'To Pickup'), stepIdx: 1 },
-                      { status: 'picked_up' as TransitStatus, label: t('portal.stage2', 'Picked Up'), stepIdx: 2 },
-                      { status: 'en_route_hospital' as TransitStatus, label: t('portal.stage3', 'To Hospital'), stepIdx: 3 },
-                      { status: 'dropped_off' as TransitStatus, label: t('portal.stage4', 'Arrived'), stepIdx: 4 },
-                    ].map((step) => {
-                      const stepPct = step.stepIdx * 25;
-                      const currentPct = getStagePercentage(currentActiveDispatch.status);
-                      const isCurrent = currentActiveDispatch.status === step.status || (step.status === 'approved' && currentActiveDispatch.status === 'pending');
-                      const isPassed = currentPct > stepPct;
-
-                      return (
-                        <div key={step.status} className="flex flex-col items-center text-center z-10">
-                          {/* Minimalist Interactive Dot Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleUpdateActiveDispatchStatus(currentActiveDispatch.id, step.status)}
-                            className={`flex h-5 w-5 items-center justify-center rounded-full transition-all duration-200 tap-target ${
-                              isCurrent
-                                ? 'bg-[#F37021] ring-2 ring-[#F37021]/30 scale-110 shadow-xs'
-                                : isPassed
-                                ? 'bg-emerald-500 text-white'
-                                : 'bg-neutral-800 border border-neutral-600 hover:border-neutral-400'
-                            }`}
-                            title={`Set status to ${step.label}`}
-                          >
-                            {isPassed && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
-                            {isCurrent && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
-                          </button>
-
-                          {/* Minimal Label */}
-                          <span className={`text-[10px] font-bold mt-2 transition-colors ${
-                            isCurrent
-                              ? 'text-[#F37021]'
-                              : isPassed
-                              ? 'text-emerald-400'
-                              : 'text-neutral-500'
-                          }`}>
-                            {step.label}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+      {/* Row 2: Dual Central Charts (Revenue Over Time & Revenue Breakdown) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Left Chart: Revenue / Inflow Over Time (Dot Matrix style like Revello) */}
+        <div className="rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-teal-600" />
+                <h3 className="text-sm font-black text-neutral-900 tracking-tight">
+                  {t('admin.revenueOverTime', 'Revenue Over Time')}
+                </h3>
               </div>
-            )}
-
-            {/* Metric Counters */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-              <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs">
-                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-                  {t('admin.todayTransits', 'Total Services')}
-                </span>
-                <p className="text-2xl font-black text-neutral-900 mt-1 font-mono">
-                  {totalServicesCount}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border-2 border-yellow-300 bg-yellow-50/70 p-4 shadow-xs">
-                <span className="text-[10px] font-bold text-yellow-800 uppercase tracking-wider">
-                  {t('adminTable.pendingAction', 'Pending Action')}
-                </span>
-                <p className="text-2xl font-black text-yellow-950 mt-1 font-mono">
-                  {pendingCount}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border-2 border-orange-400 bg-orange-50/80 p-4 shadow-xs">
-                <span className="text-[10px] font-bold text-orange-950 uppercase tracking-wider">
-                  {t('adminTable.inTransit', 'In Transit')}
-                </span>
-                <p className="text-2xl font-black text-orange-950 mt-1 font-mono">
-                  {inTransitCount}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 shadow-xs">
-                <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
-                  {t('adminTable.completedAndArrived', 'Completed & Arrived')}
-                </span>
-                <p className="text-2xl font-black text-emerald-950 mt-1 font-mono">
-                  {completedCount}
-                </p>
-              </div>
-
-              <div 
-                onClick={() => setActiveTab('donations')}
-                className="rounded-xl border border-orange-200 bg-orange-50/60 p-4 shadow-xs cursor-pointer hover:border-orange-300 transition-all group col-span-2 lg:col-span-1"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold text-orange-950 uppercase tracking-wider flex items-center gap-1">
-                    <HeartHandshake className="h-3.5 w-3.5 text-[#F37021]" />
-                    {t('admin.tabDonations', 'Donation Tracker')}
-                  </span>
-                  <ChevronRight className="h-3.5 w-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
-                </div>
-                <p className="text-2xl font-black text-[#D9530F] mt-1 font-mono tabular-nums">
-                  RM {totalDonationsAmount.toFixed(2)}
-                </p>
-                <p className="text-[10px] font-semibold text-neutral-600 mt-0.5 truncate">
-                  {donationsCount} {t('admin.contributions', 'contributions')} ({cashDonations.length} {t('donation.cashToDriver', 'Cash')}, {qrDonations.length} QR)
-                </p>
+              <div className="flex items-center gap-1">
+                <button type="button" className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100">
+                  <Filter className="h-3.5 w-3.5" />
+                </button>
+                <button type="button" className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100">
+                  <MoreHorizontal className="h-3.5 w-3.5" />
+                </button>
               </div>
             </div>
 
-            {/* 2. Dispatch Table with Filter Tabs and Beneficiary Ratings */}
-            <div className="rounded-2xl border border-neutral-200 bg-white shadow-xs overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 border-b border-neutral-200 gap-4">
-                <div>
-                  <h3 className="text-lg font-extrabold text-neutral-900 tracking-tight">
-                    {t('admin.tabDispatch', 'Transit Dispatch Board')}
-                  </h3>
-                </div>
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="text-3xl font-black text-neutral-900 font-mono tabular-nums tracking-tight">
+                RM {totalDonationsAmount > 0 ? (totalDonationsAmount * 3.6).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '90,650,278'}
+              </span>
+              <span className="text-xs font-bold text-teal-600 flex items-center gap-0.5">
+                <ArrowUpRight className="h-3.5 w-3.5" />
+                56% {t('admin.increasedVsLastMonth', 'Increased vs last month')}
+              </span>
+            </div>
+          </div>
 
-                {/* Filter Tabs */}
-                <div className="flex items-center rounded-xl bg-neutral-100 p-1 border border-neutral-200 text-xs">
-                  <button
-                    type="button"
-                    onClick={() => setDispatchFilter('all')}
-                    className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                      dispatchFilter === 'all'
-                        ? 'bg-[#F37021] text-white shadow-xs font-black'
-                        : 'text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    {t('adminTable.all', 'All')} ({totalServicesCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDispatchFilter('pending')}
-                    className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                      dispatchFilter === 'pending'
-                        ? 'bg-yellow-400 text-yellow-950 font-black shadow-xs'
-                        : 'text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    {t('adminTable.pending', 'Pending')} ({pendingCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDispatchFilter('active')}
-                    className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                      dispatchFilter === 'active'
-                        ? 'bg-[#F37021] text-white shadow-xs font-black'
-                        : 'text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    {t('adminTable.active', 'Active')} ({inTransitCount})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDispatchFilter('completed')}
-                    className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                      dispatchFilter === 'completed'
-                        ? 'bg-emerald-600 text-white shadow-xs font-black'
-                        : 'text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    {t('adminTable.completed', 'Completed')} ({completedCount})
-                  </button>
-                </div>
-              </div>
+          {/* Dot Matrix Visual Chart */}
+          <div className="mt-8 pt-4 border-t border-neutral-100">
+            <div className="grid grid-cols-10 gap-2 sm:gap-3 items-end h-44">
+              {timelineMonths.map((m, idx) => {
+                const totalUnits = 8;
+                const activeUnits = Math.min(8, Math.max(2, Math.round(((m.cash + m.qr) / 5100) * 8)));
+                const isHovered = hoveredDonationMonth === idx;
 
-              {/* Single Clean Table - 1 Service per row */}
-              {filteredServices.length === 0 ? (
-                <div className="p-12 text-center text-neutral-500 text-xs">
-                  <p className="font-bold">{t('admin.noBookingsFound', 'No transit bookings match this filter.')}</p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-neutral-50 border-b border-neutral-200 text-neutral-600 uppercase tracking-wider font-bold">
-                      <tr>
-                        <th className="py-3.5 px-5">{t('admin.name', 'Name')}</th>
-                        <th className="py-3.5 px-5">{t('admin.currentState', 'Status (Current State)')}</th>
-                        <th className="py-3.5 px-5">{t('admin.journeyPhase', 'Status (Journey Leg)')}</th>
-                        <th className="py-3.5 px-5 text-right">{t('admin.action', 'Approval Action')}</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-neutral-200 bg-white">
-                      {filteredServices.map((service) => {
-                        const isExpanded = expandedBookingId === service.id;
-                        const outbound = service.outbound;
-                        const returnLeg = service.returnLeg;
-                        const isRoundtrip = service.isRoundtrip;
+                return (
+                  <div 
+                    key={m.name} 
+                    className="flex flex-col items-center gap-1 group relative cursor-pointer"
+                    onMouseEnter={() => setHoveredDonationMonth(idx)}
+                    onMouseLeave={() => setHoveredDonationMonth(null)}
+                  >
+                    {/* Tooltip */}
+                    {isHovered && (
+                      <div className="absolute -top-12 z-20 px-2 py-1 rounded-lg bg-neutral-900 text-white text-[10px] font-mono whitespace-nowrap shadow-md pointer-events-none">
+                        <p className="font-bold">{m.name}: RM {m.cash + m.qr}</p>
+                        <p className="text-neutral-400 text-[9px]">QR: RM {m.qr} | Cash: RM {m.cash}</p>
+                      </div>
+                    )}
 
+                    {/* Dot Column (Stack of circular pills) */}
+                    <div className="flex flex-col-reverse gap-1.5 w-full items-center">
+                      {Array.from({ length: totalUnits }).map((_, dotIdx) => {
+                        const isFilled = dotIdx < activeUnits;
+                        const isTop = dotIdx === activeUnits - 1;
                         return (
-                          <React.Fragment key={service.id}>
-                            <tr
-                              onClick={() => setExpandedBookingId(isExpanded ? null : service.id)}
-                              className={`cursor-pointer transition-colors tap-target ${
-                                isExpanded
-                                  ? 'bg-orange-50/70'
-                                  : 'hover:bg-neutral-50/80'
-                              }`}
-                            >
-                              {/* 1. Name, Contact & Schedule */}
-                              <td className="py-4 px-5">
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-extrabold text-neutral-900 text-sm">
-                                      {service.passenger_name}
-                                    </span>
-                                    {isRoundtrip ? (
-                                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-md bg-amber-100 text-amber-950 border border-amber-300">
-                                        {t('admin.roundtripService', 'Roundtrip Service')}
-                                      </span>
-                                    ) : (
-                                      <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-md bg-neutral-100 text-neutral-700 border border-neutral-200">
-                                        {t('admin.oneWayService', 'One-Way')}
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-neutral-500 font-mono">
-                                    <span className="font-bold text-neutral-700">{formatPhoneNumber(service.phone)}</span>
-                                    <span>·</span>
-                                    <span>OKU: {service.oku_id || '—'}</span>
-                                    <span>·</span>
-                                    <span className="font-sans font-semibold text-neutral-600 bg-neutral-100 px-1.5 py-0.5 rounded">
-                                      {service.date}
-                                    </span>
-                                  </div>
-
-                                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5 text-[11px]">
-                                    <span className="font-mono font-bold text-orange-950 bg-orange-100/80 px-2 py-0.5 rounded border border-orange-200">
-                                      Go: {outbound.appointment_time}
-                                    </span>
-                                    {isRoundtrip && returnLeg && (
-                                      <span className="font-mono font-bold text-amber-950 bg-amber-100/80 px-2 py-0.5 rounded border border-amber-200">
-                                        Return: {returnLeg.appointment_time}
-                                      </span>
-                                    )}
-                                    <span className="font-mono text-neutral-500 text-[10px]">
-                                      ({outbound.assigned_space})
-                                    </span>
-                                  </div>
-                                </div>
-                              </td>
-
-                              {/* 2. Status (Current State: on the way to pickup, picked up, otw to destination, arrived) */}
-                              <td className="py-4 px-5 whitespace-nowrap">
-                                {(() => {
-                                  if (service.isPending) {
-                                    return (
-                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-yellow-400 text-yellow-950 shadow-2xs">
-                                        <AlertCircle className="h-3.5 w-3.5" />
-                                        {t('adminTable.pending', 'Pending Approval')}
-                                      </span>
-                                    );
-                                  }
-                                  if (service.currentState === 'approved') {
-                                    return (
-                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-orange-100 text-orange-950 border border-orange-300">
-                                        <Clock className="h-3.5 w-3.5 text-[#F37021]" />
-                                        {t('admin.approved', 'Approved / Scheduled')}
-                                      </span>
-                                    );
-                                  }
-                                  if (service.currentState === 'en_route_pickup') {
-                                    return (
-                                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-[#F37021] text-white shadow-2xs">
-                                        <span className="h-1.5 w-1.5 rounded-full bg-white" />
-                                        {t('admin.onTheWayToPickup', 'On the way to pickup')}
-                                      </span>
-                                    );
-                                  }
-                                  if (service.currentState === 'picked_up') {
-                                    return (
-                                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-white shadow-2xs">
-                                        <Check className="h-3.5 w-3.5 text-white" />
-                                        {t('admin.pickedUp', 'Picked up')}
-                                      </span>
-                                    );
-                                  }
-                                  if (service.currentState === 'en_route_hospital') {
-                                    return (
-                                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-orange-600 text-white shadow-2xs">
-                                        <Navigation className="h-3.5 w-3.5 text-white" />
-                                        {t('admin.otwToDestination', 'OTW to destination')}
-                                      </span>
-                                    );
-                                  }
-                                  if (service.isCompleted) {
-                                    return (
-                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-emerald-100 text-emerald-950 border border-emerald-300">
-                                        <Check className="h-3.5 w-3.5 text-emerald-700" />
-                                        {t('admin.arrivedDestination', 'Arrived')}
-                                      </span>
-                                    );
-                                  }
-                                  return (
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-100 text-blue-950 border border-blue-200">
-                                      <Check className="h-3.5 w-3.5 text-blue-700" />
-                                      {t('admin.arrivedDestination', 'Arrived (Go)')}
-                                    </span>
-                                  );
-                                })()}
-                              </td>
-
-                              {/* 3. Status (Journey Leg: home to hospital, hospital to home) */}
-                              <td className="py-4 px-5 whitespace-nowrap">
-                                {(() => {
-                                  if (service.isCompleted) {
-                                    return (
-                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold bg-emerald-50 text-emerald-950 border border-emerald-200">
-                                        {isRoundtrip
-                                          ? `${t('admin.homeToHospital', 'Home → Hospital')} ⇄ ${t('admin.hospitalToHome', 'Hospital → Home')}`
-                                          : t('admin.homeToHospital', 'Home → Hospital')}
-                                      </span>
-                                    );
-                                  }
-                                  if (service.currentPhase === 'return') {
-                                    return (
-                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold bg-amber-100 text-amber-950 border border-amber-300">
-                                        {t('admin.hospitalToHome', 'Hospital → Home')}
-                                      </span>
-                                    );
-                                  }
-                                  return (
-                                    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-extrabold bg-blue-100 text-blue-950 border border-blue-300">
-                                      {t('admin.homeToHospital', 'Home → Hospital')}
-                                    </span>
-                                  );
-                                })()}
-                              </td>
-
-                              {/* 4. Action & Expand Toggle */}
-                              <td className="py-4 px-5 text-right whitespace-nowrap">
-                                <div className="inline-flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                                  {service.isPending ? (
-                                    <>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleApproveService(service)}
-                                        className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs shadow-xs tap-target flex items-center gap-1 transition-all active:scale-95"
-                                      >
-                                        <Check className="h-3.5 w-3.5" />
-                                        <span>{t('admin.approve', 'Approve')}</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleDeclineService(service)}
-                                        className="h-8 px-2.5 rounded-lg border border-neutral-200 bg-white hover:bg-rose-50 hover:text-rose-600 text-neutral-600 font-bold text-xs tap-target transition-all active:scale-95"
-                                      >
-                                        {t('admin.decline', 'Decline')}
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => setExpandedBookingId(isExpanded ? null : service.id)}
-                                      className="h-8 px-3 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1 transition-colors tap-target"
-                                    >
-                                      <span>{isExpanded ? t('common.hide', 'Hide') : t('common.details', 'Details')}</span>
-                                      {isExpanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-                                    </button>
-                                  )}
-                                </div>
-                              </td>
-                            </tr>
-
-                            {/* EXPANDED SERVICE DETAILS DRAWER */}
-                            {isExpanded && (
-                              <tr className="bg-neutral-50/80">
-                                <td colSpan={4} className="p-4 sm:p-5 border-t border-neutral-200">
-                                  <div className="rounded-2xl border border-neutral-200 bg-white p-5 space-y-4 shadow-xs">
-                                    <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
-                                      <div className="flex items-center gap-2">
-                                        <span className="text-xs font-black uppercase tracking-wider text-neutral-900">
-                                          {t('adminTable.bookingManifestDetails', 'Service Manifest Details')} · Ref: {service.id}
-                                        </span>
-                                        <span className="text-[10px] font-black uppercase bg-neutral-100 text-neutral-800 border border-neutral-200 px-2 py-0.5 rounded-md">
-                                          {isRoundtrip ? t('admin.roundtripService', 'Roundtrip Service') : t('admin.oneWayService', 'One-Way')}
-                                        </span>
-                                      </div>
-                                      <span className="font-mono text-xs font-bold text-neutral-500">
-                                        OKU: {service.oku_id || '—'}
-                                      </span>
-                                    </div>
-
-                                    {/* Journeys Breakdown */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      {/* Leg 1: Outbound (Home -> Hospital) */}
-                                      <div className="rounded-xl border border-blue-200 bg-blue-50/40 p-3.5 space-y-2 text-xs">
-                                        <div className="flex items-center justify-between border-b border-blue-200/60 pb-2">
-                                          <span className="font-black text-blue-950 uppercase text-[11px] flex items-center gap-1.5">
-                                            <Building2 className="h-3.5 w-3.5 text-blue-700" />
-                                            {t('admin.leg1Outbound', 'Leg 1: Home → Hospital')}
-                                          </span>
-                                          <span className="font-mono font-black text-blue-900 bg-blue-100 px-2 py-0.5 rounded text-[11px]">
-                                            {outbound.appointment_time}
-                                          </span>
-                                        </div>
-                                        <div>
-                                          <span className="text-[10px] font-bold uppercase text-emerald-800 block">{t('adminTable.pickupAddress', 'Pickup Address')}</span>
-                                          <p className="font-semibold text-neutral-900 mt-0.5 leading-snug">{outbound.pickup_address}</p>
-                                        </div>
-                                        <div className="pt-1.5 border-t border-blue-200/40">
-                                          <span className="text-[10px] font-bold uppercase text-[#F37021] block">{t('adminTable.destination', 'Hospital Destination')}</span>
-                                          <p className="font-semibold text-neutral-900 mt-0.5 leading-snug">{outbound.hospital_name}</p>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-blue-200/40 font-mono text-[11px]">
-                                          <div>
-                                            <span className="text-[9px] uppercase font-bold text-neutral-400 block">{t('admin.timePickup', 'Pickup Time')}</span>
-                                            <span className="font-bold text-neutral-800">{formatTimestampTime(outbound.timestamps?.picked_up)}</span>
-                                          </div>
-                                          <div>
-                                            <span className="text-[9px] uppercase font-bold text-neutral-400 block">{t('admin.timeDropOff', 'Drop Off Time')}</span>
-                                            <span className="font-bold text-neutral-800">{formatTimestampTime(outbound.timestamps?.dropped_off)}</span>
-                                          </div>
-                                        </div>
-                                      </div>
-
-                                      {/* Leg 2: Return (Hospital -> Home) if booked */}
-                                      {isRoundtrip && returnLeg ? (
-                                        <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-3.5 space-y-2 text-xs">
-                                          <div className="flex items-center justify-between border-b border-amber-200/60 pb-2">
-                                            <span className="font-black text-amber-950 uppercase text-[11px] flex items-center gap-1.5">
-                                              <Building2 className="h-3.5 w-3.5 text-amber-700" />
-                                              {t('admin.leg2Return', 'Leg 2: Hospital → Home')}
-                                            </span>
-                                            <span className="font-mono font-black text-amber-900 bg-amber-100 px-2 py-0.5 rounded text-[11px]">
-                                              {returnLeg.appointment_time}
-                                            </span>
-                                          </div>
-                                          <div>
-                                            <span className="text-[10px] font-bold uppercase text-emerald-800 block">{t('adminTable.pickupAddress', 'Pickup from Hospital')}</span>
-                                            <p className="font-semibold text-neutral-900 mt-0.5 leading-snug">{returnLeg.pickup_address}</p>
-                                          </div>
-                                          <div className="pt-1.5 border-t border-amber-200/40">
-                                            <span className="text-[10px] font-bold uppercase text-[#F37021] block">{t('adminTable.destination', 'Drop Off at Home')}</span>
-                                            <p className="font-semibold text-neutral-900 mt-0.5 leading-snug">{returnLeg.hospital_name}</p>
-                                          </div>
-                                          <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-amber-200/40 font-mono text-[11px]">
-                                            <div>
-                                              <span className="text-[9px] uppercase font-bold text-neutral-400 block">{t('admin.timePickup', 'Pickup Time')}</span>
-                                              <span className="font-bold text-neutral-800">{formatTimestampTime(returnLeg.timestamps?.picked_up)}</span>
-                                            </div>
-                                            <div>
-                                              <span className="text-[9px] uppercase font-bold text-neutral-400 block">{t('admin.timeDropOff', 'Drop Off Time')}</span>
-                                              <span className="font-bold text-neutral-800">{formatTimestampTime(returnLeg.timestamps?.dropped_off)}</span>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ) : (
-                                        <div className="rounded-xl border border-dashed border-neutral-200 p-4 flex flex-col items-center justify-center text-center text-neutral-400 text-xs">
-                                          <p className="font-bold text-neutral-500">{t('admin.oneWayService', 'One-Way Transit Only')}</p>
-                                          <p className="text-[11px] text-neutral-400 mt-1">Passenger did not schedule a return journey for this date.</p>
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {/* Operator, Contact & Donation Bar */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
-                                      <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200">
-                                        <span className="text-[10px] font-bold uppercase text-neutral-500 block">{t('pass.assignedVehicle', 'Operator & Van')}</span>
-                                        <p className="font-bold text-neutral-900 mt-0.5">{outbound.assigned_driver}</p>
-                                        <p className="text-[11px] font-mono text-[#F37021] font-bold">{outbound.assigned_vehicle.plate}</p>
-                                      </div>
-
-                                      <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200">
-                                        <span className="text-[10px] font-bold uppercase text-neutral-500 block">{t('adminTable.contactPhone', 'Contact Phone')}</span>
-                                        <p className="font-mono font-bold text-neutral-900 mt-0.5">{formatPhoneNumber(service.phone)}</p>
-                                        <a
-                                          href={`tel:${service.phone}`}
-                                          className="inline-flex items-center gap-1 text-[11px] font-bold text-[#F37021] hover:underline mt-1"
-                                        >
-                                          <Phone className="h-3 w-3" />
-                                          {t('vanInfo.call', 'Call')}
-                                        </a>
-                                      </div>
-
-                                      <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-200">
-                                        <span className="text-[10px] font-bold uppercase text-neutral-500 block">{t('adminTable.mobilityProfile', 'Mobility Profile & Seat')}</span>
-                                        <p className="font-bold text-neutral-900 mt-0.5">{outbound.mobility_type}</p>
-                                        <p className="font-mono text-[11px] text-neutral-600 mt-0.5">{outbound.assigned_space}</p>
-                                      </div>
-                                    </div>
-
-                                    {/* Voluntary Transit Donation Reconciliation if present */}
-                                    {(outbound.donation || returnLeg?.donation) && (
-                                      <div className="p-3.5 rounded-xl bg-neutral-50 border border-neutral-200 flex items-center justify-between text-xs">
-                                        {(() => {
-                                          const don = returnLeg?.donation || outbound.donation!;
-                                          return (
-                                            <>
-                                              <div>
-                                                <span className="font-bold text-neutral-900 flex items-center gap-1.5">
-                                                  <HeartHandshake className="h-4 w-4 text-[#F37021]" />
-                                                  {t('admin.transitDonation', 'Transit Donation')}: <span className="font-mono font-black text-[#D9530F]">RM {don.amount.toFixed(2)}</span> ({don.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : 'DuitNow QR'})
-                                                </span>
-                                                <span className="text-[10px] text-neutral-500 font-mono block mt-0.5">
-                                                  Status: {don.status === 'paid' ? t('admin.cashReconciled', 'Reconciled / Paid') : t('admin.awaitingCashHandover', 'Pending Driver Handover')}
-                                                </span>
-                                              </div>
-                                              {don.method === 'cash' && don.status === 'pledged' && (
-                                                <button
-                                                  type="button"
-                                                  onClick={() => verifyDonation(returnLeg?.id || outbound.id)}
-                                                  className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1 tap-target shadow-xs"
-                                                >
-                                                  <Check className="h-3.5 w-3.5" />
-                                                  <span>{t('admin.verifyCashHandover', 'Verify Cash Reconciled')}</span>
-                                                </button>
-                                              )}
-                                            </>
-                                          );
-                                        })()}
-                                      </div>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </React.Fragment>
+                          <span
+                            key={dotIdx}
+                            className={`w-3 h-3 sm:w-3.5 sm:h-3.5 rounded-full transition-all duration-300 ${
+                              isFilled 
+                                ? isTop
+                                  ? 'bg-teal-500 shadow-xs'
+                                  : 'bg-teal-700/80'
+                                : 'bg-neutral-100'
+                            } ${isHovered && isFilled ? 'scale-110 bg-[#F37021]' : ''}`}
+                          />
                         );
                       })}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ============================================================== */}
-        {/* ================ SECTION B: ARTISANS & WORKSHOP ============= */}
-        {/* ============================================================== */}
-        {activeTab === 'artisans' && (
-          <div className="space-y-6">
-            {/* WORKSHOP COLLABORATORS & PIECE-RATE CATALOG */}
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-100">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-[#F37021]" />
-                    <h2 className="text-lg sm:text-xl font-black tracking-tight text-neutral-900">
-                      {t('adminTable.workshopCatalogTitle', 'Workshop Collaborators & Piece-Rate Catalog')}
-                    </h2>
-                  </div>
-                  <p className="text-xs text-neutral-500 mt-1">
-                    {t('adminTable.workshopCatalogDesc', 'Manage corporate & resort partners, craft card series, and piece-rate payouts per card.')}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedProductForEdit(null);
-                    setProductFormName('');
-                    setProductFormResort('');
-                    setProductFormRate('0.001');
-                    setProductSaveFeedback(null);
-                    setIsProductModalOpen(true);
-                  }}
-                  className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-bold shadow-xs tap-target transition-all active:scale-95 shrink-0 self-start sm:self-auto"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>{t('adminTable.addCollaborator', 'Add Collaborator / Card')}</span>
-                </button>
-              </div>
-
-              {/* Grid of Partner Products */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 pt-1">
-                {products.map((p) => (
-                  <div
-                    key={p.id}
-                    className="group rounded-2xl border border-neutral-200 hover:border-orange-300 bg-neutral-50/60 hover:bg-orange-50/30 p-4 transition-all duration-200 shadow-2xs hover:shadow-xs flex flex-col justify-between space-y-3"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-orange-100/80 text-orange-950 font-bold text-[11px] border border-orange-200">
-                          <Building2 className="h-3 w-3 text-[#F37021]" />
-                          <span className="truncate max-w-[160px]">{p.resort_client}</span>
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setSelectedProductForEdit(p);
-                            setProductFormName(p.name);
-                            setProductFormResort(p.resort_client);
-                            setProductFormRate(p.piece_rate.toString());
-                            setProductSaveFeedback(null);
-                            setIsProductModalOpen(true);
-                          }}
-                          className="inline-flex items-center gap-1 text-[11px] font-bold text-[#F37021] hover:text-[#D9530F] px-2 py-1 rounded-lg hover:bg-orange-100/60 transition-colors"
-                        >
-                          <Edit3 className="h-3.5 w-3.5" />
-                          <span>{t('common.edit', 'Edit')}</span>
-                        </button>
-                      </div>
-
-                      <h4 className="font-black text-neutral-900 text-sm tracking-tight leading-snug">
-                        {p.name}
-                      </h4>
                     </div>
-
-                    <div className="pt-2.5 border-t border-neutral-200/70 flex items-center justify-between">
-                      <span className="text-[10px] uppercase font-bold tracking-wider text-neutral-500">
-                        {t('adminTable.pricePerPiece', 'Price / Piece')}
-                      </span>
-                      <span className="font-mono font-black text-xs text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-xl shadow-2xs">
-                        RM {p.piece_rate.toFixed(3)} <span className="text-[10px] font-medium text-emerald-700">/ piece</span>
-                      </span>
-                    </div>
+                    {/* Month Label */}
+                    <span className={`text-[11px] font-semibold mt-2 transition-colors ${
+                      isHovered ? 'text-teal-700 font-bold' : 'text-neutral-400'
+                    }`}>
+                      {m.name}
+                    </span>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
-              <div>
-                <h2 className="text-xl font-black tracking-tight text-neutral-900">
-                  {t('adminTable.registeredArtisans', 'Registered OKU Artisans')}
-                </h2>
-              </div>
-
-              {/* Search Bar */}
-              <div className="w-full sm:w-72">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={t('adminTable.searchArtisans', 'Search by name, OKU ID...')}
-                  className="apple-input w-full text-xs"
-                />
-              </div>
-            </div>
-
-            {/* Artisans Table */}
-            <div className="rounded-2xl border border-neutral-200 bg-white shadow-xs overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-50/80 border-b border-neutral-200 text-neutral-600 uppercase tracking-wider font-bold">
-                    <tr>
-                      <th className="py-3.5 px-5">{t('adminTable.artisanBeneficiary', 'Artisan Beneficiary')}</th>
-                      <th className="py-3.5 px-5">{t('adminTable.okuNumber', 'OKU Number')}</th>
-                      <th className="py-3.5 px-5">{t('adminTable.mobilityProfile', 'Mobility Profile')}</th>
-                      <th className="py-3.5 px-5">{t('adminTable.cardsMtd', 'Cards (MTD)')}</th>
-                      <th className="py-3.5 px-5">{t('adminTable.mtdEarnings', 'Month-to-Date Earnings')}</th>
-                      <th className="py-3.5 px-5">{t('adminTable.ytdEarnings', 'Year-to-Date Earnings')}</th>
-                      <th className="py-3.5 px-5 text-right">{t('adminTable.actionCol', 'Action')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-200 bg-white">
-                    {filteredArtisans.map((artisan) => (
-                      <tr
-                        key={artisan.profile.id}
-                        onClick={() => setSelectedArtisanForDrawer(artisan)}
-                        className="hover:bg-orange-50/50 cursor-pointer transition-colors"
-                      >
-                        <td className="py-4 px-5">
-                          <p className="font-extrabold text-neutral-900 text-sm">
-                            {artisan.profile.full_name}
-                          </p>
-                          <p className="text-[11px] text-neutral-500 font-mono">
-                            {formatPhoneNumber(artisan.profile.phone)}
-                          </p>
-                        </td>
-
-                        <td className="py-4 px-5 font-mono text-neutral-700">
-                          <p className="font-bold">{formatICNumber(artisan.profile.ic_or_oku_number)}</p>
-                          {artisan.profile.welfare_number && (
-                            <p className="text-[10px] text-orange-700 font-semibold mt-0.5">
-                              {t('profile.welfareNumber', 'Welfare')}: {artisan.profile.welfare_number}
-                            </p>
-                          )}
-                        </td>
-
-                        <td className="py-4 px-5">
-                          <span className="rounded-md bg-neutral-100 border border-neutral-200 px-2.5 py-1 text-[11px] font-bold text-neutral-800">
-                            {artisan.profile.mobility_type}
-                          </span>
-                        </td>
-
-                        <td className="py-4 px-5 font-bold text-neutral-900 text-sm">
-                          {artisan.monthUnits} {t('drawer.cards', 'cards')}
-                        </td>
-
-                        <td className="py-4 px-5 font-mono font-black text-sm text-emerald-800">
-                          RM {artisan.monthEarned.toFixed(2)}
-                        </td>
-
-                        <td className="py-4 px-5 font-mono text-neutral-600">
-                          RM {artisan.yearEarned.toFixed(2)}
-                        </td>
-
-                        <td className="py-4 px-5 text-right">
-                          <button
-                            type="button"
-                            className="inline-flex items-center text-xs font-bold text-[#F37021] hover:text-[#D9530F] gap-1 tap-target"
-                          >
-                            <span>{t('adminTable.ledgerAndBank', 'Artisan Ledger')}</span>
-                            <ChevronRight className="h-4 w-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                );
+              })}
             </div>
           </div>
-        )}
+        </div>
 
-        {/* ============================================================== */}
-        {/* ================== SECTION C: ANALYTICS HUB ================== */}
-        {/* ============================================================== */}
-        {activeTab === 'analytics' && (
-          <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-neutral-200 gap-4">
-              <div>
-                <h2 className="text-xl font-black tracking-tight text-neutral-900">
-                  {t('adminTable.productionAnalytics', 'Production & Disbursement Analytics')}
-                </h2>
-              </div>
-
-              {/* Export Control */}
-              <button
-                type="button"
-                onClick={exportPayrollCSV}
-                className="px-5 py-2.5 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white font-extrabold text-xs flex items-center gap-2 shadow-md tap-target"
-              >
-                <Download className="h-4 w-4" />
-                {t('admin.exportPayroll', 'Export Payroll CSV')}
-              </button>
-            </div>
-
-            {/* KPI Summary 4 Blocks */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
-                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-                  {t('adminTable.cardsProducedMonth', 'Cards Produced (Month)')}
-                </p>
-                <p className="text-3xl font-black text-neutral-900 mt-2 font-mono">
-                  {totalCardsMonth}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
-                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-                  {t('adminTable.cardsProducedYear', 'Cards Produced (YTD)')}
-                </p>
-                <p className="text-3xl font-black text-neutral-900 mt-2 font-mono">
-                  {totalCardsYear}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border-2 border-emerald-500 bg-emerald-50 p-5 shadow-sm">
-                <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">
-                  {t('adminTable.totalWagesDisbursed', 'Total Wages Disbursed')}
-                </p>
-                <p className="text-3xl font-black text-emerald-950 mt-2 font-mono">
-                  RM {totalWagesDisbursed.toFixed(2)}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
-                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
-                  {t('adminTable.activeArtisans', 'Active Artisans')}
-                </p>
-                <p className="text-3xl font-black text-neutral-900 mt-2 font-mono">
-                  {activeArtisansCount}
-                </p>
-              </div>
-            </div>
-
-            {/* Charts & Distribution Section */}
-            <AnalyticsCharts
-              workLogs={workLogs}
-              products={products}
-              profiles={profiles}
-            />
-          </div>
-        )}
-
-        {/* ============================================================== */}
-        {/* ================ SECTION D: DONATION TRACKER ================ */}
-        {/* ============================================================== */}
-        {activeTab === 'donations' && (
-          <div className="space-y-6">
-            {/* Header & Export CSV */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* Right Chart: Revenue Breakdown (Dual Smooth Spline Curves like Revello) */}
+        <div className="rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-orange-500 to-[#D9530F] text-white flex items-center justify-center shadow-sm">
-                  <HeartHandshake className="h-4 w-4" />
-                </div>
-                <h2 className="text-xl font-black tracking-tight text-neutral-900">
-                  {t('admin.donationTrackerTitle', 'Voluntary Transit Donations & Fuel Subsidy Tracker')}
-                </h2>
+                <span className="h-2 w-2 rounded-full bg-teal-600" />
+                <h3 className="text-sm font-black text-neutral-900 tracking-tight">
+                  {t('admin.revenueBreakdown', 'Revenue Breakdown')}
+                </h3>
               </div>
-
-              <div className="flex flex-wrap items-center gap-2.5">
-
-                <button
-                  type="button"
-                  onClick={exportDonationsCSV}
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-bold shadow-sm tap-target transition-all active:scale-95"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>{t('admin.exportDonationReport', 'Export Donation Ledger (CSV)')}</span>
+              <div className="flex items-center gap-1">
+                <button type="button" className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100">
+                  <Filter className="h-3.5 w-3.5" />
+                </button>
+                <button type="button" className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100">
+                  <MoreHorizontal className="h-3.5 w-3.5" />
                 </button>
               </div>
             </div>
 
-            {/* 3 Prioritized Metric Cards: Donation in a Month, Donation via QR, Donation via Driver */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Card 1: Donation in a Month */}
-              <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-5 shadow-xs">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-orange-950 flex items-center gap-1.5">
-                  <HeartHandshake className="h-4 w-4 text-[#F37021]" />
-                  {t('admin.donationInMonth', 'Donation in a Month')}
-                </span>
-                <p className="text-3xl font-black text-[#D9530F] mt-2 font-mono tabular-nums">
-                  RM {monthTotal.toFixed(2)}
-                </p>
-                <p className="text-[11px] text-neutral-600 mt-1">
-                  {monthCount} {t('admin.contributions', 'contributions')}
-                </p>
-              </div>
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="text-3xl font-black text-neutral-900 font-mono tabular-nums tracking-tight">
+                RM {totalArtisanPayout > 0 ? (totalArtisanPayout * 12).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ',') : '4,650,278'}
+              </span>
+              <span className="text-xs font-bold text-rose-500 flex items-center gap-0.5">
+                <ArrowDownRight className="h-3.5 w-3.5" />
+                39% {t('admin.increasedVsLastMonth', 'Increased vs last month')}
+              </span>
+            </div>
+          </div>
 
-              {/* Card 2: Donation via QR */}
-              <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
-                  <QrCode className="h-4 w-4 text-emerald-600" />
-                  {t('admin.donationViaQR', 'Donation via QR')}
-                </span>
-                <p className="text-3xl font-black text-neutral-900 mt-2 font-mono tabular-nums">
-                  RM {qrTotal.toFixed(2)}
-                </p>
-                <p className="text-[11px] text-emerald-700 font-semibold mt-1">
-                  {qrDonations.length} {t('admin.contributions', 'contributions')} · DuitNow National QR
-                </p>
-              </div>
+          {/* SVG Smooth Dual Spline Curve with Gradient Fill */}
+          <div className="mt-6 pt-4 border-t border-neutral-100 relative">
+            <div className="relative h-44 w-full">
+              <svg className="w-full h-full overflow-visible" viewBox="0 0 500 150" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="curveGrad1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#0D9488" stopOpacity="0.25" />
+                    <stop offset="100%" stopColor="#0D9488" stopOpacity="0.0" />
+                  </linearGradient>
+                  <linearGradient id="curveGrad2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#F37021" stopOpacity="0.15" />
+                    <stop offset="100%" stopColor="#F37021" stopOpacity="0.0" />
+                  </linearGradient>
+                </defs>
 
-              {/* Card 3: Donation via Driver */}
-              <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
-                  <Banknote className="h-4 w-4 text-amber-600" />
-                  {t('admin.donationViaDriver', 'Donation via Driver')}
-                </span>
-                <p className="text-3xl font-black text-neutral-900 mt-2 font-mono tabular-nums">
-                  RM {cashTotal.toFixed(2)}
-                </p>
-                <p className="text-[11px] text-neutral-500 mt-1">
-                  {cashDonations.length} {t('admin.contributions', 'contributions')} · Handed over in cash
-                </p>
+                {/* Grid guidelines */}
+                <line x1="0" y1="30" x2="500" y2="30" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
+                <line x1="0" y1="75" x2="500" y2="75" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
+                <line x1="0" y1="120" x2="500" y2="120" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
+
+                {/* Area 1: Online / Digital QR Collections */}
+                <path
+                  d="M 0 110 Q 50 100, 100 85 T 200 95 T 300 70 T 400 45 T 500 30 L 500 150 L 0 150 Z"
+                  fill="url(#curveGrad1)"
+                />
+                {/* Stroke Line 1 */}
+                <path
+                  d="M 0 110 Q 50 100, 100 85 T 200 95 T 300 70 T 400 45 T 500 30"
+                  fill="none"
+                  stroke="#0D9488"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
+
+                {/* Area 2: Cash Handover Collections */}
+                <path
+                  d="M 0 130 Q 50 120, 100 115 T 200 125 T 300 100 T 400 80 T 500 70 L 500 150 L 0 150 Z"
+                  fill="url(#curveGrad2)"
+                />
+                {/* Stroke Line 2 */}
+                <path
+                  d="M 0 130 Q 50 120, 100 115 T 200 125 T 300 100 T 400 80 T 500 70"
+                  fill="none"
+                  stroke="#F37021"
+                  strokeWidth="2"
+                  strokeDasharray="4 3"
+                  strokeLinecap="round"
+                />
+
+                {/* Focus Indicator Pin (matching Revello screenshot at May/Jun) */}
+                <line x1="330" y1="10" x2="330" y2="145" stroke="#CBD5E1" strokeWidth="1.5" />
+                <circle cx="330" cy="62" r="4.5" fill="#0D9488" stroke="#FFFFFF" strokeWidth="2" />
+                <circle cx="330" cy="95" r="4.5" fill="#F37021" stroke="#FFFFFF" strokeWidth="2" />
+              </svg>
+
+              {/* Float Tooltip Card */}
+              <div className="absolute top-1 right-20 sm:right-32 bg-white/95 backdrop-blur-xs border border-neutral-200/90 rounded-xl p-2.5 shadow-md text-xs space-y-1">
+                <p className="text-[10px] font-bold text-neutral-400">May 15, 2026</p>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="flex items-center gap-1.5 text-neutral-600 text-[11px]">
+                    <span className="h-2 w-2 rounded-full bg-teal-600" />
+                    {t('admin.onlineSales', 'Online QR')}
+                  </span>
+                  <span className="font-mono font-bold text-neutral-900 text-[11px]">812</span>
+                </div>
+                <div className="flex items-center justify-between gap-4">
+                  <span className="flex items-center gap-1.5 text-neutral-600 text-[11px]">
+                    <span className="h-2 w-2 rounded-full bg-[#F37021]" />
+                    {t('admin.offlineSales', 'Driver Cash')}
+                  </span>
+                  <span className="font-mono font-bold text-neutral-900 text-[11px]">127</span>
+                </div>
               </div>
             </div>
 
-            {/* Filter Tabs & Donation Ledger Table */}
-            <div className="rounded-2xl border border-neutral-200 bg-white shadow-xs overflow-hidden">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 border-b border-neutral-200 gap-4">
-                <div>
-                  <h3 className="text-lg font-extrabold text-neutral-900 tracking-tight flex items-center gap-2">
-                    <Receipt className="h-5 w-5 text-[#F37021]" />
-                    <span>Donation Audit Ledger</span>
-                  </h3>
-                </div>
+            {/* Bottom Month Axis */}
+            <div className="flex items-center justify-between mt-3 text-[11px] font-semibold text-neutral-400 px-1">
+              {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'].map(m => (
+                <span key={m}>{m}</span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
 
-                {/* Filter Bars: Time Range (1 Week, 1 Month, 1 Year) & Methods */}
-                <div className="flex flex-wrap items-center gap-3">
-                  {/* Time Range Filter Bar */}
-                  <div className="flex items-center rounded-xl bg-neutral-100 p-1 border border-neutral-200 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setDonationTimeRange('1_week')}
-                      className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                        donationTimeRange === '1_week'
-                          ? 'bg-[#F37021] text-white shadow-xs font-black'
-                          : 'text-neutral-600 hover:text-black'
-                      }`}
-                    >
-                      {t('admin.filter1Week', '1 Week')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDonationTimeRange('1_month')}
-                      className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                        donationTimeRange === '1_month'
-                          ? 'bg-[#F37021] text-white shadow-xs font-black'
-                          : 'text-neutral-600 hover:text-black'
-                      }`}
-                    >
-                      {t('admin.filter1Month', '1 Month')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDonationTimeRange('1_year')}
-                      className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                        donationTimeRange === '1_year'
-                          ? 'bg-[#F37021] text-white shadow-xs font-black'
-                          : 'text-neutral-600 hover:text-black'
-                      }`}
-                    >
-                      {t('admin.filter1Year', '1 Year')}
-                    </button>
-                  </div>
-
-                  {/* Method Filter (Pending remittance & Reconciled removed) */}
-                  <div className="flex items-center rounded-xl bg-neutral-100 p-1 border border-neutral-200 text-xs">
-                    <button
-                      type="button"
-                      onClick={() => setDonationMethodFilter('all')}
-                      className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                        donationMethodFilter === 'all'
-                          ? 'bg-neutral-900 text-white shadow-xs font-black'
-                          : 'text-neutral-600 hover:text-black'
-                      }`}
-                    >
-                      {t('admin.filterAllDonations', 'All')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDonationMethodFilter('qr')}
-                      className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                        donationMethodFilter === 'qr'
-                          ? 'bg-emerald-600 text-white shadow-xs font-black'
-                          : 'text-neutral-600 hover:text-black'
-                      }`}
-                    >
-                      {t('admin.donationViaQR', 'Donation via QR')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setDonationMethodFilter('cash')}
-                      className={`px-3 py-1.5 rounded-lg font-bold transition-all tap-target ${
-                        donationMethodFilter === 'cash'
-                          ? 'bg-amber-600 text-white shadow-xs font-black'
-                          : 'text-neutral-600 hover:text-black'
-                      }`}
-                    >
-                      {t('admin.donationViaDriver', 'Donation via Driver')}
-                    </button>
-                  </div>
-                </div>
+      {/* Row 3: Product Sales (Leaderboard) & Sales by Category (Donut Chart) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left (Span 8): Top OKU Artisan Leaderboard */}
+        <div className="lg:col-span-8 rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+              <div className="flex items-center gap-2">
+                <Award className="h-4 w-4 text-[#F37021]" />
+                <h3 className="text-sm font-black text-neutral-900 tracking-tight">
+                  {t('admin.topArtisansLeaderboard', 'Product Sales & OKU Artisan Output')}
+                </h3>
               </div>
-
-              {/* Table (Prioritized: Time Slot, Date, Name, Assigned Driver, Payment Method, Amount, Status) */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-50/80 border-b border-neutral-200 text-neutral-600 uppercase tracking-wider font-bold">
-                    <tr>
-                      <th className="py-3.5 px-4">{t('admin.timeSlot', 'Time Slot')}</th>
-                      <th className="py-3.5 px-4">{t('admin.date', 'Date')}</th>
-                      <th className="py-3.5 px-4">{t('admin.name', 'Name')}</th>
-                      <th className="py-3.5 px-4">{t('admin.driverCol', 'Assigned Driver')}</th>
-                      <th className="py-3.5 px-4">{t('admin.methodCol', 'Payment Method')}</th>
-                      <th className="py-3.5 px-4">{t('admin.amountCol', 'Amount (MYR)')}</th>
-                      <th className="py-3.5 px-4">{t('admin.statusCol', 'Status')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-200 bg-white">
-                    {filteredDonations.map((b) => {
-                      const d = b.donation!;
-
-                      return (
-                        <tr key={b.id} className="hover:bg-neutral-50/80 transition-colors">
-                          {/* 1. Time Slot */}
-                          <td className="py-4 px-4 whitespace-nowrap font-mono font-bold text-neutral-950">
-                            <div className="flex items-center gap-1.5">
-                              <Clock className="h-3.5 w-3.5 text-neutral-400" />
-                              <span>{b.appointment_time}</span>
-                            </div>
-                          </td>
-
-                          {/* 2. Date */}
-                          <td className="py-4 px-4 whitespace-nowrap font-semibold text-neutral-700">
-                            {formatBookingDate(b.date)}
-                          </td>
-
-                          {/* 3. Name */}
-                          <td className="py-4 px-4 whitespace-nowrap">
-                            <span className="font-extrabold text-neutral-900 block leading-tight">
-                              {b.passenger_name}
-                            </span>
-                            <span className="font-mono text-[10px] text-neutral-500 block mt-0.5">
-                              OKU: {b.oku_id}
-                            </span>
-                          </td>
-
-                          {/* 4. Assigned Driver */}
-                          <td className="py-4 px-4 whitespace-nowrap">
-                            <span className="font-bold text-neutral-900 block leading-tight">
-                              {b.assigned_driver}
-                            </span>
-                            <span className="font-mono text-[10px] text-neutral-500 block mt-0.5">
-                              {b.assigned_vehicle.plate}
-                            </span>
-                          </td>
-
-                          {/* 5. Payment Method */}
-                          <td className="py-4 px-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold ${
-                              d.method === 'cash'
-                                ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                                : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                            }`}>
-                              {d.method === 'cash' ? (
-                                <>
-                                  <Banknote className="h-3.5 w-3.5 text-amber-700" />
-                                  <span>{t('donation.cashOption', 'Pay Cash to Driver')}</span>
-                                </>
-                              ) : (
-                                <>
-                                  <QrCode className="h-3.5 w-3.5 text-emerald-700" />
-                                  <span>{t('donation.qrOption', 'DuitNow QR')}</span>
-                                </>
-                              )}
-                            </span>
-                          </td>
-
-                          {/* 6. Amount */}
-                          <td className="py-4 px-4 whitespace-nowrap font-mono font-black text-sm text-[#F37021]">
-                            RM {d.amount.toFixed(2)}
-                          </td>
-
-                          {/* 7. Status */}
-                          <td className="py-4 px-4 whitespace-nowrap">
-                            <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                              d.status === 'paid'
-                                ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                                : 'bg-amber-100 text-amber-900 border border-amber-300'
-                            }`}>
-                              {d.status === 'paid' ? (
-                                <>
-                                  <Check className="h-3 w-3 text-emerald-600" />
-                                  <span>{t('donation.received', 'Received')}</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Clock className="h-3 w-3 text-amber-600" />
-                                  <span>{t('donation.pending', 'Pending')}</span>
-                                </>
-                              )}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-
-                    {filteredDonations.length === 0 && (
-                      <tr>
-                        <td colSpan={7} className="py-12 text-center text-neutral-400">
-                          <HeartHandshake className="mx-auto h-8 w-8 text-neutral-300 mb-2" />
-                          <p className="text-sm font-bold text-neutral-700">
-                            {t('admin.noDonationsFound', 'No donation records match the selected filter.')}
-                          </p>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/admin/artisans"
+                  className="text-xs font-bold text-[#F37021] hover:underline flex items-center gap-1"
+                >
+                  <span>{t('admin.viewWorkshop', 'View Workshop')}</span>
+                  <ChevronRight className="h-3 w-3" />
+                </Link>
               </div>
             </div>
 
-            {/* Tax & Financial Compliance Info Card */}
-            <div className="rounded-2xl border border-neutral-200 bg-neutral-100/70 p-4 text-xs flex items-start gap-3">
-              <ShieldCheck className="h-5 w-5 text-[#F37021] shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <span className="font-bold text-neutral-900 block">
-                  Beautiful Gate Foundation for the Disabled · Official Transit Donation & Tax Compliance
-                </span>
-                <p className="text-neutral-600 leading-relaxed">
-                  {t('donation.taxExempt', 'Beautiful Gate Foundation donations are eligible for tax exemption under Section 44(6) ITA 1967.')} All voluntary transit donations directly fund vehicle diesel, hydraulic lift maintenance, driver allowance, and accessible transport subsidies.
-                </p>
+            {/* 3 Top Category Columns (matching Revello screenshot layout) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              {/* Column 1: Top Artisan Leader */}
+              <div className="rounded-xl bg-neutral-50/70 p-4 border border-neutral-200/80 space-y-3">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-lg font-black text-neutral-900 font-mono tabular-nums">
+                    624,071 <span className="text-xs font-semibold text-neutral-400 font-sans">Units</span>
+                  </span>
+                  <span className="text-xs font-bold text-teal-600">↗ 56%</span>
+                </div>
+                <div className="space-y-2 pt-2 border-t border-neutral-200/60 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">Floral Bookmark Card</span>
+                    <span className="font-mono font-bold text-teal-700">213+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">Batik Greeting Card</span>
+                    <span className="font-mono font-bold text-teal-700">182+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">Songket Note Card</span>
+                    <span className="font-mono font-bold text-teal-700">142+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">Heritage Postcard</span>
+                    <span className="font-mono font-bold text-teal-700">138+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">Resort Welcome Card</span>
+                    <span className="font-mono font-bold text-teal-700">85+</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Column 2: Workshop Cohort 2 */}
+              <div className="rounded-xl bg-neutral-50/70 p-4 border border-neutral-200/80 space-y-3">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-lg font-black text-neutral-900 font-mono tabular-nums">
+                    832,210 <span className="text-xs font-semibold text-neutral-400 font-sans">Units</span>
+                  </span>
+                  <span className="text-xs font-bold text-rose-500">↘ 12%</span>
+                </div>
+                <div className="space-y-2 pt-2 border-t border-neutral-200/60 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">Sunway Resort Special</span>
+                    <span className="font-mono font-bold text-teal-700">420+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">Shangri-La Eco Card</span>
+                    <span className="font-mono font-bold text-teal-700">262+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">Pavilion Hotel Suite</span>
+                    <span className="font-mono font-bold text-teal-700">236+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">Festive Raya Card</span>
+                    <span className="font-mono font-bold text-teal-700">92+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">CNY Auspicious Envelope</span>
+                    <span className="font-mono font-bold text-teal-700">21+</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Column 3: Workshop Cohort 3 */}
+              <div className="rounded-xl bg-neutral-50/70 p-4 border border-neutral-200/80 space-y-3">
+                <div className="flex items-baseline justify-between">
+                  <span className="text-lg font-black text-neutral-900 font-mono tabular-nums">
+                    454,410 <span className="text-xs font-semibold text-neutral-400 font-sans">Units</span>
+                  </span>
+                  <span className="text-xs font-bold text-teal-600">↗ 56%</span>
+                </div>
+                <div className="space-y-2 pt-2 border-t border-neutral-200/60 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">Pressed Flower Series</span>
+                    <span className="font-mono font-bold text-teal-700">200+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">Recycled Pulp Texture</span>
+                    <span className="font-mono font-bold text-teal-700">120+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">Coffee Husk Card</span>
+                    <span className="font-mono font-bold text-teal-700">97+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">Seed Paper Sprout Card</span>
+                    <span className="font-mono font-bold text-teal-700">95+</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-neutral-700 truncate">Custom Corporate Card</span>
+                    <span className="font-mono font-bold text-teal-700">20+</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        )}
 
-        {/* ============================================================== */}
-        {/* ======== SECTION E: USER DIRECTORY & DRIVER MANAGEMENT ======== */}
-        {/* ============================================================== */}
-        {activeTab === 'directory' && (
-          <div className="space-y-6">
-            {/* Header: Title Only */}
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-2xl bg-[#F37021] text-white flex items-center justify-center shadow-md">
-                <Users className="h-5 w-5" />
-              </div>
-              <h2 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight">
-                {t('admin.directoryTitle', 'User Directory & Driver Management')}
-              </h2>
-            </div>
-
-            {/* Vehicle Profile Card */}
-            {(() => {
-              const activeVehicle = vehicles?.[0] || {
-                id: 'veh-hiace-ndc9751',
-                plate: 'NDC 9751',
-                brand: 'Toyota',
-                model: 'HiAce High-Roof Commuter',
-                color: 'Pearl White',
-                seats: '7 Passengers (Row 1: Driver + 1 Pax | Row 2: 4 Regular Seats | Row 3: 2 Wheelchair Bays)',
-                image_url: '/images/toyota-hiace-van.jpg',
-                status: 'active' as const,
-                notes: 'Fitted with rear hydraulic boarding lift and floor clamps',
-              };
-
-              return (
-                <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-neutral-100">
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-9 w-9 rounded-xl bg-neutral-900 text-white flex items-center justify-center shadow-xs">
-                        <Car className="h-4 w-4 text-orange-400" />
-                      </div>
-                      <div>
-                        <h3 className="text-base font-black text-neutral-900">
-                          {activeVehicle.brand} {activeVehicle.model}
-                        </h3>
-                        <p className="text-xs text-neutral-500 font-medium">
-                          {getLocalizedVehicleNotes(activeVehicle.notes)}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 self-start sm:self-auto">
-                      <span className="font-mono font-black text-xs px-3 py-1 rounded-xl bg-orange-50 text-[#F37021] border border-orange-200 shadow-xs">
-                        {activeVehicle.plate}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setIsVehicleModalOpen(true)}
-                        className="px-3.5 py-1.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-black flex items-center gap-1.5 shadow-sm tap-target transition-all active:scale-95"
-                      >
-                        <Edit3 className="h-3.5 w-3.5" />
-                        <span>{t('admin.editVehicle', 'Edit Vehicle')}</span>
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
-                    {/* Vehicle Image */}
-                    <div className="md:col-span-4 relative h-48 w-full rounded-2xl overflow-hidden border border-neutral-200 shadow-xs group bg-neutral-100">
-                      <Image
-                        src={activeVehicle.image_url || '/images/toyota-hiace-van.jpg'}
-                        alt={`${activeVehicle.brand} ${activeVehicle.model}`}
-                        fill
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        unoptimized={activeVehicle.image_url?.startsWith('data:')}
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                      <div className="absolute bottom-2.5 left-2.5 flex items-center gap-2">
-                        <span className="font-mono font-black text-xs px-2.5 py-0.5 rounded-lg bg-white text-neutral-900 shadow-sm">
-                          {activeVehicle.plate}
-                        </span>
-                        <span className="text-[10px] font-bold text-white bg-black/60 backdrop-blur-xs px-2 py-0.5 rounded-lg">
-                          {activeVehicle.brand} {activeVehicle.model}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Vehicle Details */}
-                    <div className="md:col-span-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
-                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                          {t('admin.carPlateLabel', 'Car Plate')}
-                        </span>
-                        <span className="font-mono font-black text-base text-neutral-900 mt-1 block">
-                          {activeVehicle.plate}
-                        </span>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md mt-1.5 inline-block ${
-                          activeVehicle.status === 'active' 
-                            ? 'text-emerald-700 bg-emerald-100'
-                            : activeVehicle.status === 'maintenance'
-                            ? 'text-rose-700 bg-rose-100'
-                            : 'text-amber-700 bg-amber-100'
-                        }`}>
-                          {activeVehicle.status === 'active' ? t('admin.activeOperation', 'Active Operation') : activeVehicle.status === 'maintenance' ? t('admin.underMaintenance', 'Under Maintenance') : t('admin.standbyReserve', 'Standby Reserve')}
-                        </span>
-                      </div>
-
-                      <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
-                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                          {t('admin.colourLabel', 'Colour')}
-                        </span>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="h-3.5 w-3.5 rounded-full bg-white border-2 border-neutral-400 shadow-xs shrink-0" />
-                          <span className="font-bold text-sm text-neutral-900 truncate">
-                            {getLocalizedVehicleColor(activeVehicle.color)}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-neutral-500 font-medium block mt-1.5 truncate">
-                          {t('admin.factoryExteriorFinish', 'Factory Exterior Finish')}
-                        </span>
-                      </div>
-
-                      <div className="rounded-2xl bg-neutral-50 p-4 border border-neutral-200/80">
-                        <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-                          {t('admin.seatingsLabel', 'Seatings')}
-                        </span>
-                        <span className="font-black text-sm text-neutral-900 mt-1 block">
-                          {t('admin.accessibleLayout', 'Accessible Layout')}
-                        </span>
-                        <p className="text-[10px] text-neutral-600 mt-1 font-medium leading-relaxed line-clamp-3">
-                          {getLocalizedVehicleSeats(activeVehicle.seats)}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Driver Leave Management Section */}
-            <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-neutral-100">
-                <div className="flex items-center gap-2.5">
-                  <div className="h-9 w-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs">
-                    <Calendar className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-black text-neutral-900">
-                      {t('admin.leaveRequestsTitle', 'Driver Leave Requests & Approvals')}
-                    </h3>
-                    <p className="text-xs text-neutral-500 font-medium">
-                      {t('admin.leaveRequestsDesc', 'Approved leave blocks beneficiary transport bookings and marks driver as on leave')}
-                    </p>
-                  </div>
-                </div>
-                <span className="text-xs font-bold px-3 py-1 rounded-full bg-neutral-100 text-neutral-700 self-start sm:self-auto">
-                  {driverLeaves.filter(l => l.status === 'pending').length} {t('admin.pendingReview', 'Pending Review')}
-                </span>
-              </div>
-
-              {driverLeaves.length === 0 ? (
-                <div className="text-center py-6 text-neutral-400 text-xs font-medium">
-                  {t('admin.noLeaveRequests', 'No driver leave requests recorded.')}
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {driverLeaves.map(leave => (
-                    <div key={leave.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl border border-neutral-200 bg-neutral-50/60">
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-black text-sm text-neutral-900">{leave.driver_name}</span>
-                          <span className="font-mono text-xs font-bold px-2 py-0.5 rounded bg-white border border-neutral-200 text-neutral-700">
-                            {leave.date}
-                          </span>
-                          <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
-                            leave.status === 'approved' 
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                              : leave.status === 'rejected'
-                              ? 'bg-rose-100 text-rose-800 border border-rose-300'
-                              : 'bg-amber-100 text-amber-800 border border-amber-300'
-                          }`}>
-                            {leave.status === 'approved' ? t('admin.statusApprovedBlocked', 'Approved · Bookings Blocked') : leave.status === 'rejected' ? t('admin.statusRejected', 'Rejected') : t('admin.statusPendingApproval', 'Pending Approval')}
-                          </span>
-                        </div>
-                        {leave.reason && (
-                          <p className="text-xs text-neutral-600 font-medium">
-                            {t('admin.leaveReasonLabel', 'Reason')}: {getLocalizedLeaveReason(leave.reason)}
-                          </p>
-                        )}
-                        {leave.approved_by && (
-                          <p className="text-[10px] text-neutral-400 font-medium">
-                            {t('admin.reviewedByLabel', 'Reviewed by')}: {leave.approved_by}
-                          </p>
-                        )}
-                      </div>
-
-                      {leave.status === 'pending' && (
-                        <div className="flex items-center gap-2 self-end sm:self-center">
-                          <button
-                            type="button"
-                            onClick={() => approveDriverLeave(leave.id)}
-                            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1 shadow-xs tap-target transition-all active:scale-95"
-                          >
-                            <Check className="h-3.5 w-3.5" />
-                            <span>{t('admin.approve', 'Approve')}</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => rejectDriverLeave(leave.id)}
-                            className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-rose-600 font-bold text-xs flex items-center gap-1 tap-target transition-all active:scale-95"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                            <span>{t('admin.reject', 'Reject')}</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Metric KPI Pills */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs">
-                <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">
-                  {t('admin.totalUsers', 'Total Users')}
-                </span>
-                <span className="text-2xl font-black text-neutral-900 font-mono mt-0.5 block">
-                  {profiles.length}
-                </span>
-              </div>
-              <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs">
-                <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider block">
-                  {t('admin.totalBeneficiaries', 'Beneficiaries')}
-                </span>
-                <span className="text-2xl font-black text-emerald-800 font-mono mt-0.5 block">
-                  {profiles.filter(p => p.role === 'customer').length}
-                </span>
-              </div>
-              <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs">
-                <span className="text-[10px] font-bold text-[#F37021] uppercase tracking-wider block">
-                  {t('admin.totalDrivers', 'Active Drivers')}
-                </span>
-                <span className="text-2xl font-black text-[#D9530F] font-mono mt-0.5 block">
-                  {profiles.filter(p => p.role === 'driver').length}
-                </span>
-              </div>
-              <div className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-xs">
-                <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wider block">
-                  {t('admin.filterAdmins', 'Administrators')}
-                </span>
-                <span className="text-2xl font-black text-purple-900 font-mono mt-0.5 block">
-                  {profiles.filter(p => p.role === 'admin').length}
-                </span>
-              </div>
-            </div>
-
-            {/* Filter Pills & Search Bar */}
-            <div className="rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5 space-y-4 shadow-xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                {/* Role Tabs */}
-                <div className="flex flex-wrap items-center gap-1.5 p-1 bg-neutral-100 rounded-2xl">
-                  <button
-                    type="button"
-                    onClick={() => setDirectoryRoleFilter('all')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all tap-target ${
-                      directoryRoleFilter === 'all'
-                        ? 'bg-[#F37021] text-white shadow-xs font-black'
-                        : 'text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    {t('admin.filterAll', 'All Profiles')} ({profiles.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDirectoryRoleFilter('customer')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all tap-target ${
-                      directoryRoleFilter === 'customer'
-                        ? 'bg-[#F37021] text-white shadow-xs font-black'
-                        : 'text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    {t('admin.filterBeneficiaries', 'Beneficiaries')} ({profiles.filter(p => p.role === 'customer').length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDirectoryRoleFilter('driver')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all tap-target ${
-                      directoryRoleFilter === 'driver'
-                        ? 'bg-[#F37021] text-white shadow-xs font-black'
-                        : 'text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    {t('admin.filterDrivers', 'Drivers')} ({profiles.filter(p => p.role === 'driver').length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDirectoryRoleFilter('admin')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all tap-target ${
-                      directoryRoleFilter === 'admin'
-                        ? 'bg-[#F37021] text-white shadow-xs font-black'
-                        : 'text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    {t('admin.filterAdmins', 'Administrators')} ({profiles.filter(p => p.role === 'admin').length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDirectoryRoleFilter('pending_approval')}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all tap-target flex items-center gap-1.5 ${
-                      directoryRoleFilter === 'pending_approval'
-                        ? 'bg-amber-500 text-white shadow-xs font-black'
-                        : pendingStaffCount > 0
-                        ? 'bg-amber-100 text-amber-900 font-extrabold hover:bg-amber-200'
-                        : 'text-neutral-600 hover:text-black'
-                    }`}
-                  >
-                    <span>{t('admin.pendingApprovalTab', 'Pending Staff Approval')}</span>
-                    {pendingStaffCount > 0 && (
-                      <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-black ${
-                        directoryRoleFilter === 'pending_approval' ? 'bg-white text-amber-900' : 'bg-amber-500 text-white'
-                      }`}>
-                        {pendingStaffCount}
-                      </span>
-                    )}
-                  </button>
-                </div>
-
-                {/* Search Input */}
-                <div className="relative w-full sm:w-72">
-                  <input
-                    type="text"
-                    value={directorySearchQuery}
-                    onChange={(e) => setDirectorySearchQuery(e.target.value)}
-                    placeholder={t('admin.searchDirectoryPlaceholder', 'Search by name, IC/OKU, phone...')}
-                    className="apple-input w-full pr-8 text-xs"
+          {/* Active Artisan Quick-Links */}
+          {artisanLeaderboard.length > 0 && (
+            <div className="mt-5 pt-3 border-t border-neutral-100 flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-neutral-400">{t('admin.activeArtisans', 'Active Artisans')}:</span>
+              {artisanLeaderboard.map((artisan) => (
+                <button
+                  key={artisan.profile.id}
+                  type="button"
+                  onClick={() => setSelectedArtisanForDrawer(artisan)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-neutral-100 hover:bg-[#F37021] hover:text-white text-neutral-700 text-xs font-semibold transition-colors"
+                >
+                  <UserAvatar
+                    src={artisan.profile.avatar_url}
+                    name={artisan.profile.full_name}
+                    size={18}
+                    className="rounded-full"
                   />
-                  {directorySearchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => setDirectorySearchQuery('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </button>
-                  )}
+                  <span>{artisan.profile.full_name}</span>
+                  <span className="text-[10px] opacity-70 font-mono">({artisan.yearUnits})</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Right (Span 4): Collaborator & Category Donut Chart (Revello Sales by Category) */}
+        <div className="lg:col-span-4 rounded-2xl border border-neutral-200/90 bg-white p-5 sm:p-6 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
+              <div className="flex items-center gap-2">
+                <span className="h-2 w-2 rounded-full bg-teal-600" />
+                <h3 className="text-sm font-black text-neutral-900 tracking-tight">
+                  {t('admin.salesByCategory', 'Sales by Category')}
+                </h3>
+              </div>
+              <div className="flex items-center gap-1">
+                <button type="button" className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100">
+                  <Filter className="h-3.5 w-3.5" />
+                </button>
+                <button type="button" className="p-1.5 rounded-lg text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100">
+                  <MoreHorizontal className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Circular Donut Visual with Center Total */}
+            <div className="relative my-6 flex items-center justify-center">
+              <svg className="w-44 h-44 -rotate-90" viewBox="0 0 100 100">
+                {/* Background Ring */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="38"
+                  fill="transparent"
+                  stroke="#F1F5F9"
+                  strokeWidth="10"
+                />
+                {/* Segment 1: Electronics / Resorts (36%) */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="38"
+                  fill="transparent"
+                  stroke="#0D9488"
+                  strokeWidth="10"
+                  strokeDasharray="86 238"
+                  strokeDashoffset="0"
+                  strokeLinecap="round"
+                />
+                {/* Segment 2: Fashion / Boutiques (24%) */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="38"
+                  fill="transparent"
+                  stroke="#F37021"
+                  strokeWidth="10"
+                  strokeDasharray="57 238"
+                  strokeDashoffset="-96"
+                  strokeLinecap="round"
+                />
+                {/* Segment 3: Home & Living / Corporate (15%) */}
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="38"
+                  fill="transparent"
+                  stroke="#0284C7"
+                  strokeWidth="10"
+                  strokeDasharray="36 238"
+                  strokeDashoffset="-163"
+                  strokeLinecap="round"
+                />
+              </svg>
+
+              {/* Center Total Figure */}
+              <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">
+                  Total
+                </span>
+                <span className="text-xl font-black text-neutral-900 font-mono tracking-tight tabular-nums">
+                  $102,000
+                </span>
+              </div>
+            </div>
+
+            {/* Legend Breakdown */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-1 rounded-full bg-teal-700" />
+                  <span className="font-semibold text-neutral-700">Sunway Resort & Hotels</span>
                 </div>
+                <span className="font-mono font-bold text-neutral-900">54,071 <span className="text-[10px] text-neutral-400 font-sans">sales</span></span>
               </div>
 
-              {/* Profiles Table */}
-              <div className="overflow-x-auto rounded-2xl border border-neutral-200">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-neutral-50 text-neutral-500 font-bold uppercase tracking-wider text-[10px] border-b border-neutral-200">
-                    <tr>
-                      <th className="py-3 px-4">{t('admin.tableUser', 'User')}</th>
-                      <th className="py-3 px-4">{t('admin.tableRole', 'Role & ID')}</th>
-                      <th className="py-3 px-4">{t('admin.tableContact', 'Contact')}</th>
-                      <th className="py-3 px-4">{t('admin.tableDetails', 'Details / Assignment')}</th>
-                      <th className="py-3 px-4 text-right">{t('admin.tableAction', 'Access & Action')}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-neutral-100 bg-white">
-                    {filteredProfiles.map((p) => {
-                      const isDriver = p.role === 'driver';
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-1 rounded-full bg-[#F37021]" />
+                  <span className="font-semibold text-neutral-700">Shangri-La Series</span>
+                </div>
+                <span className="font-mono font-bold text-neutral-900">32,210 <span className="text-[10px] text-neutral-400 font-sans">sales</span></span>
+              </div>
 
-                      return (
-                        <tr 
-                          key={p.id}
-                          className="hover:bg-neutral-50/80 transition-colors"
-                        >
-                          {/* User Photo & Name */}
-                          <td className="py-3.5 px-4 whitespace-nowrap">
-                            <div className="flex items-center gap-3">
-                              <UserAvatar
-                                src={p.avatar_url}
-                                name={p.full_name}
-                                size={40}
-                                className="rounded-2xl border border-neutral-200"
-                              />
-                              <div>
-                                <p className="font-extrabold text-neutral-900 text-sm flex items-center gap-1.5">
-                                  <span>{p.full_name}</span>
-                                  {p.chinese_name && (
-                                    <span className="text-xs font-semibold text-neutral-500">
-                                      ({p.chinese_name})
-                                    </span>
-                                  )}
-                                </p>
-                                <p className="text-[11px] text-neutral-500 font-mono">
-                                  {p.id}
-                                </p>
-                              </div>
-                            </div>
-                          </td>
-
-                          {/* Role & ID */}
-                          <td className="py-3.5 px-4 whitespace-nowrap">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                  isDriver
-                                    ? 'bg-[#F37021] text-white'
-                                    : p.role === 'admin'
-                                    ? 'bg-purple-100 text-purple-900 border border-purple-300'
-                                    : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                                }`}>
-                                  {isDriver ? <Car className="h-3 w-3" /> : <User className="h-3 w-3" />}
-                                  {p.role === 'customer' 
-                                    ? t('auth.beneficiaryRole', 'Beneficiary')
-                                    : isDriver 
-                                    ? t('auth.driverStaffRole', 'Driver')
-                                    : t('nav.supervisorRole', 'Supervisor')}
-                                </span>
-                                {p.role === 'customer' && (
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                                    p.beneficiary_type === 'daycare'
-                                      ? 'bg-blue-100 text-blue-900 border border-blue-300'
-                                      : p.beneficiary_type === 'non_resident'
-                                      ? 'bg-neutral-100 text-neutral-700 border border-neutral-300'
-                                      : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                                  }`}>
-                                    {p.beneficiary_type === 'daycare' 
-                                      ? t('profile.beneficiaryDaycareBadge', 'Daycare')
-                                      : p.beneficiary_type === 'non_resident'
-                                      ? t('profile.beneficiaryNonResidentBadge', 'Non-Resident')
-                                      : t('profile.beneficiaryResidentBadge', 'Resident')}
-                                  </span>
-                                )}
-                                {(isDriver || p.role === 'admin') && (
-                                  p.is_approved === false ? (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-900 border border-amber-200">
-                                      <Clock className="h-2.5 w-2.5 text-amber-700" />
-                                      {t('admin.pendingApprovalBadge', 'Pending Admin Approval')}
-                                    </span>
-                                  ) : (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-900 border border-emerald-200">
-                                      <CheckCircle2 className="h-2.5 w-2.5 text-emerald-700" />
-                                      {t('admin.approvedBadge', 'Approved')}
-                                    </span>
-                                  )
-                                )}
-                              </div>
-                              <p className="font-mono text-xs text-neutral-700 font-semibold">
-                                {formatICNumber(p.ic_or_oku_number)}
-                              </p>
-                              {p.welfare_number && (
-                                <p className="font-mono text-[10px] text-orange-700 font-semibold">
-                                  {t('profile.welfareNumber', 'Welfare')}: {p.welfare_number}
-                                </p>
-                              )}
-                            </div>
-                          </td>
-
-                          {/* Contact */}
-                          <td className="py-3.5 px-4 whitespace-nowrap">
-                            <div className="space-y-0.5 text-xs">
-                              <p className="font-medium text-neutral-800 flex items-center gap-1.5 font-mono">
-                                <Phone className="h-3 w-3 text-neutral-400" />
-                                {formatPhoneNumber(p.phone)}
-                              </p>
-                              <p className="text-neutral-500 font-mono text-[11px] flex items-center gap-1.5">
-                                <Mail className="h-3 w-3 text-neutral-400" />
-                                {p.email}
-                              </p>
-                            </div>
-                          </td>
-
-                          {/* Details / Assignment */}
-                          <td className="py-3.5 px-4">
-                            {isDriver ? (
-                              <div className="space-y-1 text-xs">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="font-mono font-black text-xs px-2 py-0.5 rounded bg-orange-100 text-orange-950 border border-orange-200">
-                                    {p.assigned_vehicle_plate || t('common.unassigned', 'Unassigned')}
-                                  </span>
-                                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${
-                                    p.driver_status === 'on_leave'
-                                      ? 'bg-amber-100 text-amber-900 border border-amber-300'
-                                      : p.driver_status === 'standby'
-                                      ? 'bg-blue-100 text-blue-900 border border-blue-300'
-                                      : 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                                  }`}>
-                                    {p.driver_status === 'on_leave' 
-                                      ? t('admin.onLeaveStatus', 'On Leave')
-                                      : p.driver_status === 'standby'
-                                      ? t('admin.standbyStatus', 'Standby')
-                                      : t('admin.activeStatus', 'Active')}
-                                  </span>
-                                </div>
-                                <p className="text-[11px] text-neutral-500 font-medium truncate max-w-xs">
-                                  {p.driver_license && !p.driver_license.toLowerCase().includes('gdl')
-                                    ? p.driver_license
-                                    : t('admin.gdlCertified', 'GDL Certified Transit Operator')}
-                                </p>
-                              </div>
-                            ) : p.role === 'customer' ? (
-                              <div className="space-y-1 text-xs">
-                                <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-neutral-800 bg-neutral-100 px-2 py-0.5 rounded-md">
-                                    <Accessibility className="h-3 w-3 text-[#F37021]" />
-                                    {getLocalizedMobility(p.mobility_type)}
-                                  </span>
-                                  <span className="text-[10px] font-bold text-neutral-500">
-                                    {p.beneficiary_type === 'non_resident'
-                                      ? t('profile.vanTransitOnly', 'Van Transit Only')
-                                      : t('profile.workshopAndTransit', 'Workshop & Transit')}
-                                  </span>
-                                </div>
-                                {p.address && (
-                                  <p className="text-[11px] text-neutral-500 truncate max-w-xs">
-                                    {p.address}
-                                  </p>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-neutral-500 text-xs font-medium">
-                                {t('admin.hqOperations', 'Headquarters Operations')}
-                              </span>
-                            )}
-                          </td>
-
-                          {/* Action Column: Manage Driver (editable) vs View Profile (read-only) */}
-                          <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                            {isDriver ? (
-                              <div className="flex flex-col items-end gap-1.5">
-                                <div className="flex items-center gap-1.5">
-                                  {p.is_approved === false ? (
-                                    <>
-                                      <button
-                                        type="button"
-                                        onClick={() => approveDriverAccount(p.id)}
-                                        className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1 shadow-sm tap-target transition-all active:scale-95"
-                                        title={t('admin.approveStaffDriverTooltip', 'Approve driver for dispatch assignment')}
-                                      >
-                                        <Check className="h-3.5 w-3.5" />
-                                        <span>{t('admin.approveStaff', 'Approve Driver')}</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => handleManageDriver(p)}
-                                        className="px-2.5 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1 tap-target"
-                                      >
-                                        <Edit3 className="h-3 w-3" />
-                                        <span>{t('admin.reviewStaff', 'Review')}</span>
-                                      </button>
-                                    </>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleManageDriver(p)}
-                                      className="px-3.5 py-1.5 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white font-black text-xs flex items-center gap-1.5 shadow-sm tap-target transition-all active:scale-95"
-                                    >
-                                      <Edit3 className="h-3.5 w-3.5" />
-                                      <span>{t('admin.manageDriver', 'Manage Driver')}</span>
-                                    </button>
-                                  )}
-
-                                  {p.id !== currentUser?.id && (
-                                    <button
-                                      type="button"
-                                      onClick={() => setProfileToDelete(p)}
-                                      className="p-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 transition-all tap-target shadow-xs"
-                                      title={t('admin.deleteDriverTitle', 'Delete Driver Account')}
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
-                                  )}
-                                </div>
-                                <span className="text-[9px] font-bold text-orange-700 bg-orange-50 px-1.5 py-0.2 rounded">
-                                  {t('admin.manageableBadge', 'Administrator Managed')}
-                                </span>
-                              </div>
-                            ) : p.role === 'admin' ? (
-                              <div className="flex flex-col items-end gap-1.5">
-                                <div className="flex items-center gap-1.5">
-                                  {p.is_approved === false && (
-                                    <button
-                                      type="button"
-                                      onClick={() => approveDriverAccount(p.id)}
-                                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs flex items-center gap-1 shadow-sm tap-target transition-all active:scale-95"
-                                    >
-                                      <Check className="h-3.5 w-3.5" />
-                                      <span>{t('admin.approveSupervisor', 'Approve Admin')}</span>
-                                    </button>
-                                  )}
-                                  {(p.id === currentUser?.id || p.email === currentUser?.email || currentUser?.role === 'admin') ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setSelectedProfileForModal(p);
-                                        setProfileModalMode('edit_self');
-                                        setIsProfileModalOpen(true);
-                                      }}
-                                      className="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-[#F37021] text-[#F37021] hover:text-white border border-orange-200 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
-                                    >
-                                      <User className="h-3.5 w-3.5" />
-                                      <span>{t('profile.edit', 'Edit Profile')}</span>
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleViewProfile(p)}
-                                      className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
-                                    >
-                                      <Eye className="h-3.5 w-3.5 text-neutral-500" />
-                                      <span>{t('admin.viewProfile', 'View Profile')}</span>
-                                    </button>
-                                  )}
-
-                                  {p.id !== currentUser?.id && (
-                                    <button
-                                      type="button"
-                                      onClick={() => setProfileToDelete(p)}
-                                      className="p-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 transition-all tap-target shadow-xs"
-                                      title={t('admin.deleteAccount', 'Delete Account')}
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="flex flex-col items-end gap-1">
-                                <div className="flex items-center gap-1.5">
-                                  {(p.id === currentUser?.id || p.email === currentUser?.email || currentUser?.role === 'admin') ? (
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setSelectedProfileForModal(p);
-                                        setProfileModalMode('edit_self');
-                                        setIsProfileModalOpen(true);
-                                      }}
-                                      className="px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-[#F37021] text-[#F37021] hover:text-white border border-orange-200 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
-                                    >
-                                      <User className="h-3.5 w-3.5" />
-                                      <span>{t('profile.edit', 'Edit Profile')}</span>
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => handleViewProfile(p)}
-                                      className="px-3 py-1.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 font-bold text-xs flex items-center gap-1.5 shadow-xs tap-target transition-all active:scale-95"
-                                    >
-                                      <Eye className="h-3.5 w-3.5 text-neutral-500" />
-                                      <span>{t('admin.viewProfile', 'View Profile')}</span>
-                                    </button>
-                                  )}
-
-                                  {p.id !== currentUser?.id && (
-                                    <button
-                                      type="button"
-                                      onClick={() => setProfileToDelete(p)}
-                                      className="p-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-600 hover:text-white text-rose-600 transition-all tap-target shadow-xs"
-                                      title={t('admin.deleteUserTitle', 'Delete User Account')}
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
-                                  )}
-                                </div>
-                                <span className="text-[9px] font-medium text-neutral-400 flex items-center gap-0.5">
-                                  <Lock className="h-2.5 w-2.5" />
-                                  {t('admin.readOnlyBadge', 'Read-Only · User Managed')}
-                                </span>
-                              </div>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
-
-                    {filteredProfiles.length === 0 && (
-                      <tr>
-                        <td colSpan={5} className="py-12 text-center text-neutral-400">
-                          <Users className="mx-auto h-8 w-8 text-neutral-300 mb-2" />
-                          <p className="text-sm font-bold text-neutral-700">
-                            {t('admin.noProfilesFound', 'No user profiles found matching your search.')}
-                          </p>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="h-2.5 w-1 rounded-full bg-sky-600" />
+                  <span className="font-semibold text-neutral-700">Pavilion Hotel Suite</span>
+                </div>
+                <span className="font-mono font-bold text-neutral-900">24,410 <span className="text-[10px] text-neutral-400 font-sans">sales</span></span>
               </div>
             </div>
           </div>
-        )}
-      </main>
 
-      {/* Expandable Artisan Drawer */}
+          <div className="mt-5 pt-3 border-t border-neutral-100 flex items-center justify-between text-xs">
+            <span className="text-neutral-400 font-medium">3 {t('admin.partnerAccounts', 'Partner Accounts')}</span>
+            <Link
+              href="/admin/donations"
+              className="text-teal-700 font-bold hover:underline flex items-center gap-1"
+            >
+              <span>{t('admin.auditLedger', 'Audit Ledger')}</span>
+              <ChevronRight className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Expandable Artisan Drawer if clicked */}
       {selectedArtisanForDrawer && (
         <ArtisanDrawer
           artisan={selectedArtisanForDrawer}
           onClose={() => setSelectedArtisanForDrawer(null)}
         />
-      )}
-
-      {/* Profile Modal for Viewing or Managing */}
-      {isProfileModalOpen && (
-        <ProfileModal
-          isOpen={isProfileModalOpen}
-          onClose={() => setIsProfileModalOpen(false)}
-          targetProfile={selectedProfileForModal}
-          mode={profileModalMode}
-        />
-      )}
-
-      {/* Vehicle Modal for Editing Fleet Asset */}
-      {isVehicleModalOpen && (
-        <VehicleModal
-          isOpen={isVehicleModalOpen}
-          onClose={() => setIsVehicleModalOpen(false)}
-          targetVehicle={vehicles?.[0]}
-        />
-      )}
-
-      {/* EDIT / ADD WORKSHOP COLLABORATOR & PIECE-RATE MODAL */}
-      {isProductModalOpen && (
-        <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in-50"
-          onClick={() => setIsProductModalOpen(false)}
-        >
-          <div 
-            className="relative w-full max-w-lg rounded-2xl bg-white border border-neutral-200 shadow-xl overflow-hidden animate-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Modal Header */}
-            <div className="bg-neutral-900 text-white p-5 sm:p-6 relative border-b border-neutral-800">
-              <button
-                type="button"
-                onClick={() => setIsProductModalOpen(false)}
-                className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white transition-colors"
-              >
-                <X className="h-4 w-4" />
-              </button>
-
-              <div className="flex items-center gap-2 mb-1">
-                <span className="h-2 w-2 rounded-full bg-[#F37021]" />
-                <span className="font-bold text-[11px] uppercase tracking-wider text-orange-200">
-                  {selectedProductForEdit ? t('adminTable.editCollaborator', 'Edit Collaborator & Piece Rate') : t('adminTable.addCollaborator', 'Add Collaborator / Card')}
-                </span>
-              </div>
-              <h3 className="text-lg sm:text-xl font-black tracking-tight text-white">
-                {selectedProductForEdit ? selectedProductForEdit.resort_client : t('adminTable.addCollaborator', 'Add Collaborator / Card')}
-              </h3>
-            </div>
-
-            {/* Modal Body */}
-            <form 
-              onSubmit={async (e) => {
-                e.preventDefault();
-                if (!productFormName.trim() || !productFormResort.trim() || !productFormRate.trim()) {
-                  setProductSaveFeedback(t('common.requiredFields', 'Please fill in all fields.'));
-                  return;
-                }
-                const rateNum = parseFloat(productFormRate);
-                if (isNaN(rateNum) || rateNum <= 0) {
-                  setProductSaveFeedback('Invalid piece rate amount.');
-                  return;
-                }
-
-                setIsSavingProduct(true);
-                try {
-                  if (selectedProductForEdit) {
-                    await updateProduct(selectedProductForEdit.id, {
-                      name: productFormName.trim(),
-                      resort_client: productFormResort.trim(),
-                      piece_rate: rateNum,
-                    });
-                  } else {
-                    await addProduct({
-                      name: productFormName.trim(),
-                      resort_client: productFormResort.trim(),
-                      piece_rate: rateNum,
-                    });
-                  }
-                  setIsProductModalOpen(false);
-                } catch (err: any) {
-                  setProductSaveFeedback(err?.message || 'Error saving changes');
-                } finally {
-                  setIsSavingProduct(false);
-                }
-              }}
-              className="p-5 sm:p-6 space-y-4 text-xs text-neutral-800"
-            >
-              {productSaveFeedback && (
-                <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-medium">
-                  {productSaveFeedback}
-                </div>
-              )}
-
-              {/* Collaborator / Resort Client */}
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">
-                  {t('adminTable.collaboratorName', 'Collaborator / Resort Client')}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={productFormResort}
-                  onChange={(e) => setProductFormResort(e.target.value)}
-                  placeholder="e.g. Pangkor Laut Resort, The Datai Langkawi"
-                  className="apple-input w-full text-xs font-medium"
-                />
-              </div>
-
-              {/* Card Product / Series Name */}
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">
-                  {t('adminTable.cardSeries', 'Card Product / Series')}
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={productFormName}
-                  onChange={(e) => setProductFormName(e.target.value)}
-                  placeholder="e.g. Pangkor Hornbill Note Card"
-                  className="apple-input w-full text-xs font-medium"
-                />
-              </div>
-
-              {/* Price / Piece (MYR) */}
-              <div>
-                <label className="block text-xs font-bold text-neutral-700 mb-1">
-                  {t('adminTable.pricePerPiece', 'Price / Piece')} (MYR)
-                </label>
-                <input
-                  type="number"
-                  step="0.001"
-                  min="0.001"
-                  max="100.00"
-                  required
-                  value={productFormRate}
-                  onChange={(e) => setProductFormRate(e.target.value)}
-                  placeholder="0.001"
-                  className="apple-input w-full font-mono font-bold text-xs"
-                />
-                <p className="text-[11px] text-neutral-500 mt-1">
-                  Payout credited directly to OKU artisan for each finished piece.
-                </p>
-              </div>
-
-              {/* Modal Actions */}
-              <div className="pt-4 border-t border-neutral-100 flex items-center justify-between gap-2">
-                {selectedProductForEdit ? (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      if (window.confirm(t('adminTable.confirmDeleteProduct', 'Are you sure you want to delete this product collaboration?'))) {
-                        await deleteProduct(selectedProductForEdit.id);
-                        setIsProductModalOpen(false);
-                      }
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-rose-600 hover:bg-rose-50 font-bold text-xs transition-colors"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                    <span>{t('adminTable.deleteProduct', 'Delete Collaborator')}</span>
-                  </button>
-                ) : <div />}
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsProductModalOpen(false)}
-                    className="px-4 py-2 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-50 text-neutral-700 font-bold text-xs"
-                  >
-                    {t('common.cancel', 'Cancel')}
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSavingProduct}
-                    className="px-4 py-2 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white font-bold text-xs shadow-xs tap-target transition-all active:scale-95 disabled:opacity-50"
-                  >
-                    {isSavingProduct ? 'Saving...' : t('adminTable.saveProduct', 'Save Changes')}
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Profile Confirmation Modal */}
-      {profileToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in-50">
-          <div className="relative w-full max-w-md rounded-2xl bg-white border border-neutral-200 p-6 shadow-xl space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-200">
-                <Trash2 className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-neutral-900">
-                  {t('admin.confirmDeleteTitle', 'Permanently Delete Account')}
-                </h3>
-                <p className="text-xs text-neutral-500 font-medium">
-                  {profileToDelete.role === 'driver' 
-                    ? t('admin.deleteDriverTitle', 'Delete Driver Account') 
-                    : t('admin.deleteUserTitle', 'Delete User Account')}
-                </p>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 space-y-2">
-              <div className="flex items-center gap-3">
-                <UserAvatar 
-                  src={profileToDelete.avatar_url} 
-                  name={profileToDelete.full_name} 
-                  size={40} 
-                  className="rounded-xl border border-neutral-200" 
-                />
-                <div>
-                  <p className="font-extrabold text-sm text-neutral-900 flex items-center gap-1.5">
-                    <span>{profileToDelete.full_name}</span>
-                    {profileToDelete.chinese_name && (
-                      <span className="text-xs font-semibold text-neutral-500">
-                        ({profileToDelete.chinese_name})
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-xs text-neutral-500 font-mono">{profileToDelete.email}</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 pt-2 border-t border-neutral-200/60 text-[11px] text-neutral-600">
-                <span className="font-mono font-bold">{profileToDelete.ic_or_oku_number}</span>
-                <span>·</span>
-                <span className="font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 rounded-full bg-white border border-neutral-200 text-neutral-700">
-                  {profileToDelete.role === 'driver' 
-                    ? t('auth.driverStaffRole', 'Driver') 
-                    : profileToDelete.role === 'customer' 
-                    ? t('auth.beneficiaryRole', 'Beneficiary') 
-                    : t('nav.supervisorRole', 'Supervisor')}
-                </span>
-              </div>
-            </div>
-
-            <p className="text-xs text-neutral-600 leading-relaxed">
-              {t('admin.confirmDeleteDesc', 'Are you sure you want to permanently delete {name}? Their profile and authentication access will be removed immediately from Beautiful Gate and the Supabase database. This action cannot be undone.').replace('{name}', profileToDelete.full_name)}
-            </p>
-
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                disabled={isDeletingProfile}
-                onClick={() => setProfileToDelete(null)}
-                className="px-4 py-2.5 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-bold tap-target transition-all disabled:opacity-50"
-              >
-                {t('common.cancel', 'Cancel')}
-              </button>
-              <button
-                type="button"
-                disabled={isDeletingProfile}
-                onClick={handleConfirmDelete}
-                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-black shadow-md tap-target transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span>{isDeletingProfile ? t('admin.deleting', 'Deleting...') : t('admin.confirmDeleteBtn', 'Yes, Delete Permanently')}</span>
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </div>
   );
