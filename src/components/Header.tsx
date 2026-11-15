@@ -19,6 +19,11 @@ export const Header: React.FC = () => {
   const { t } = useLanguage();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
+  // Hide global top header on admin portal (Admin has its own dedicated sidebar & shell layout)
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   const handleLogout = () => {
     logout();
     router.push('/login');
