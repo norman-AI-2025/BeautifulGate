@@ -8,19 +8,19 @@ import { useApp } from '@/context/AppContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { UserAvatar } from '@/components/UserAvatar';
 import { ProfileModal } from '@/components/ProfileModal';
-import { 
-  LayoutDashboard, 
-  Car, 
-  Sparkles, 
-  HeartHandshake, 
-  Users, 
-  Bell, 
-  ChevronLeft, 
-  ChevronRight, 
-  Menu, 
-  X, 
-  LogOut, 
-  ShieldCheck, 
+import {
+  LayoutDashboard,
+  Car,
+  Sparkles,
+  HeartHandshake,
+  Users,
+  Bell,
+  ChevronLeft,
+  ChevronRight,
+  Menu,
+  X,
+  LogOut,
+  ShieldCheck,
   Calendar,
   Clock,
   CheckCircle2,
@@ -30,12 +30,12 @@ import {
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { 
-    isLoaded, 
-    currentUser, 
-    bookings, 
-    driverLeaves, 
-    logout 
+  const {
+    isLoaded,
+    currentUser,
+    bookings,
+    driverLeaves,
+    logout
   } = useApp();
   const { t, language, setLanguage } = useLanguage();
 
@@ -150,7 +150,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-[#f8fafc] text-neutral-900 flex flex-col md:flex-row antialiased">
       {/* Mobile Backdrop */}
       {isMobileOpen && (
-        <div 
+        <div
           onClick={() => setIsMobileOpen(false)}
           className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs md:hidden"
         />
@@ -159,16 +159,15 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       {/* ================================================================ */}
       {/* LEFT NAVIGATION SIDEBAR (Revello SaaS Style)                     */}
       {/* ================================================================ */}
-      <aside 
-        className={`fixed md:sticky top-0 bottom-0 left-0 z-50 flex flex-col justify-between bg-white border-r border-neutral-200/90 transition-all duration-300 ease-in-out shrink-0 h-screen overflow-y-auto ${
-          isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'
-        } ${isCollapsed ? 'md:w-20' : 'md:w-64'}`}
+      <aside
+        className={`fixed md:sticky top-0 bottom-0 left-0 z-50 flex flex-col justify-between bg-white border-r border-neutral-200/90 transition-all duration-300 ease-in-out shrink-0 h-screen overflow-y-auto ${isMobileOpen ? 'translate-x-0 w-64' : '-translate-x-full md:translate-x-0'
+          } ${isCollapsed ? 'md:w-20' : 'md:w-64'}`}
       >
         <div className={`flex flex-col space-y-6 ${isCollapsed ? 'p-3 items-center' : 'p-4 sm:p-5'}`}>
           {/* Brand Header */}
           <div className={`flex w-full ${isCollapsed ? 'flex-col items-center gap-2.5' : 'items-center justify-between gap-3'}`}>
-            <Link 
-              href="/admin" 
+            <Link
+              href="/admin"
               className="flex items-center justify-center focus:outline-none shrink-0 group"
             >
               <div className="h-10 w-10 rounded-xl bg-orange-50 border border-orange-200/80 p-1 flex items-center justify-center shrink-0 shadow-xs">
@@ -230,27 +229,23 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                         key={item.href}
                         href={item.href}
                         title={isCollapsed ? item.name : undefined}
-                        className={`group relative flex items-center ${
-                          isCollapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2.5'
-                        } rounded-xl text-xs font-semibold transition-all duration-150 ${
-                          item.isActive
+                        className={`group relative flex items-center ${isCollapsed ? 'justify-center p-2.5' : 'justify-between px-3 py-2.5'
+                          } rounded-xl text-xs font-semibold transition-all duration-150 ${item.isActive
                             ? 'bg-[#F37021] text-white shadow-xs font-bold'
                             : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100/80'
-                        }`}
+                          }`}
                       >
                         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 min-w-0'}`}>
-                          <Icon className={`h-4 w-4 shrink-0 transition-colors ${
-                            item.isActive ? 'text-white' : 'text-neutral-400 group-hover:text-neutral-800'
-                          }`} />
+                          <Icon className={`h-4 w-4 shrink-0 transition-colors ${item.isActive ? 'text-white' : 'text-neutral-400 group-hover:text-neutral-800'
+                            }`} />
                           {!isCollapsed && (
                             <span className="truncate">{item.name}</span>
                           )}
                         </div>
 
                         {item.badge !== null && !isCollapsed && (
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold leading-none ${
-                            item.isActive ? 'bg-white text-[#F37021]' : item.badgeColor || 'bg-neutral-200 text-neutral-700'
-                          }`}>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold leading-none ${item.isActive ? 'bg-white text-[#F37021]' : item.badgeColor || 'bg-neutral-200 text-neutral-700'
+                            }`}>
                             {item.badge}
                           </span>
                         )}
@@ -270,7 +265,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         <div className="p-3 sm:p-4 border-t border-neutral-200/80 bg-neutral-50/60">
           {!isCollapsed ? (
             <div className="rounded-xl border border-neutral-200/80 bg-white p-3 shadow-2xs space-y-2.5">
-              <div 
+              <div
                 onClick={() => setIsProfileModalOpen(true)}
                 className="flex items-center gap-2.5 cursor-pointer hover:opacity-85 transition-opacity"
               >
