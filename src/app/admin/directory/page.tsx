@@ -108,7 +108,7 @@ export default function AdminDirectoryPage() {
 
   // Helper to localize vehicle notes across languages
   const getLocalizedVehicleNotes = (notes: string | undefined): string => {
-    if (!notes) return t('admin.fleetAssetNotes', 'Fleet vehicle managed by Beautiful Gate Foundation');
+    if (!notes) return t('admin.fleetAssetNotes', 'Fleet vehicle managed by Beautiful Gate Seremban Foundation');
     if (notes.includes('hydraulic boarding lift') || notes.includes('rear hydraulic')) {
       return t('admin.vehicleNotesDesc', 'Fitted with rear hydraulic boarding lift and floor clamps');
     }
@@ -872,7 +872,7 @@ export default function AdminDirectoryPage() {
             </div>
 
             <p className="text-xs text-neutral-600 leading-relaxed">
-              {t('admin.deleteUserWarning', 'Are you sure you want to permanently delete this user account from the Beautiful Gate database? All linked permissions will be revoked.')}
+              {t('admin.deleteUserWarning', 'Are you sure you want to permanently delete this user account from the Beautiful Gate Seremban database? All linked permissions will be revoked.')}
             </p>
 
             <div className="flex items-center justify-end gap-2.5 pt-2">

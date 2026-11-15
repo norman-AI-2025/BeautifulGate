@@ -16,7 +16,7 @@ export const TransitPassModal: React.FC<TransitPassModalProps> = ({ booking, onC
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs overflow-y-auto">
       <div className="relative w-full max-w-md rounded-2xl bg-white border border-neutral-200 shadow-xl overflow-hidden my-8">
-        {/* Pass Top Card (Clean dark ticket card with Beautiful Gate Branding) */}
+        {/* Pass Top Card (Clean dark ticket card with Beautiful Gate Seremban Branding) */}
         <div className="bg-neutral-900 text-white p-6 relative border-b border-neutral-800">
           <button
             onClick={onClose}

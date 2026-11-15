@@ -1100,7 +1100,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const product = products.find(p => p.id === cardId) || {
       id: cardId,
       name: 'Standard Greeting Card',
-      resort_client: 'Beautiful Gate Artisan',
+      resort_client: 'Beautiful Gate Seremban Artisan',
       piece_rate: 1.50,
     };
     const earned = Number((units * product.piece_rate).toFixed(2));

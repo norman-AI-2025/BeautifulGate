@@ -616,7 +616,7 @@ export default function DriverPage() {
               <span>{t('driver.accountPendingTitle', 'Staff Account Awaiting Administrator Approval')}</span>
             </div>
             <p className="text-xs text-amber-800 leading-relaxed font-medium">
-              {t('driver.accountPendingDesc', 'Your staff / driver credentials have been submitted and are pending verification and approval by a Beautiful Gate administrator before active dispatch missions are scheduled.')}
+              {t('driver.accountPendingDesc', 'Your staff / driver credentials have been submitted and are pending verification and approval by a Beautiful Gate Seremban administrator before active dispatch missions are scheduled.')}
             </p>
           </div>
         )}
@@ -761,7 +761,7 @@ export default function DriverPage() {
                 {t('driver.noJobsFound', 'No Scheduled Missions Found')}
               </h3>
               <p className="text-xs text-neutral-500 font-medium max-w-sm mx-auto">
-                {t('driver.noJobsDesc', 'There are no active or upcoming transit missions assigned. Check back later or notify the Beautiful Gate transport supervisor.')}
+                {t('driver.noJobsDesc', 'There are no active or upcoming transit missions assigned. Check back later or notify the Beautiful Gate Seremban transport supervisor.')}
               </p>
             </div>
           ) : (

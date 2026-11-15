@@ -83,7 +83,7 @@ export default function SignUpPage() {
         <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-white border border-neutral-200 shadow-xs p-2.5 mb-3">
           <Image
             src="/images/beautiful-gate-logo.png"
-            alt="Beautiful Gate Foundation"
+            alt="Beautiful Gate Seremban Foundation"
             width={72}
             height={72}
             priority
@@ -91,7 +91,7 @@ export default function SignUpPage() {
           />
         </div>
         <h1 className="text-2xl font-black tracking-tight text-neutral-900">
-          {t('brand.name', 'Beautiful Gate')}
+          {t('brand.name', 'Beautiful Gate Seremban')}
         </h1>
         <p className="text-sm text-neutral-500 font-medium mt-1">
           {t('brand.subtitle', 'Assisted Mobility')} & Artisan Registration

@@ -82,7 +82,7 @@ export const TransitDonationModal: React.FC<TransitDonationModalProps> = ({ book
               <HeartHandshake className="h-4 w-4" />
             </div>
             <span className="font-bold text-xs tracking-wider uppercase text-orange-200">
-              Beautiful Gate Foundation
+              Beautiful Gate Seremban Foundation
             </span>
           </div>
 
@@ -90,7 +90,7 @@ export const TransitDonationModal: React.FC<TransitDonationModalProps> = ({ book
             {t('donation.title', 'Voluntary Transit Donation')}
           </h3>
           <p className="text-xs text-orange-200/90 font-medium mt-1 leading-relaxed">
-            {t('donation.subtitle', 'Help Beautiful Gate Foundation subsidize fuel, vehicle upkeep & accessible hospital runs for disabled beneficiaries.')}
+            {t('donation.subtitle', 'Help Beautiful Gate Seremban Foundation subsidize fuel, vehicle upkeep & accessible hospital runs for disabled beneficiaries.')}
           </p>
 
           {/* Booking Context Pill */}
@@ -151,11 +151,11 @@ export const TransitDonationModal: React.FC<TransitDonationModalProps> = ({ book
 
                 <div className="flex items-center justify-between">
                   <span className="text-neutral-600 font-medium">Beneficiary Organization:</span>
-                  <span className="font-bold text-neutral-900">Beautiful Gate Foundation</span>
+                  <span className="font-bold text-neutral-900">Beautiful Gate Seremban Foundation</span>
                 </div>
 
                 <p className="text-[10px] text-emerald-800/90 pt-2 border-t border-emerald-200 italic leading-snug">
-                  {t('donation.taxExempt', 'Beautiful Gate Foundation donations are eligible for tax exemption under Section 44(6) ITA 1967.')}
+                  {t('donation.taxExempt', 'Beautiful Gate Seremban Foundation donations are eligible for tax exemption under Section 44(6) ITA 1967.')}
                 </p>
               </div>
 
@@ -292,12 +292,12 @@ export const TransitDonationModal: React.FC<TransitDonationModalProps> = ({ book
                       <span>DuitNow National QR</span>
                     </div>
 
-                    {/* Official Beautiful Gate DuitNow QR Code Image */}
+                    {/* Official Beautiful Gate Seremban DuitNow QR Code Image */}
                     <div className="flex justify-center my-2">
                       <div className="relative p-2 rounded-2xl bg-white border-2 border-neutral-200 shadow-md max-w-[260px] overflow-hidden">
                         <Image
                           src="/images/beautiful-gate-duitnow-qr.png"
-                          alt="Beautiful Gate Foundation DuitNow QR Code"
+                          alt="Beautiful Gate Seremban Foundation DuitNow QR Code"
                           width={260}
                           height={368}
                           className="w-full h-auto object-contain rounded-xl"

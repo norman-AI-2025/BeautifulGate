@@ -84,7 +84,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex items-center justify-center bg-[#18181B] text-white">
         <div className="flex flex-col items-center gap-3">
           <div className="h-8 w-8 border-2 border-[#F37021] border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs font-mono text-neutral-400">Loading Beautiful Gate System...</p>
+          <p className="text-xs font-mono text-neutral-400">Loading Beautiful Gate Seremban System...</p>
         </div>
       </div>
     );
@@ -173,7 +173,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <div className="h-10 w-10 rounded-xl bg-orange-50 border border-orange-200/80 p-1 flex items-center justify-center shrink-0 shadow-xs">
                 <Image
                   src="/images/beautiful-gate-logo.png"
-                  alt="Beautiful Gate Foundation"
+                  alt="Beautiful Gate Seremban Foundation"
                   width={34}
                   height={34}
                   className="object-contain"
@@ -182,7 +182,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               {!isCollapsed && (
                 <div className="min-w-0 ml-3">
                   <h1 className="text-sm font-black tracking-tight text-neutral-900 truncate leading-none">
-                    {t('brand.name', 'Beautiful Gate')}
+                    {t('brand.name', 'Beautiful Gate Seremban')}
                   </h1>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-[#F37021] block mt-1">
                     {t('adminNav.controlTower', 'Control Tower')}

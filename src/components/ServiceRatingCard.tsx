@@ -60,7 +60,7 @@ export const ServiceRatingCard: React.FC<ServiceRatingCardProps> = ({ booking })
           ))}
         </div>
         <p className="text-xs text-emerald-800 font-medium">
-          {t('rating.thankYouDetail', 'Your rating of Driver Johan has been recorded and submitted to Beautiful Gate administration.')}
+          {t('rating.thankYouDetail', 'Your rating of Driver Johan has been recorded and submitted to Beautiful Gate Seremban administration.')}
         </p>
       </div>
     );

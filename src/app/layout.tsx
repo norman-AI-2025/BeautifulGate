@@ -6,7 +6,7 @@ import { Header } from '@/components/Header';
 import { LanguageSelector } from '@/components/LanguageSelector';
 
 export const metadata: Metadata = {
-  title: 'Beautiful Gate | Assisted Mobility & Artisan Workshop Platform',
+  title: 'Beautiful Gate Seremban | Assisted Mobility & Artisan Workshop Platform',
   description: 'Production-grade Apple HIG platform for accessible hospital transit and OKU artisan workshop management.',
 };
 

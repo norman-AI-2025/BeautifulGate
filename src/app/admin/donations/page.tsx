@@ -381,10 +381,10 @@ export default function AdminDonationsPage() {
         <ShieldCheck className="h-5 w-5 text-[#F37021] shrink-0 mt-0.5" />
         <div className="space-y-1">
           <span className="font-bold text-neutral-900 block">
-            Beautiful Gate Foundation for the Disabled · Official Transit Donation & Tax Compliance
+            Beautiful Gate Seremban Foundation for the Disabled · Official Transit Donation & Tax Compliance
           </span>
           <p className="text-neutral-600 leading-relaxed">
-            {t('donation.taxExempt', 'Beautiful Gate Foundation donations are eligible for tax exemption under Section 44(6) ITA 1967.')} All voluntary transit donations directly fund vehicle diesel, hydraulic lift maintenance, driver allowance, and accessible transport subsidies.
+            {t('donation.taxExempt', 'Beautiful Gate Seremban Foundation donations are eligible for tax exemption under Section 44(6) ITA 1967.')} All voluntary transit donations directly fund vehicle diesel, hydraulic lift maintenance, driver allowance, and accessible transport subsidies.
           </p>
         </div>
       </div>

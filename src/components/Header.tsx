@@ -38,7 +38,7 @@ export const Header: React.FC = () => {
             <div className="relative h-10 w-10 shrink-0">
               <Image 
                 src="/images/beautiful-gate-logo.png" 
-                alt="Beautiful Gate Foundation" 
+                alt="Beautiful Gate Seremban Foundation" 
                 width={40} 
                 height={40} 
                 className="h-10 w-10 object-contain"
@@ -47,7 +47,7 @@ export const Header: React.FC = () => {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-base font-black tracking-tight text-neutral-900">
-                {t('brand.name', 'Beautiful Gate')}
+                {t('brand.name', 'Beautiful Gate Seremban')}
               </span>
               <span className="hidden sm:inline-block rounded-full bg-orange-50 text-[#F37021] border border-orange-200 px-2 py-0.5 text-[10px] font-black tracking-wider uppercase">
                 {t('brand.subtitle', 'Assisted Mobility')}

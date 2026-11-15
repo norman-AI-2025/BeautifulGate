@@ -67,12 +67,12 @@ export default function HomePage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-12 pb-16 sm:pt-16 sm:pb-24 border-b border-neutral-200 bg-white">
         <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 text-center">
-          {/* Beautiful Gate Official NGO Logo */}
+          {/* Beautiful Gate Seremban Official NGO Logo */}
           <div className="flex justify-center mb-6">
             <div className="relative h-24 w-24 sm:h-28 sm:w-28 flex items-center justify-center p-2.5 rounded-2xl bg-white shadow-xs border border-neutral-200/80">
               <Image
                 src="/images/beautiful-gate-logo.png"
-                alt="Beautiful Gate Foundation for the Disabled"
+                alt="Beautiful Gate Seremban Foundation for the Disabled"
                 width={104}
                 height={104}
                 priority
@@ -83,7 +83,7 @@ export default function HomePage() {
 
           <div className="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3.5 py-1 text-xs font-semibold text-[#D9530F] mb-6">
             <span className="h-2 w-2 rounded-full bg-[#F37021]" />
-            {t('home.pill', 'Beautiful Gate Foundation for the Disabled')}
+            {t('home.pill', 'Beautiful Gate Seremban Foundation for the Disabled')}
           </div>
 
           <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-neutral-900 leading-[1.1]">
