@@ -77,7 +77,7 @@ export default function LoginPage() {
     <div className="min-h-screen bg-neutral-100/60 flex flex-col justify-center items-center px-4 py-12 relative">
       {/* Brand Header */}
       <div className="mb-6 text-center">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white border border-neutral-200/80 shadow-md p-2 mb-3">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-white border border-neutral-200 shadow-xs p-2.5 mb-3">
           <Image
             src="/images/beautiful-gate-logo.png"
             alt="Beautiful Gate Foundation"
@@ -96,7 +96,7 @@ export default function LoginPage() {
       </div>
 
       {/* Centered Modal Card */}
-      <div className="w-full max-w-md rounded-3xl bg-white border border-neutral-200 p-8 shadow-xl">
+      <div className="w-full max-w-md rounded-2xl bg-white border border-neutral-200 p-8 shadow-xs">
         <h2 className="text-xl font-bold text-neutral-900 tracking-tight">
           {t('auth.signIn', 'Sign In')}
         </h2>
@@ -105,7 +105,7 @@ export default function LoginPage() {
         </p>
 
         {errorMsg && (
-          <div className="mb-5 rounded-2xl border border-red-200 bg-red-50/90 p-4 shadow-sm flex items-start gap-3 animate-in fade-in-50 duration-200">
+          <div className="mb-5 rounded-xl border border-red-200 bg-red-50/90 p-3.5 shadow-xs flex items-start gap-3 animate-in fade-in-50 duration-200">
             <div className="h-6 w-6 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 mt-0.5">
               <span className="font-black text-xs">!</span>
             </div>

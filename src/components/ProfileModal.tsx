@@ -246,11 +246,11 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     : t('nav.supervisorRole', 'Supervisor');
 
   const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in-50">
-      <div className="relative w-full max-w-2xl rounded-3xl bg-white border border-neutral-200 shadow-2xl overflow-hidden my-4 sm:my-8 max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/50 backdrop-blur-xs overflow-y-auto animate-in fade-in-50">
+      <div className="relative w-full max-w-2xl rounded-2xl bg-white border border-neutral-200 shadow-xl overflow-hidden my-4 sm:my-8 max-h-[92vh] flex flex-col">
         
         {/* Header */}
-        <div className="bg-gradient-to-r from-neutral-950 via-stone-900 to-orange-950 text-white p-5 sm:p-6 relative shrink-0">
+        <div className="bg-neutral-900 text-white p-5 sm:p-6 relative shrink-0 border-b border-neutral-800">
           <button
             type="button"
             onClick={onClose}
@@ -331,7 +331,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
           {/* 1. Profile Photo Upload Section */}
           <div className="rounded-2xl border border-neutral-200 bg-neutral-50/80 p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 shadow-xs">
             <div className="relative group shrink-0">
-              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-3xl overflow-hidden bg-white border-2 border-neutral-200 shadow-md flex items-center justify-center relative">
+              <div className="h-20 w-20 sm:h-24 sm:w-24 rounded-2xl overflow-hidden bg-white border border-neutral-200 shadow-xs flex items-center justify-center relative">
                 {avatarUrl && !avatarError ? (
                   <Image
                     src={avatarUrl}

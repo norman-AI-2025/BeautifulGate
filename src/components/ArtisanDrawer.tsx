@@ -55,7 +55,7 @@ export const ArtisanDrawer: React.FC<ArtisanDrawerProps> = ({ artisan, onClose }
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs">
-      <div className="relative w-full max-w-xl h-full bg-white shadow-2xl flex flex-col border-l border-neutral-200 overflow-y-auto">
+      <div className="relative w-full max-w-xl h-full bg-white shadow-xl flex flex-col border-l border-neutral-200 overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-neutral-200 px-6 py-5 bg-neutral-50/70 sticky top-0 z-10 backdrop-blur-md">
           <div>

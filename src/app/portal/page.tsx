@@ -137,7 +137,7 @@ export default function MobileArtisanPortalPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-neutral-900 pb-28">
       {/* Top Mobile Bar */}
-      <div className="bg-gradient-to-r from-neutral-950 via-stone-900 to-orange-950 text-white shadow-md sticky top-0 z-30">
+      <div className="bg-[#18181B] text-white border-b border-neutral-800 shadow-xs sticky top-0 z-30">
         <div className="max-w-2xl mx-auto px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2">
             <div 
@@ -313,7 +313,7 @@ export default function MobileArtisanPortalPage() {
                       return (
                         <div
                           key={service.id}
-                          className="rounded-3xl border-2 border-orange-500 bg-white p-5 sm:p-6 shadow-md space-y-4"
+                          className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs space-y-4"
                         >
                           {/* Seamless phase switch notice when outbound is completed and return is active */}
                           {isReturnPhase && service.isRoundtrip && (
@@ -420,7 +420,7 @@ export default function MobileArtisanPortalPage() {
                       return (
                         <div
                           key={service.id}
-                          className="rounded-2xl border-2 border-yellow-400 bg-gradient-to-r from-yellow-50 to-amber-50 p-4 shadow-xs space-y-3"
+                          className="rounded-xl border border-amber-300 bg-amber-50/70 p-4 shadow-xs space-y-3"
                         >
                           <div className="flex items-start justify-between">
                             <div className="flex items-center gap-2">
@@ -464,7 +464,7 @@ export default function MobileArtisanPortalPage() {
 
                 {/* 3. Completed Services (With Service Rating & Donation Button) */}
                 {completedServices.length > 0 && (
-                  <div className="rounded-3xl border border-neutral-200 bg-white overflow-hidden shadow-xs transition-all">
+                  <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-xs transition-all">
                     {/* Collapsible Header Accordion Toggle */}
                     <button
                       type="button"
@@ -604,7 +604,7 @@ export default function MobileArtisanPortalPage() {
 
                 {/* Empty State */}
                 {userServices.length === 0 && (
-                  <div className="rounded-3xl border border-neutral-200 bg-white p-8 text-center space-y-3">
+                  <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center space-y-3">
                     <Calendar className="mx-auto h-10 w-10 text-neutral-400" />
                     <h4 className="text-base font-bold text-neutral-900">
                       {t('portalStatus.noBookingsYet', 'No Transit Bookings Yet')}
@@ -638,7 +638,7 @@ export default function MobileArtisanPortalPage() {
                 <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">
                   {t('portal.todayIncome', "Today's Income")}
                 </span>
-                <p className="text-2xl font-black text-emerald-950 font-mono mt-1">
+                <p className="text-2xl font-black text-emerald-950 font-mono mt-1 tabular-nums">
                   RM {artisanStats?.todayEarned.toFixed(2) || '0.00'}
                 </p>
                 <p className="text-[11px] font-semibold text-emerald-800 mt-0.5">
@@ -651,7 +651,7 @@ export default function MobileArtisanPortalPage() {
                 <span className="text-[10px] font-bold uppercase tracking-wider text-orange-700">
                   {t('portal.thisWeekMonSun', 'A Week (Mon – Sun)')}
                 </span>
-                <p className="text-2xl font-black text-orange-950 font-mono mt-1">
+                <p className="text-2xl font-black text-orange-950 font-mono mt-1 tabular-nums">
                   RM {artisanStats?.weekEarned.toFixed(2) || '0.00'}
                 </p>
                 <p className="text-[11px] font-semibold text-orange-800 mt-0.5">
@@ -659,12 +659,12 @@ export default function MobileArtisanPortalPage() {
                 </p>
               </div>
 
-              {/* This Month (Highlighted in bold brand orange / charcoal) */}
-              <div className="rounded-2xl border-2 border-[#F37021] bg-[#18181B] text-white p-4 shadow-md">
+              {/* This Month (Highlighted in brand charcoal card) */}
+              <div className="rounded-2xl border border-neutral-700 bg-[#18181B] text-white p-4 shadow-xs">
                 <span className="text-[10px] font-bold uppercase tracking-wider text-orange-400">
                   {t('portal.thisMonth', 'Month-to-Date (MTD)')}
                 </span>
-                <p className="text-2xl font-black text-white font-mono mt-1">
+                <p className="text-2xl font-black text-white font-mono mt-1 tabular-nums">
                   RM {artisanStats?.monthEarned.toFixed(2) || '0.00'}
                 </p>
                 <p className="text-[11px] font-medium text-orange-200 mt-0.5">
@@ -677,7 +677,7 @@ export default function MobileArtisanPortalPage() {
                 <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700">
                   {t('portal.thisYear', 'Year-to-Date (YTD)')}
                 </span>
-                <p className="text-2xl font-black text-purple-950 font-mono mt-1">
+                <p className="text-2xl font-black text-purple-950 font-mono mt-1 tabular-nums">
                   RM {artisanStats?.yearEarned.toFixed(2) || '0.00'}
                 </p>
                 <p className="text-[11px] font-semibold text-purple-800 mt-0.5">
@@ -687,7 +687,7 @@ export default function MobileArtisanPortalPage() {
             </div>
 
             {/* Recent Activity List */}
-            <div className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-xs">
+            <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
               <h3 className="text-sm font-bold text-neutral-900 pb-3 border-b border-neutral-100">
                 {t('portal.recentHistory', 'Recent Production History')}
               </h3>

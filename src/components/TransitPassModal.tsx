@@ -14,10 +14,10 @@ export const TransitPassModal: React.FC<TransitPassModalProps> = ({ booking, onC
   const { t } = useLanguage();
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-md rounded-3xl bg-white border border-neutral-200 shadow-2xl overflow-hidden my-8">
-        {/* Pass Top Card (Apple Wallet Style with Beautiful Gate Branding) */}
-        <div className="bg-gradient-to-br from-neutral-950 via-stone-900 to-orange-950 text-white p-6 relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs overflow-y-auto">
+      <div className="relative w-full max-w-md rounded-2xl bg-white border border-neutral-200 shadow-xl overflow-hidden my-8">
+        {/* Pass Top Card (Clean dark ticket card with Beautiful Gate Branding) */}
+        <div className="bg-neutral-900 text-white p-6 relative border-b border-neutral-800">
           <button
             onClick={onClose}
             className="absolute top-5 right-5 flex h-8 w-8 items-center justify-center rounded-full bg-neutral-800 text-neutral-300 hover:text-white transition-colors tap-target"

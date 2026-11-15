@@ -488,49 +488,49 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/50 backdrop-blur-xs overflow-y-auto">
       {/* USER SPEC: Make the popup for seat selection bigger (max-w-4xl) */}
-      <div className="relative w-full max-w-4xl rounded-3xl bg-white border border-neutral-200 shadow-2xl overflow-hidden my-4 sm:my-6 max-h-[94vh] flex flex-col">
+      <div className="relative w-full max-w-4xl rounded-2xl bg-white border border-neutral-200 shadow-xl overflow-hidden my-4 sm:my-6 max-h-[94vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-neutral-200 px-5 sm:px-7 py-4 bg-neutral-50/90 shrink-0">
           <div className="flex flex-wrap items-center gap-2.5">
-            <h2 className="text-lg font-black text-neutral-900 tracking-tight">
+            <h2 className="text-base font-bold text-neutral-900 tracking-tight">
               {t('vanModal.seatSelection', 'Seat Selection')}
             </h2>
-            <span className="rounded-lg bg-[#F37021] text-white px-3 py-1 text-xs font-black shadow-xs">
+            <span className="rounded-lg bg-[#F37021] text-white px-2.5 py-1 text-xs font-bold shadow-xs">
               {selectedDay.split(',')[0]}
             </span>
-            <span className="rounded-lg bg-orange-100 text-orange-950 border border-orange-300 px-3 py-1 font-mono text-xs font-black">
+            <span className="rounded-lg bg-orange-50 text-orange-950 border border-orange-200 px-2.5 py-1 font-mono text-xs font-bold tabular-nums">
               {selectedTimeSlot}
             </span>
-            <span className="hidden sm:inline-flex items-center gap-1 text-xs font-bold text-neutral-500">
+            <span className="hidden sm:inline-flex items-center gap-1 text-xs font-semibold text-neutral-500">
               · {activeVehicle ? `${activeVehicle.brand} ${activeVehicle.model} (${activeVehicle.plate})` : 'Toyota HiAce Commuter'}
             </span>
           </div>
 
           <button
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-400 hover:text-black hover:bg-neutral-200 transition-colors tap-target shrink-0"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-400 hover:text-black hover:bg-neutral-200 transition-colors tap-target shrink-0"
             aria-label={t('vanModal.close', 'Close modal')}
           >
-            <X className="h-5 w-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
         {/* Form Body - Scrollable */}
         <form onSubmit={handleSubmit} className="overflow-y-auto p-5 sm:p-7 flex-1 space-y-6">
           {isDateBlockedByLeave(selectedDay) && (
-            <div className="rounded-2xl bg-amber-50 border-2 border-amber-300 p-4 text-xs font-bold text-amber-950 flex items-center gap-2.5 animate-in fade-in-50">
-              <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+            <div className="rounded-xl bg-amber-50 border border-amber-300 p-4 text-xs font-semibold text-amber-950 flex items-center gap-2.5 animate-in fade-in-50">
+              <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
               <div>
-                <p className="font-black text-sm">Driver On Approved Leave</p>
+                <p className="font-bold text-sm">Driver On Approved Leave</p>
                 <p className="text-amber-800 font-medium">Van bookings for {selectedDay} are disabled because the driver is on approved leave.</p>
               </div>
             </div>
           )}
 
           {errorMsg && (
-            <div className="rounded-2xl bg-red-50 border-2 border-red-200 p-3.5 text-xs font-bold text-red-800 animate-in fade-in-50">
+            <div className="rounded-xl bg-red-50 border border-red-200 p-3.5 text-xs font-semibold text-red-800 animate-in fade-in-50">
               {errorMsg}
             </div>
           )}
@@ -539,7 +539,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
             
             {/* COLUMN 1: EXPANDED VAN FLOOR PLAN (Left - 5 Cols) */}
-            <div className="lg:col-span-5 flex flex-col items-center bg-neutral-50/70 rounded-3xl border border-neutral-200 p-5 shadow-xs">
+            <div className="lg:col-span-5 flex flex-col items-center bg-neutral-50/70 rounded-2xl border border-neutral-200 p-5 shadow-xs">
               <div className="w-full flex items-center justify-between mb-3 pb-2 border-b border-neutral-200">
                 <span className="text-xs font-black uppercase tracking-wider text-neutral-900">
                   Toyota HiAce Floor Plan
@@ -800,7 +800,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                       className="apple-input w-full px-4 text-xs font-medium"
                     />
                     {isLoadingGeo && (
-                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#F37021] animate-pulse">
+                      <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#F37021]">
                         {t('vanModal.searching', 'Searching...')}
                       </span>
                     )}
@@ -808,8 +808,8 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
 
                   {/* Search Dropdown with Real Malaysian Suggestions */}
                   {showDestDropdown && destSuggestions.length > 0 && (
-                    <div className="absolute left-0 right-0 top-full mt-1.5 z-40 rounded-2xl border border-neutral-200 bg-white shadow-2xl max-h-56 overflow-y-auto divide-y divide-neutral-100 animate-in fade-in-50">
-                      <div className="p-2 bg-neutral-50 border-b border-neutral-100 flex items-center justify-between text-[11px] font-black text-neutral-600">
+                    <div className="absolute left-0 right-0 top-full mt-1.5 z-40 rounded-xl border border-neutral-200 bg-white shadow-xl max-h-56 overflow-y-auto divide-y divide-neutral-100 animate-in fade-in-50">
+                      <div className="p-2 bg-neutral-50 border-b border-neutral-100 flex items-center justify-between text-[11px] font-bold text-neutral-600">
                         <span>{t('vanModal.suggestedDestinations', 'Suggested Destinations in Malaysia')}</span>
                         <span className="text-[10px] text-neutral-400 font-normal">Click to select</span>
                       </div>
@@ -822,10 +822,10 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
                           <MapPin className="h-4 w-4 text-[#F37021] shrink-0 mt-0.5" />
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
-                              <p className="font-extrabold text-neutral-900 truncate">
+                              <p className="font-bold text-neutral-900 truncate">
                                 {item.name}
                               </p>
-                              <span className="text-[10px] font-bold bg-orange-100 text-orange-950 px-1.5 py-0.5 rounded shrink-0">
+                              <span className="text-[10px] font-semibold bg-orange-50 text-orange-950 px-1.5 py-0.5 rounded border border-orange-200 shrink-0">
                                 {item.state}
                               </span>
                             </div>
@@ -841,7 +841,7 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
 
                 {/* Selected Verified Destination Card */}
                 {selectedDestinationItem && (
-                  <div className="rounded-2xl border-2 border-emerald-300 bg-emerald-50/80 p-3.5 space-y-1.5 shadow-xs animate-in fade-in-50">
+                  <div className="rounded-xl border border-emerald-300 bg-emerald-50/80 p-3.5 space-y-1.5 shadow-xs animate-in fade-in-50">
                     <div className="flex items-center justify-between">
                       <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 flex items-center gap-1">
                         <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />

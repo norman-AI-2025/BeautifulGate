@@ -310,7 +310,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
   };
 
   return (
-    <div className="w-full bg-white rounded-3xl border border-neutral-200 shadow-sm overflow-hidden">
+    <div className="w-full bg-white rounded-2xl border border-neutral-200 shadow-xs overflow-hidden">
       {/* 1. CHOOSE DATE OF SERVICE (WITH EXPANDABLE CALENDAR BUTTON) */}
       <div className="p-5 border-b border-neutral-200 bg-neutral-50/70 space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -446,9 +446,9 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
 
         {/* DRIVER ON LEAVE WARNING BANNER - TRANSLATED IN EN, ZH, MS */}
         {(isDateBlockedByLeave(selectedIsoDate) || isDateBlockedByLeave(selectedDayObj.dateStr)) && (
-          <div className="rounded-2xl border-2 border-amber-400 bg-amber-50 p-4 shadow-xs space-y-1">
-            <div className="flex items-center gap-2 text-amber-950 font-black text-xs sm:text-sm">
-              <span className="h-2 w-2 rounded-full bg-amber-500 animate-pulse" />
+          <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 shadow-xs space-y-1">
+            <div className="flex items-center gap-2 text-amber-950 font-bold text-xs sm:text-sm">
+              <span className="h-2 w-2 rounded-full bg-amber-500" />
               <span>{t('timetable.driverOnLeaveTitle', 'Driver On Approved Leave · Bookings Unavailable')}</span>
             </div>
             <p className="text-xs text-amber-800 font-medium">
@@ -463,17 +463,17 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
         {/* VEHICLE & DRIVER DETAILS POP-UP MODAL (FROM DATABASE) */}
         {isVehicleModalOpen && (
           <div 
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 backdrop-blur-xs animate-in fade-in-50 duration-200"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/50 backdrop-blur-xs animate-in fade-in-50 duration-200"
             onClick={() => setIsVehicleModalOpen(false)}
             role="dialog"
             aria-modal="true"
           >
             <div 
-              className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl border-2 border-orange-400 bg-white p-5 sm:p-7 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200"
+              className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl border border-neutral-200 bg-white p-5 sm:p-7 shadow-xl space-y-5 animate-in zoom-in-95 duration-200"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Header with Title, Badge, and Close Button */}
-              <div className="flex items-center justify-between pb-4 border-b border-orange-200">
+              <div className="flex items-center justify-between pb-4 border-b border-neutral-200">
                 <div className="flex items-center gap-2.5">
                   <div className="h-9 w-9 rounded-xl bg-[#F37021] text-white flex items-center justify-center shadow-xs shrink-0">
                     <Car className="h-5 w-5" />
@@ -677,7 +677,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
         )}
 
         {selectedDayObj.isHoliday ? (
-          <div className="rounded-3xl bg-[#8B1E24] text-white p-8 text-center space-y-2 shadow-inner">
+          <div className="rounded-2xl bg-[#8B1E24] text-white p-8 text-center space-y-2 shadow-inner">
             <h4 className="text-lg font-black tracking-wide">{selectedDayObj.holidayReason}</h4>
             <p className="text-xs text-red-200 font-medium">
               {t('timetable.closedOnHoliday', 'Van transit service is closed on this public holiday. Please choose another date above.')}

@@ -65,10 +65,10 @@ export const TransitDonationModal: React.FC<TransitDonationModalProps> = ({ book
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in-50 duration-200">
-      <div className="relative w-full max-w-lg rounded-3xl bg-white border border-neutral-200 shadow-2xl overflow-hidden my-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/50 backdrop-blur-xs overflow-y-auto animate-in fade-in-50 duration-200">
+      <div className="relative w-full max-w-lg rounded-2xl bg-white border border-neutral-200 shadow-xl overflow-hidden my-6">
         {/* Top Header */}
-        <div className="bg-gradient-to-r from-neutral-950 via-stone-900 to-orange-950 text-white p-5 sm:p-6 relative">
+        <div className="bg-neutral-900 text-white p-5 sm:p-6 relative border-b border-neutral-800">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-neutral-300 hover:text-white transition-colors tap-target"
@@ -81,7 +81,7 @@ export const TransitDonationModal: React.FC<TransitDonationModalProps> = ({ book
             <div className="h-7 w-7 rounded-lg bg-[#F37021] text-white flex items-center justify-center shadow-xs">
               <HeartHandshake className="h-4 w-4" />
             </div>
-            <span className="font-extrabold text-xs tracking-wider uppercase text-orange-200">
+            <span className="font-bold text-xs tracking-wider uppercase text-orange-200">
               Beautiful Gate Foundation
             </span>
           </div>
@@ -109,8 +109,8 @@ export const TransitDonationModal: React.FC<TransitDonationModalProps> = ({ book
           {/* SUCCESS RECEIPT STATE */}
           {isSuccess ? (
             <div className="text-center space-y-4 py-2">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 shadow-sm animate-bounce">
-                <CheckCircle2 className="h-8 w-8" />
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-100 text-emerald-600 shadow-xs">
+                <CheckCircle2 className="h-7 w-7" />
               </div>
 
               <div>

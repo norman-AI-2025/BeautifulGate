@@ -550,7 +550,7 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen bg-[#f8fafc] text-neutral-900 pb-24">
       {/* Top Banner Navigation */}
-      <div className="bg-gradient-to-r from-neutral-950 via-stone-900 to-orange-950 text-white shadow-md">
+      <div className="bg-[#18181B] text-white border-b border-neutral-800 shadow-xs">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -558,7 +558,7 @@ export default function AdminPage() {
                 <span className="text-[11px] font-bold uppercase tracking-widest text-[#F37021]">
                   {t('admin.title', 'Supervisor Control Tower')}
                 </span>
-                <span className="inline-flex items-center rounded-full bg-[#F37021] text-white font-black px-2.5 py-0.5 text-xs shadow-xs">
+                <span className="inline-flex items-center rounded-full bg-[#F37021] text-white font-bold px-2 py-0.5 text-[11px] shadow-xs">
                   {t('common.verified', 'Admin Dispatch Active')}
                 </span>
               </div>
@@ -661,19 +661,18 @@ export default function AdminPage() {
             {currentActiveDispatch && (
               <div 
                 key={currentActiveDispatch.id}
-                className="rounded-3xl border border-neutral-800 bg-[#18181B] text-white p-6 sm:p-7 shadow-xl space-y-6"
+                className="rounded-2xl border border-neutral-800 bg-[#18181B] text-white p-6 sm:p-7 shadow-xs space-y-6"
               >
                 {/* 1. Minimal Header: Active Indicator, Time & Interactive Status */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-2.5 w-2.5 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#F37021] opacity-75" />
-                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#F37021]" />
+                    <span className="flex h-2 w-2 relative">
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#F37021]" />
                     </span>
                     <span className="text-xs font-bold uppercase tracking-widest text-neutral-400">
                       {t('admin.activeDispatchTitle', 'Active Dispatch')}
                     </span>
-                    <span className="font-mono text-xs font-extrabold bg-white/10 text-orange-200 border border-white/10 px-2.5 py-0.5 rounded-lg">
+                    <span className="font-mono text-xs font-bold bg-white/10 text-orange-200 border border-white/10 px-2.5 py-0.5 rounded-lg tabular-nums">
                       {currentActiveDispatch.appointment_time}
                     </span>
                     <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold border ${
@@ -710,13 +709,13 @@ export default function AdminPage() {
                   {/* Active Status Badge (Read-only status display, no manual trigger) */}
                   <div className="flex items-center gap-2 self-start sm:self-auto">
                     <div
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-2 shadow-sm ${
+                      className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center gap-2 shadow-xs ${
                         currentActiveDispatch.status === 'dropped_off' || currentActiveDispatch.status === 'en_route_next'
                           ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                           : 'bg-[#F37021]/20 text-orange-300 border border-[#F37021]/30'
                       }`}
                     >
-                      <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
+                      <span className="h-1.5 w-1.5 rounded-full bg-current" />
                       <span key={currentActiveDispatch.status}>
                         {currentActiveDispatch.status.replace(/_/g, ' ')}
                       </span>
@@ -846,23 +845,23 @@ export default function AdminPage() {
                           <button
                             type="button"
                             onClick={() => handleUpdateActiveDispatchStatus(currentActiveDispatch.id, step.status)}
-                            className={`flex h-5 w-5 items-center justify-center rounded-full transition-all duration-300 tap-target ${
+                            className={`flex h-5 w-5 items-center justify-center rounded-full transition-all duration-200 tap-target ${
                               isCurrent
-                                ? 'bg-[#F37021] ring-4 ring-[#F37021]/40 scale-125 shadow-md animate-status-switch'
+                                ? 'bg-[#F37021] ring-2 ring-[#F37021]/30 scale-110 shadow-xs'
                                 : isPassed
                                 ? 'bg-emerald-500 text-white'
-                                : 'bg-neutral-800 border-2 border-neutral-600 hover:border-white'
+                                : 'bg-neutral-800 border border-neutral-600 hover:border-neutral-400'
                             }`}
                             title={`Set status to ${step.label}`}
                           >
                             {isPassed && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
-                            {isCurrent && <span className="h-2 w-2 rounded-full bg-white animate-pulse" />}
+                            {isCurrent && <span className="h-1.5 w-1.5 rounded-full bg-white" />}
                           </button>
 
                           {/* Minimal Label */}
                           <span className={`text-[10px] font-bold mt-2 transition-colors ${
                             isCurrent
-                              ? 'text-[#F37021] font-black'
+                              ? 'text-[#F37021]'
                               : isPassed
                               ? 'text-emerald-400'
                               : 'text-neutral-500'
@@ -917,7 +916,7 @@ export default function AdminPage() {
 
               <div 
                 onClick={() => setActiveTab('donations')}
-                className="rounded-2xl border-2 border-[#F37021] bg-gradient-to-br from-orange-50 to-amber-50 p-4 shadow-xs cursor-pointer hover:shadow-md transition-all group col-span-2 lg:col-span-1"
+                className="rounded-xl border border-orange-200 bg-orange-50/60 p-4 shadow-xs cursor-pointer hover:border-orange-300 transition-all group col-span-2 lg:col-span-1"
               >
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] font-bold text-orange-950 uppercase tracking-wider flex items-center gap-1">
@@ -926,7 +925,7 @@ export default function AdminPage() {
                   </span>
                   <ChevronRight className="h-3.5 w-3.5 text-neutral-400 group-hover:translate-x-0.5 transition-transform" />
                 </div>
-                <p className="text-2xl font-black text-[#D9530F] mt-1 font-mono">
+                <p className="text-2xl font-black text-[#D9530F] mt-1 font-mono tabular-nums">
                   RM {totalDonationsAmount.toFixed(2)}
                 </p>
                 <p className="text-[10px] font-semibold text-neutral-600 mt-0.5 truncate">
@@ -936,7 +935,7 @@ export default function AdminPage() {
             </div>
 
             {/* 2. Dispatch Table with Filter Tabs and Beneficiary Ratings */}
-            <div className="rounded-3xl border border-neutral-200 bg-white shadow-xs overflow-hidden">
+            <div className="rounded-2xl border border-neutral-200 bg-white shadow-xs overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 border-b border-neutral-200 gap-4">
                 <div>
                   <h3 className="text-lg font-extrabold text-neutral-900 tracking-tight">
@@ -1091,15 +1090,15 @@ export default function AdminPage() {
                                   }
                                   if (service.currentState === 'en_route_pickup') {
                                     return (
-                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-[#F37021] text-white shadow-2xs animate-pulse">
-                                        <span className="h-2 w-2 rounded-full bg-white" />
+                                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-[#F37021] text-white shadow-2xs">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-white" />
                                         {t('admin.onTheWayToPickup', 'On the way to pickup')}
                                       </span>
                                     );
                                   }
                                   if (service.currentState === 'picked_up') {
                                     return (
-                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-amber-500 text-white shadow-2xs">
+                                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500 text-white shadow-2xs">
                                         <Check className="h-3.5 w-3.5 text-white" />
                                         {t('admin.pickedUp', 'Picked up')}
                                       </span>
@@ -1107,7 +1106,7 @@ export default function AdminPage() {
                                   }
                                   if (service.currentState === 'en_route_hospital') {
                                     return (
-                                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black bg-orange-600 text-white shadow-2xs animate-pulse">
+                                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-orange-600 text-white shadow-2xs">
                                         <Navigation className="h-3.5 w-3.5 text-white" />
                                         {t('admin.otwToDestination', 'OTW to destination')}
                                       </span>
@@ -1362,7 +1361,7 @@ export default function AdminPage() {
         {activeTab === 'artisans' && (
           <div className="space-y-6">
             {/* WORKSHOP COLLABORATORS & PIECE-RATE CATALOG */}
-            <div className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-neutral-100">
                 <div>
                   <div className="flex items-center gap-2">
@@ -1461,7 +1460,7 @@ export default function AdminPage() {
             </div>
 
             {/* Artisans Table */}
-            <div className="rounded-3xl border border-neutral-200 bg-white shadow-xs overflow-hidden">
+            <div className="rounded-2xl border border-neutral-200 bg-white shadow-xs overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-neutral-50/80 border-b border-neutral-200 text-neutral-600 uppercase tracking-wider font-bold">
@@ -1639,12 +1638,12 @@ export default function AdminPage() {
             {/* 3 Prioritized Metric Cards: Donation in a Month, Donation via QR, Donation via Driver */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {/* Card 1: Donation in a Month */}
-              <div className="rounded-3xl border-2 border-[#F37021] bg-gradient-to-br from-orange-50 to-amber-50 p-5 shadow-xs">
+              <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-5 shadow-xs">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-orange-950 flex items-center gap-1.5">
                   <HeartHandshake className="h-4 w-4 text-[#F37021]" />
                   {t('admin.donationInMonth', 'Donation in a Month')}
                 </span>
-                <p className="text-3xl font-black text-[#D9530F] mt-2 font-mono">
+                <p className="text-3xl font-black text-[#D9530F] mt-2 font-mono tabular-nums">
                   RM {monthTotal.toFixed(2)}
                 </p>
                 <p className="text-[11px] text-neutral-600 mt-1">
@@ -1653,12 +1652,12 @@ export default function AdminPage() {
               </div>
 
               {/* Card 2: Donation via QR */}
-              <div className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-xs">
+              <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
                   <QrCode className="h-4 w-4 text-emerald-600" />
                   {t('admin.donationViaQR', 'Donation via QR')}
                 </span>
-                <p className="text-3xl font-black text-neutral-900 mt-2 font-mono">
+                <p className="text-3xl font-black text-neutral-900 mt-2 font-mono tabular-nums">
                   RM {qrTotal.toFixed(2)}
                 </p>
                 <p className="text-[11px] text-emerald-700 font-semibold mt-1">
@@ -1667,12 +1666,12 @@ export default function AdminPage() {
               </div>
 
               {/* Card 3: Donation via Driver */}
-              <div className="rounded-3xl border border-neutral-200 bg-white p-5 shadow-xs">
+              <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-xs">
                 <span className="text-[10px] font-extrabold uppercase tracking-wider text-neutral-500 flex items-center gap-1.5">
                   <Banknote className="h-4 w-4 text-amber-600" />
                   {t('admin.donationViaDriver', 'Donation via Driver')}
                 </span>
-                <p className="text-3xl font-black text-neutral-900 mt-2 font-mono">
+                <p className="text-3xl font-black text-neutral-900 mt-2 font-mono tabular-nums">
                   RM {cashTotal.toFixed(2)}
                 </p>
                 <p className="text-[11px] text-neutral-500 mt-1">
@@ -1682,7 +1681,7 @@ export default function AdminPage() {
             </div>
 
             {/* Filter Tabs & Donation Ledger Table */}
-            <div className="rounded-3xl border border-neutral-200 bg-white shadow-xs overflow-hidden">
+            <div className="rounded-2xl border border-neutral-200 bg-white shadow-xs overflow-hidden">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between p-5 border-b border-neutral-200 gap-4">
                 <div>
                   <h3 className="text-lg font-extrabold text-neutral-900 tracking-tight flex items-center gap-2">
@@ -1932,7 +1931,7 @@ export default function AdminPage() {
               };
 
               return (
-                <div className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs">
+                <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3 border-b border-neutral-100">
                     <div className="flex items-center gap-2.5">
                       <div className="h-9 w-9 rounded-xl bg-neutral-900 text-white flex items-center justify-center shadow-xs">
@@ -2037,7 +2036,7 @@ export default function AdminPage() {
             })()}
 
             {/* Driver Leave Management Section */}
-            <div className="rounded-3xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="rounded-2xl border border-neutral-200 bg-white p-5 sm:p-6 shadow-xs space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-neutral-100">
                 <div className="flex items-center gap-2.5">
                   <div className="h-9 w-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-xs">
@@ -2156,7 +2155,7 @@ export default function AdminPage() {
             </div>
 
             {/* Filter Pills & Search Bar */}
-            <div className="rounded-3xl border border-neutral-200 bg-white p-4 sm:p-5 space-y-4 shadow-xs">
+            <div className="rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5 space-y-4 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 {/* Role Tabs */}
                 <div className="flex flex-wrap items-center gap-1.5 p-1 bg-neutral-100 rounded-2xl">
@@ -2328,12 +2327,12 @@ export default function AdminPage() {
                                 )}
                                 {(isDriver || p.role === 'admin') && (
                                   p.is_approved === false ? (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300 animate-pulse">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-900 border border-amber-200">
                                       <Clock className="h-2.5 w-2.5 text-amber-700" />
                                       {t('admin.pendingApprovalBadge', 'Pending Admin Approval')}
                                     </span>
                                   ) : (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-900 border border-emerald-300">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-900 border border-emerald-200">
                                       <CheckCircle2 className="h-2.5 w-2.5 text-emerald-700" />
                                       {t('admin.approvedBadge', 'Approved')}
                                     </span>
@@ -2616,15 +2615,15 @@ export default function AdminPage() {
       {/* EDIT / ADD WORKSHOP COLLABORATOR & PIECE-RATE MODAL */}
       {isProductModalOpen && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in-50"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in-50"
           onClick={() => setIsProductModalOpen(false)}
         >
           <div 
-            className="relative w-full max-w-lg rounded-3xl bg-white border border-neutral-200 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+            className="relative w-full max-w-lg rounded-2xl bg-white border border-neutral-200 shadow-xl overflow-hidden animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-neutral-950 via-stone-900 to-orange-950 text-white p-5 sm:p-6 relative">
+            <div className="bg-neutral-900 text-white p-5 sm:p-6 relative border-b border-neutral-800">
               <button
                 type="button"
                 onClick={() => setIsProductModalOpen(false)}
@@ -2635,7 +2634,7 @@ export default function AdminPage() {
 
               <div className="flex items-center gap-2 mb-1">
                 <span className="h-2 w-2 rounded-full bg-[#F37021]" />
-                <span className="font-extrabold text-[11px] uppercase tracking-wider text-orange-200">
+                <span className="font-bold text-[11px] uppercase tracking-wider text-orange-200">
                   {selectedProductForEdit ? t('adminTable.editCollaborator', 'Edit Collaborator & Piece Rate') : t('adminTable.addCollaborator', 'Add Collaborator / Card')}
                 </span>
               </div>
@@ -2781,14 +2780,14 @@ export default function AdminPage() {
 
       {/* Delete Profile Confirmation Modal */}
       {profileToDelete && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in-50">
-          <div className="relative w-full max-w-md rounded-3xl bg-white border border-neutral-200 p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in-50">
+          <div className="relative w-full max-w-md rounded-2xl bg-white border border-neutral-200 p-6 shadow-xl space-y-4">
             <div className="flex items-center gap-3">
-              <div className="h-12 w-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
-                <Trash2 className="h-6 w-6" />
+              <div className="h-10 w-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-200">
+                <Trash2 className="h-5 w-5" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-neutral-900">
+                <h3 className="text-base font-bold text-neutral-900">
                   {t('admin.confirmDeleteTitle', 'Permanently Delete Account')}
                 </h3>
                 <p className="text-xs text-neutral-500 font-medium">

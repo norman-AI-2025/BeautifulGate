@@ -73,7 +73,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
 
         {/* Upward Apple-style Dropdown Menu */}
         {isOpen && (
-          <div className="absolute right-0 bottom-full mb-2 w-52 rounded-2xl border border-neutral-200/90 bg-white/95 backdrop-blur-xl p-1.5 shadow-2xl z-50 animate-in fade-in zoom-in-95 duration-150">
+          <div className="absolute right-0 bottom-full mb-2 w-52 rounded-2xl border border-neutral-200/90 bg-white/95 backdrop-blur-xl p-1.5 shadow-lg z-50 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-neutral-400 border-b border-neutral-100 mb-1">
               <Globe className="h-3 w-3 text-[#F37021]" />
               <span>Language · 语言 · Bahasa</span>

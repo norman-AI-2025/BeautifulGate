@@ -610,9 +610,9 @@ export default function DriverPage() {
       <main className="max-w-xl mx-auto px-4 pt-5 sm:px-6 space-y-6">
         {/* PENDING APPROVAL WARNING NOTICE */}
         {driverProfile && driverProfile.is_approved === false && (
-          <div className="rounded-3xl border-2 border-amber-300 bg-amber-50 p-5 shadow-sm space-y-2">
-            <div className="flex items-center gap-2.5 text-amber-900 font-extrabold text-sm">
-              <Clock className="h-5 w-5 text-amber-600 shrink-0 animate-pulse" />
+          <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-4 shadow-xs space-y-1.5">
+            <div className="flex items-center gap-2 text-amber-900 font-bold text-sm">
+              <Clock className="h-4 w-4 text-amber-600 shrink-0" />
               <span>{t('driver.accountPendingTitle', 'Staff Account Awaiting Administrator Approval')}</span>
             </div>
             <p className="text-xs text-amber-800 leading-relaxed font-medium">
@@ -624,14 +624,14 @@ export default function DriverPage() {
         {/* ============================================================== */}
         {/* UPCOMING DAYS THIS WEEK CALENDAR BAR                           */}
         {/* ============================================================== */}
-        <div className="rounded-3xl border border-neutral-200 bg-white p-4 sm:p-5 shadow-xs space-y-3.5">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5 shadow-xs space-y-3.5">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-orange-100 text-[#F37021] shadow-xs">
-                <CalendarDays className="h-5 w-5" />
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-[#F37021] border border-orange-200/60 shadow-xs">
+                <CalendarDays className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-neutral-900">
+                <h3 className="text-xs sm:text-sm font-bold text-neutral-900">
                   {t('driver.upcomingWeekCalendar', 'Transit Schedule & Week Days')}
                 </h3>
                 <p className="text-[11px] text-neutral-500 font-medium">
@@ -640,7 +640,7 @@ export default function DriverPage() {
               </div>
             </div>
 
-            <span className="font-mono text-[10px] font-black px-2.5 py-1 rounded-xl bg-neutral-900 text-white shadow-xs shrink-0">
+            <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-lg bg-neutral-900 text-white shadow-xs shrink-0 tabular-nums">
               {allDriverJobs.length} {t('driver.totalRuns', 'Runs')}
             </span>
           </div>
@@ -669,19 +669,19 @@ export default function DriverPage() {
                       }
                     }
                   }}
-                  className={`py-2 px-1 rounded-2xl flex flex-col items-center justify-center transition-all tap-target relative cursor-pointer ${
+                  className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all tap-target relative cursor-pointer ${
                     isSelected
-                      ? 'bg-[#F37021] text-white shadow-md font-black'
+                      ? 'bg-[#F37021] text-white shadow-xs font-bold'
                       : isDayOnLeave
                       ? 'bg-amber-100/70 border border-amber-300 text-amber-900 font-bold'
                       : d.isToday
                       ? 'bg-orange-50/80 hover:bg-orange-100 border border-orange-300 text-neutral-900 font-bold'
-                      : 'bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-neutral-700 font-semibold'
+                      : 'bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-neutral-700 font-medium'
                   }`}
                 >
                   {/* Today Badge */}
                   {d.isToday && (
-                    <span className={`text-[7px] sm:text-[8px] font-black uppercase tracking-wider px-1 rounded-full mb-0.5 leading-tight ${
+                    <span className={`text-[7px] sm:text-[8px] font-bold uppercase tracking-wider px-1 rounded-full mb-0.5 leading-tight ${
                       isSelected ? 'bg-white text-[#F37021]' : 'bg-[#F37021] text-white'
                     }`}>
                       {t('driver.today', 'Today')}
@@ -694,19 +694,19 @@ export default function DriverPage() {
                   </span>
 
                   {/* Date number */}
-                  <span className="text-xs font-extrabold mt-0.5">
+                  <span className="text-xs font-bold mt-0.5 tabular-nums">
                     {d.dateNum.split(' ')[0]}
                   </span>
 
                   {/* On leave indicator or Run count pill */}
                   {isDayOnLeave ? (
-                    <span className={`mt-1 text-[8px] px-1 py-0.2 rounded font-black uppercase tracking-wider ${
+                    <span className={`mt-1 text-[8px] px-1 py-0.2 rounded font-bold uppercase tracking-wider ${
                       isSelected ? 'bg-white text-amber-900' : 'bg-amber-200 text-amber-900'
                     }`}>
                       {t('driver.onLeaveTag', 'Leave')}
                     </span>
                   ) : runCount > 0 ? (
-                    <span className={`mt-1 text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold leading-none ${
+                    <span className={`mt-1 text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold leading-none tabular-nums ${
                       isSelected
                         ? 'bg-white text-[#F37021]'
                         : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
@@ -724,9 +724,9 @@ export default function DriverPage() {
 
         {/* ON LEAVE NOTICE BANNER */}
         {isDateBlockedByLeave(selectedYmd) && (
-          <div className="rounded-3xl border-2 border-amber-400 bg-amber-50 p-5 shadow-sm space-y-2 animate-in fade-in-50">
-            <div className="flex items-center gap-2.5 text-amber-950 font-black text-sm sm:text-base">
-              <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+          <div className="rounded-xl border border-amber-400 bg-amber-50 p-4 shadow-xs space-y-1.5 animate-in fade-in-50">
+            <div className="flex items-center gap-2 text-amber-950 font-bold text-sm">
+              <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
               <span>{t('driver.onLeaveBannerTitle', 'ON LEAVE · Transport Services Suspended')}</span>
             </div>
             <p className="text-xs text-amber-900 leading-relaxed font-medium">
@@ -743,24 +743,21 @@ export default function DriverPage() {
         <div className="space-y-4">
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-lg sm:text-xl font-extrabold text-neutral-900 tracking-tight">
+              <h2 className="text-lg font-bold text-neutral-900 tracking-tight">
                 {t('driver.upcomingJobsTitle', 'Dispatch Missions Timeline')}
               </h2>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300">
-                {t('driver.scrollUpToDown', 'Up-Down Scroll')}
-              </span>
             </div>
-            <span className="text-xs font-bold text-neutral-500">
+            <span className="text-xs font-semibold text-neutral-500 tabular-nums">
               {allDriverJobs.filter(j => !j.isCompleted).length} {t('driver.upcomingCount', 'Upcoming')}
             </span>
           </div>
 
           {allDriverJobs.length === 0 ? (
-            <div className="rounded-3xl border border-neutral-200 bg-white p-8 text-center space-y-3 shadow-xs">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-400 mx-auto">
-                <Car className="h-7 w-7 text-neutral-400" />
+            <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center space-y-3 shadow-xs">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-neutral-100 text-neutral-400 mx-auto">
+                <Car className="h-6 w-6 text-neutral-400" />
               </div>
-              <h3 className="text-base font-extrabold text-neutral-900">
+              <h3 className="text-sm font-bold text-neutral-900">
                 {t('driver.noJobsFound', 'No Scheduled Missions Found')}
               </h3>
               <p className="text-xs text-neutral-500 font-medium max-w-sm mx-auto">
@@ -781,18 +778,18 @@ export default function DriverPage() {
                 // - Upcoming: clean, crisp, neutral border
                 let containerStyle = '';
                 if (isCurrentJob) {
-                  containerStyle = 'border-2 border-emerald-500 ring-4 ring-emerald-500/20 shadow-2xl shadow-emerald-500/10 scale-[1.01] bg-white opacity-100 blur-0 z-20';
+                  containerStyle = 'border-2 border-emerald-600 ring-2 ring-emerald-500/15 shadow-sm bg-white opacity-100 blur-0 z-20';
                 } else if (isCompleted) {
                   if (isCentered) {
                     // Scrolled back to completed job: unblurred, clear, but standard neutral border (NEVER glowing green)
-                    containerStyle = 'border-2 border-neutral-300 bg-white opacity-100 blur-0 scale-100 shadow-md z-10';
+                    containerStyle = 'border border-neutral-300 bg-white opacity-100 blur-0 scale-100 shadow-xs z-10';
                   } else {
                     // Normal completed: faded and blurred
                     containerStyle = 'border border-neutral-200 bg-neutral-100/75 opacity-40 blur-[1.5px] scale-[0.98] cursor-pointer hover:opacity-75 z-10';
                   }
                 } else {
                   // Upcoming jobs
-                  containerStyle = 'border-2 border-neutral-200/90 bg-white shadow-sm opacity-100 blur-0 hover:border-neutral-300 z-10';
+                  containerStyle = 'border border-neutral-200 bg-white shadow-xs opacity-100 blur-0 hover:border-neutral-300 z-10';
                 }
 
                 return (
@@ -811,25 +808,25 @@ export default function DriverPage() {
                         setCenteredJobId(job.id);
                       }
                     }}
-                    className={`relative rounded-3xl p-5 sm:p-6 transition-all duration-300 ease-out space-y-4 ${containerStyle}`}
+                    className={`relative rounded-2xl p-5 sm:p-6 transition-all duration-200 ease-out space-y-4 ${containerStyle}`}
                   >
                     {/* Job Header */}
                     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 pb-3.5">
                       <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
                           {/* Date Badge */}
-                          <span className="text-xs font-black text-neutral-800 bg-neutral-100 border border-neutral-200 px-2.5 py-0.5 rounded-lg">
+                          <span className="text-xs font-semibold text-neutral-800 bg-neutral-100 border border-neutral-200 px-2 py-0.5 rounded-lg tabular-nums">
                             {formatDisplayDate(job.date, language)}
                           </span>
 
-                          {/* Time Slot - Large and bold */}
-                          <span className="font-mono text-sm sm:text-base font-black px-3 py-0.5 rounded-xl bg-orange-100 text-orange-950 border border-orange-300 shadow-xs">
+                          {/* Time Slot */}
+                          <span className="font-mono text-xs sm:text-sm font-bold px-2.5 py-0.5 rounded-lg bg-orange-50 text-orange-950 border border-orange-200 shadow-xs tabular-nums">
                             {job.displayTime}
                           </span>
                         </div>
 
                         {/* Customer count & Seat capacity */}
-                        <p className="text-[11px] font-extrabold text-neutral-500 flex items-center gap-1.5 pt-0.5">
+                        <p className="text-[11px] font-semibold text-neutral-500 flex items-center gap-1.5 pt-0.5">
                           <span>{job.paxCount} {job.paxCount === 1 ? t('driverManifest.customer', 'Customer') : t('driverManifest.customers', 'Customers')}</span>
                           <span>·</span>
                           <span>{job.paxCount} / 6 {t('driverManifest.seatsReserved', 'Seats Reserved')}</span>
@@ -839,13 +836,13 @@ export default function DriverPage() {
                       {/* Status Badges & Advance All */}
                       <div className="flex items-center gap-2">
                         {isCompleted ? (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-neutral-200 text-neutral-700 flex items-center gap-1">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-neutral-100 text-neutral-600 border border-neutral-200 flex items-center gap-1">
                             <CheckCircle2 className="h-3 w-3 text-emerald-600" />
                             {t('driver.completedSlot', 'Completed')}
                           </span>
                         ) : isCurrentJob ? (
-                          <span className="px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider bg-emerald-600 text-white flex items-center gap-1.5 shadow-sm animate-pulse">
-                            <span className="h-2 w-2 rounded-full bg-white animate-ping" />
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-600 text-white flex items-center gap-1.5 shadow-xs">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-200" />
                             {language === 'zh'
                               ? '当前行程'
                               : language === 'ms'
@@ -853,12 +850,12 @@ export default function DriverPage() {
                               : t('driver.currentJob', 'Current Job')}
                           </span>
                         ) : job.isActive ? (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide bg-[#F37021] text-white flex items-center gap-1 shadow-xs">
-                            <span className="h-1.5 w-1.5 rounded-full bg-white animate-ping" />
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide bg-[#F37021] text-white flex items-center gap-1 shadow-xs">
+                            <span className="h-1.5 w-1.5 rounded-full bg-white/80" />
                             {t('driverManifest.inProgress', 'In Progress')}
                           </span>
                         ) : (
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide bg-emerald-100 text-emerald-900 border border-emerald-300">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
                             {t('driverManifest.upcomingJob', 'Upcoming Job')}
                           </span>
                         )}
@@ -1071,7 +1068,7 @@ export default function DriverPage() {
               setCenteredJobId(currentJob.id);
             }
           }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-5 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs shadow-2xl flex items-center gap-2 border border-emerald-400/50 backdrop-blur-md cursor-pointer tap-target transition-all hover:scale-105 active:scale-95 animate-bounce"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs shadow-lg flex items-center gap-2 border border-neutral-700/80 backdrop-blur-md cursor-pointer tap-target transition-all active:scale-[0.98]"
         >
           <Navigation className="h-3.5 w-3.5 text-white" />
           <span>
@@ -1096,8 +1093,8 @@ export default function DriverPage() {
 
       {/* Driver Leave Request Modal */}
       {isLeaveModalOpen && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in-50">
-          <div className="relative w-full max-w-md rounded-3xl bg-white border border-neutral-200 shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in-50">
+          <div className="relative w-full max-w-md rounded-2xl bg-white border border-neutral-200 shadow-xl overflow-hidden">
             <div className="bg-neutral-900 text-white p-5 sm:p-6 relative">
               <button
                 type="button"
@@ -1108,14 +1105,14 @@ export default function DriverPage() {
                 <X className="h-4 w-4" />
               </button>
               <div className="flex items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500 text-white">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-500 text-white">
                   {t('driver.staffDispatch', 'Staff Dispatch')}
                 </span>
                 <span className="font-mono text-xs text-amber-300 font-bold">
                   {driverProfile?.full_name || t('nav.driverRole', 'Driver')}
                 </span>
               </div>
-              <h2 className="text-xl font-black text-white mt-1.5">
+              <h2 className="text-lg font-bold text-white mt-1.5">
                 {t('driver.leaveModalTitle', 'Request Driver Leave')}
               </h2>
               <p className="text-xs text-neutral-300 mt-0.5">
@@ -1148,32 +1145,32 @@ export default function DriverPage() {
               className="p-5 sm:p-6 space-y-4"
             >
               {leaveError && (
-                <div className="p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold">
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
                   {leaveError}
                 </div>
               )}
 
               {leaveSubmitted && (
-                <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black">
+                <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold">
                   {t('driver.leaveSubmittedSuccess', 'Leave request submitted successfully. Awaiting Administrator approval.')}
                 </div>
               )}
 
               <div>
-                <label className="text-xs font-bold text-neutral-700 block mb-1">
+                <label className="text-xs font-semibold text-neutral-700 block mb-1">
                   {t('driver.leaveDate', 'Leave Date')}
                 </label>
                 <input
                   type="date"
                   value={leaveDate}
                   onChange={(e) => setLeaveDate(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-2xl border border-neutral-300 bg-neutral-50 focus:bg-white text-neutral-900 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-[#F37021] transition-all"
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-300 bg-neutral-50 focus:bg-white text-neutral-900 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-[#F37021] transition-all"
                   required
                 />
               </div>
 
               <div>
-                <label className="text-xs font-bold text-neutral-700 block mb-1">
+                <label className="text-xs font-semibold text-neutral-700 block mb-1">
                   {t('driver.leaveReason', 'Reason for Leave (Optional)')}
                 </label>
                 <input
@@ -1181,7 +1178,7 @@ export default function DriverPage() {
                   value={leaveReason}
                   onChange={(e) => setLeaveReason(e.target.value)}
                   placeholder={t('driver.leaveReasonPlaceholder', 'e.g. Medical appointment, family matter, routine checkup')}
-                  className="w-full px-3.5 py-2.5 rounded-2xl border border-neutral-300 bg-neutral-50 focus:bg-white text-neutral-900 text-sm focus:outline-none focus:ring-2 focus:ring-[#F37021] transition-all"
+                  className="w-full px-3 py-2 rounded-xl border border-neutral-300 bg-neutral-50 focus:bg-white text-neutral-900 text-sm focus:outline-none focus:ring-1 focus:ring-[#F37021] transition-all"
                 />
               </div>
 
@@ -1189,14 +1186,14 @@ export default function DriverPage() {
                 <button
                   type="button"
                   onClick={() => setIsLeaveModalOpen(false)}
-                  className="px-4 py-2.5 rounded-2xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-bold transition-all tap-target cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-neutral-300 bg-white hover:bg-neutral-100 text-neutral-700 text-xs font-semibold transition-all tap-target cursor-pointer"
                 >
                   {t('common.cancel', 'Cancel')}
                 </button>
                 <button
                   type="submit"
                   disabled={leaveSubmitted}
-                  className="px-5 py-2.5 rounded-2xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-black shadow-md transition-all tap-target disabled:opacity-50 cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-[#F37021] hover:bg-[#D9530F] text-white text-xs font-bold shadow-xs transition-all tap-target disabled:opacity-50 cursor-pointer"
                 >
                   {leaveSubmitted ? t('driver.submitted', 'Submitted') : t('driver.submitLeaveRequest', 'Submit Leave Request')}
                 </button>
@@ -1210,55 +1207,55 @@ export default function DriverPage() {
       {/* Clean Modal for Cash Donation Collection */}
       {cashDonationModalBooking && typeof document !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in-50 duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in-50 duration-200"
           onClick={() => setCashDonationModalBooking(null)}
         >
           <div 
-            className="w-full max-w-sm rounded-3xl bg-white border border-neutral-200 p-6 shadow-2xl space-y-5 animate-in zoom-in-95 duration-200"
+            className="w-full max-w-sm rounded-2xl bg-white border border-neutral-200 p-5 shadow-xl space-y-4 animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
               <div className="flex items-center gap-2">
-                <div className="h-8 w-8 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center">
+                <div className="h-7 w-7 rounded-lg bg-amber-100 text-amber-900 flex items-center justify-center">
                   <Banknote className="h-4 w-4 text-amber-700" />
                 </div>
-                <h3 className="font-extrabold text-sm text-neutral-900">
+                <h3 className="font-bold text-sm text-neutral-900">
                   {t('donation.cashHandoverTitle', 'Cash Collection')}
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setCashDonationModalBooking(null)}
-                className="h-8 w-8 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
+                className="h-7 w-7 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 transition-colors cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             {/* Clean Data Fields */}
-            <div className="space-y-3 bg-neutral-50 rounded-2xl p-4 border border-neutral-200/80 text-xs">
+            <div className="space-y-2.5 bg-neutral-50 rounded-xl p-3.5 border border-neutral-200/80 text-xs">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-neutral-500">{t('admin.date', 'Date')}</span>
-                <span className="font-bold text-neutral-900">
+                <span className="font-medium text-neutral-500">{t('admin.date', 'Date')}</span>
+                <span className="font-semibold text-neutral-900">
                   {cashDonationModalBooking.date || t('common.today', 'Today')}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-neutral-500">{t('admin.timeSlot', 'Time Slot')}</span>
-                <span className="font-mono font-extrabold text-neutral-900">
+                <span className="font-medium text-neutral-500">{t('admin.timeSlot', 'Time Slot')}</span>
+                <span className="font-mono font-bold text-neutral-900 tabular-nums">
                   {cashDonationModalBooking.appointment_time}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-neutral-500">{t('admin.name', 'Username')}</span>
-                <span className="font-extrabold text-neutral-900">
+                <span className="font-medium text-neutral-500">{t('admin.name', 'Username')}</span>
+                <span className="font-semibold text-neutral-900">
                   {cashDonationModalBooking.passenger_name}
                 </span>
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-neutral-200/60">
-                <span className="font-semibold text-neutral-500">{t('admin.amountCol', 'Amount')}</span>
-                <span className="font-mono text-base font-black text-[#F37021]">
+                <span className="font-medium text-neutral-500">{t('admin.amountCol', 'Amount')}</span>
+                <span className="font-mono text-base font-bold text-[#F37021] tabular-nums">
                   RM {cashDonationModalBooking.donation?.amount.toFixed(2)}
                 </span>
               </div>
@@ -1272,13 +1269,13 @@ export default function DriverPage() {
                   verifyDonation(cashDonationModalBooking.id);
                   setCashDonationModalBooking(null);
                 }}
-                className={`w-full py-3 rounded-2xl text-xs font-black shadow-md transition-all tap-target flex items-center justify-center gap-2 cursor-pointer ${
+                className={`w-full py-2.5 rounded-xl text-xs font-bold shadow-xs transition-all tap-target flex items-center justify-center gap-2 cursor-pointer ${
                   cashDonationModalBooking.donation?.status === 'paid'
                     ? 'bg-emerald-600 text-white cursor-default'
-                    : 'bg-[#F37021] hover:bg-[#D9530F] text-white active:scale-95'
+                    : 'bg-[#F37021] hover:bg-[#D9530F] text-white active:scale-[0.99]'
                 }`}
               >
-                <Check className="h-4 w-4 stroke-[3]" />
+                <Check className="h-4 w-4 stroke-[2.5]" />
                 <span>
                   {cashDonationModalBooking.donation?.status === 'paid'
                     ? t('donation.received', 'Received')

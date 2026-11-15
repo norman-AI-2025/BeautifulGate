@@ -131,11 +131,11 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in-50">
-      <div className="relative w-full max-w-xl rounded-3xl bg-white border border-neutral-200 shadow-2xl overflow-hidden my-4 max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/50 backdrop-blur-xs overflow-y-auto animate-in fade-in-50">
+      <div className="relative w-full max-w-xl rounded-2xl bg-white border border-neutral-200 shadow-xl overflow-hidden my-4 max-h-[92vh] flex flex-col">
         
         {/* Header */}
-        <div className="bg-neutral-900 text-white p-5 sm:p-6 relative shrink-0">
+        <div className="bg-neutral-900 text-white p-5 sm:p-6 relative shrink-0 border-b border-neutral-800">
           <button
             type="button"
             onClick={onClose}

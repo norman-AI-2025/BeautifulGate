@@ -80,7 +80,7 @@ export default function SignUpPage() {
     <div className="min-h-screen bg-neutral-100/60 flex flex-col justify-center items-center px-4 py-12 relative">
       {/* Brand Header */}
       <div className="mb-6 text-center">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white border border-neutral-200/80 shadow-md p-2 mb-3">
+        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-white border border-neutral-200 shadow-xs p-2.5 mb-3">
           <Image
             src="/images/beautiful-gate-logo.png"
             alt="Beautiful Gate Foundation"
@@ -98,7 +98,7 @@ export default function SignUpPage() {
         </p>
       </div>
 
-      <div className="w-full max-w-lg rounded-3xl bg-white border border-neutral-200 p-8 shadow-xl">
+      <div className="w-full max-w-lg rounded-2xl bg-white border border-neutral-200 p-8 shadow-xs">
         <h2 className="text-xl font-bold text-neutral-900 tracking-tight">
           {t('auth.createAccount', 'Create Account')}
         </h2>
