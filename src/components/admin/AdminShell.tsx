@@ -43,7 +43,6 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [dateRange, setDateRange] = useState<'today' | 'week' | 'month' | 'year'>('month');
 
   const notifRef = useRef<HTMLDivElement>(null);
 
@@ -343,68 +342,32 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* ================================================================ */}
-      {/* MAIN CONTENT AREA WITH TOP CONTROL BAR                           */}
+      {/* MAIN CONTENT AREA                                                */}
       {/* ================================================================ */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Top Header Bar (Revello style) */}
-        <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-neutral-200/90 px-4 sm:px-6 py-3 flex items-center justify-between gap-3 shadow-2xs">
+        {/* Top Floating Controls: Mobile menu trigger & Message/Notification button */}
+        <div className="flex items-center justify-between px-4 sm:px-6 lg:px-8 pt-4 pb-0">
           <div className="flex items-center gap-3">
             {/* Mobile Menu Button */}
             <button
               type="button"
               onClick={() => setIsMobileOpen(true)}
-              className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200 text-neutral-600 hover:bg-neutral-100"
+              className="md:hidden flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-100 shadow-2xs"
               aria-label="Open Navigation Menu"
             >
               <Menu className="h-5 w-5" />
             </button>
           </div>
 
-          {/* Right Controls: Date Range, Notifications, Language */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
-            {/* Date Range Selector Pill */}
-            <div className="hidden lg:flex items-center rounded-xl bg-neutral-100 p-1 border border-neutral-200/80 text-xs">
-              {(['today', 'week', 'month', 'year'] as const).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setDateRange(r)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold capitalize transition-all ${
-                    dateRange === r
-                      ? 'bg-white text-neutral-900 shadow-2xs'
-                      : 'text-neutral-500 hover:text-neutral-900'
-                  }`}
-                >
-                  {r === 'today' ? t('common.today', 'Today') : r === 'week' ? t('common.week', 'Week') : r === 'month' ? t('common.month', 'Month') : t('common.year', 'Year')}
-                </button>
-              ))}
-            </div>
-
-            {/* Language Switcher Pill */}
-            <div className="flex items-center rounded-xl border border-neutral-200 bg-white p-0.5 shadow-2xs">
-              {(['en', 'zh', 'ms'] as const).map((lang) => (
-                <button
-                  key={lang}
-                  type="button"
-                  onClick={() => setLanguage(lang)}
-                  className={`px-2 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
-                    language === lang
-                      ? 'bg-[#F37021] text-white shadow-2xs'
-                      : 'text-neutral-500 hover:text-neutral-900'
-                  }`}
-                >
-                  {lang === 'zh' ? '中' : lang.toUpperCase()}
-                </button>
-              ))}
-            </div>
-
-            {/* Notification Bell Dropdown */}
+          {/* Right Controls: Only remain the Message / Notification Button */}
+          <div className="flex items-center gap-3 shrink-0 ml-auto">
             <div className="relative" ref={notifRef}>
               <button
                 type="button"
                 onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-                className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 transition-colors shadow-2xs"
-                aria-label="View notifications"
+                className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/90 bg-white text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 transition-colors shadow-2xs cursor-pointer"
+                aria-label="View notifications and messages"
+                title={t('adminNav.actionItems', 'Action Items & Messages')}
               >
                 <Bell className="h-4 w-4" />
                 {totalAlertsCount > 0 && (
@@ -492,7 +455,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               )}
             </div>
           </div>
-        </header>
+        </div>
 
         {/* Page Canvas Container */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full space-y-6">
