@@ -603,84 +603,188 @@ export default function AdminOverviewDashboard() {
           </div>
 
           {/* SVG Smooth Curves with Gradient Fill strictly from Supabase data */}
-          <div className="mt-6 pt-4 border-t border-neutral-100 relative">
-            <div className="relative h-44 w-full">
-              <svg className="w-full h-full overflow-visible" viewBox="0 0 500 150" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="payoutGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0D9488" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#0D9488" stopOpacity="0.0" />
-                  </linearGradient>
-                  <linearGradient id="cardsGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#F37021" stopOpacity="0.15" />
-                    <stop offset="100%" stopColor="#F37021" stopOpacity="0.0" />
-                  </linearGradient>
-                </defs>
+          {(() => {
+            const activeProductionMonthIndex = hoveredPayoutMonth !== null 
+              ? hoveredPayoutMonth 
+              : new Date().getMonth();
+            const activeMonthData = timelineMonths[activeProductionMonthIndex] || timelineMonths[timelineMonths.length - 1];
 
-                {/* Grid guidelines */}
-                <line x1="0" y1="30" x2="500" y2="30" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
-                <line x1="0" y1="75" x2="500" y2="75" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
-                <line x1="0" y1="120" x2="500" y2="120" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
+            const activeX = timelineMonths.length > 1 
+              ? 10 + activeProductionMonthIndex * (480 / (timelineMonths.length - 1))
+              : 250;
+            const activeCardsY = 135 - ((activeMonthData?.cards || 0) / maxCardsMonth) * 120;
+            const activePayoutY = 135 - ((activeMonthData?.payout || 0) / maxPayoutMonth) * 120;
+            const activePct = (activeX / 500) * 100;
 
-                {/* Real Data Curve: Cards Completed */}
-                {fillPath && (
-                  <path d={fillPath} fill="url(#payoutGrad)" />
-                )}
-                {cardsPath && (
-                  <path
-                    d={cardsPath}
-                    fill="none"
-                    stroke="#0D9488"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                )}
+            return (
+              <div className="mt-6 pt-4 border-t border-neutral-100 relative">
+                <div 
+                  className="relative h-44 w-full cursor-crosshair select-none touch-none"
+                  onMouseMove={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const ratio = Math.max(0, Math.min(1, x / rect.width));
+                    const idx = Math.round(ratio * (timelineMonths.length - 1));
+                    setHoveredPayoutMonth(idx);
+                  }}
+                  onTouchMove={(e) => {
+                    if (e.touches.length === 0) return;
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = e.touches[0].clientX - rect.left;
+                    const ratio = Math.max(0, Math.min(1, x / rect.width));
+                    const idx = Math.round(ratio * (timelineMonths.length - 1));
+                    setHoveredPayoutMonth(idx);
+                  }}
+                  onMouseLeave={() => setHoveredPayoutMonth(null)}
+                  onTouchEnd={() => setHoveredPayoutMonth(null)}
+                >
+                  <svg className="w-full h-full overflow-visible" viewBox="0 0 500 150" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="payoutGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#0D9488" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="#0D9488" stopOpacity="0.0" />
+                      </linearGradient>
+                      <linearGradient id="cardsGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#F37021" stopOpacity="0.15" />
+                        <stop offset="100%" stopColor="#F37021" stopOpacity="0.0" />
+                      </linearGradient>
+                    </defs>
 
-                {/* Real Data Curve: Payout Disbursed */}
-                {payoutPath && (
-                  <path
-                    d={payoutPath}
-                    fill="none"
-                    stroke="#F37021"
-                    strokeWidth="2"
-                    strokeDasharray="4 3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                )}
-              </svg>
+                    {/* Grid guidelines */}
+                    <line x1="0" y1="30" x2="500" y2="30" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
+                    <line x1="0" y1="75" x2="500" y2="75" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
+                    <line x1="0" y1="120" x2="500" y2="120" stroke="#F1F5F9" strokeWidth="1" strokeDasharray="4 4" />
 
-              {/* Real Legend Badge */}
-              <div className="absolute top-1 right-2 bg-white/95 backdrop-blur-xs border border-neutral-200/90 rounded-xl p-2.5 shadow-xs text-xs space-y-1">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="flex items-center gap-1.5 text-neutral-600 text-[11px]">
-                    <span className="h-2 w-2 rounded-full bg-teal-600" />
-                    {t('admin.cardsProduced', 'Cards Produced')}
-                  </span>
-                  <span className="font-mono font-bold text-neutral-900 text-[11px]">
-                    {totalCardsProduced}
-                  </span>
+                    {/* Real Data Curve: Cards Completed */}
+                    {fillPath && (
+                      <path d={fillPath} fill="url(#payoutGrad)" />
+                    )}
+                    {cardsPath && (
+                      <path
+                        d={cardsPath}
+                        fill="none"
+                        stroke="#0D9488"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    )}
+
+                    {/* Real Data Curve: Payout Disbursed */}
+                    {payoutPath && (
+                      <path
+                        d={payoutPath}
+                        fill="none"
+                        stroke="#F37021"
+                        strokeWidth="2"
+                        strokeDasharray="4 3"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    )}
+
+                    {/* Vertical Interactive Guide Line tracking the cursor */}
+                    <line 
+                      x1={activeX} 
+                      y1="10" 
+                      x2={activeX} 
+                      y2="140" 
+                      stroke="#0D9488" 
+                      strokeWidth="1.5" 
+                      strokeDasharray="3 3" 
+                      className="transition-all duration-75 ease-out opacity-75"
+                    />
+
+                    {/* Active Data Points on Curves */}
+                    <circle
+                      cx={activeX}
+                      cy={activeCardsY}
+                      r="5.5"
+                      fill="#0D9488"
+                      stroke="#ffffff"
+                      strokeWidth="2.5"
+                      className="transition-all duration-75 ease-out drop-shadow-sm"
+                    />
+                    <circle
+                      cx={activeX}
+                      cy={activePayoutY}
+                      r="5"
+                      fill="#F37021"
+                      stroke="#ffffff"
+                      strokeWidth="2"
+                      className="transition-all duration-75 ease-out drop-shadow-sm"
+                    />
+                  </svg>
+
+                  {/* Real Legend & Dynamic Moving Tooltip Badge tracking cursor */}
+                  {activeMonthData && (
+                    <div 
+                      className="absolute pointer-events-none z-20 bg-white/95 backdrop-blur-md border border-neutral-200/90 rounded-xl p-2.5 shadow-md text-xs space-y-1.5 transition-all duration-100 ease-out min-w-[190px]"
+                      style={{
+                        left: `${activePct}%`,
+                        top: '2px',
+                        transform: activePct > 65 
+                          ? 'translateX(calc(-100% - 12px))' 
+                          : activePct < 35 
+                          ? 'translateX(12px)' 
+                          : 'translateX(-50%)',
+                      }}
+                    >
+                      {/* Active Month Header */}
+                      <div className="flex items-center justify-between gap-4 pb-1 border-b border-neutral-100 text-[10px] font-black text-neutral-800">
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-2.5 w-2.5 text-neutral-400" />
+                          <span>{activeMonthData.name}</span>
+                        </span>
+                        <span className="font-mono text-neutral-400 font-semibold">{currentYear}</span>
+                      </div>
+
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="flex items-center gap-1.5 text-neutral-600 text-[11px] font-medium">
+                          <span className="h-2 w-2 rounded-full bg-teal-600 shrink-0" />
+                          {t('admin.cardsProduced', 'Cards Produced')}
+                        </span>
+                        <span className="font-mono font-black text-neutral-900 text-[11px] tabular-nums">
+                          {activeMonthData.cards.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-4">
+                        <span className="flex items-center gap-1.5 text-neutral-600 text-[11px] font-medium">
+                          <span className="h-2 w-2 rounded-full bg-[#F37021] shrink-0" />
+                          {t('admin.payoutDisbursed', 'Payout Disbursed')}
+                        </span>
+                        <span className="font-mono font-black text-neutral-900 text-[11px] tabular-nums">
+                          RM {activeMonthData.payout.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center justify-between gap-4">
-                  <span className="flex items-center gap-1.5 text-neutral-600 text-[11px]">
-                    <span className="h-2 w-2 rounded-full bg-[#F37021]" />
-                    {t('admin.payoutDisbursed', 'Payout Disbursed')}
-                  </span>
-                  <span className="font-mono font-bold text-neutral-900 text-[11px]">
-                    RM {totalArtisanPayout.toFixed(0)}
-                  </span>
+
+                {/* Bottom Month Axis with Interactive Hover Trigger */}
+                <div className="flex items-center justify-between mt-3 text-[10px] font-semibold text-neutral-400 px-1">
+                  {timelineMonths.map((m, idx) => {
+                    const isSelected = idx === activeProductionMonthIndex;
+                    return (
+                      <button
+                        key={m.name}
+                        type="button"
+                        onMouseEnter={() => setHoveredPayoutMonth(idx)}
+                        onClick={() => setHoveredPayoutMonth(idx)}
+                        className={`truncate max-w-[30px] transition-all cursor-pointer ${
+                          isSelected 
+                            ? 'text-teal-700 font-black scale-110' 
+                            : 'text-neutral-400 hover:text-neutral-700'
+                        }`}
+                      >
+                        {m.name}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-            </div>
-
-            {/* Bottom Month Axis */}
-            <div className="flex items-center justify-between mt-3 text-[10px] font-semibold text-neutral-400 px-1">
-              {timelineMonths.map(m => (
-                <span key={m.name} className="truncate max-w-[30px]">{m.name}</span>
-              ))}
-            </div>
-          </div>
+            );
+          })()}
         </div>
       </div>
 
