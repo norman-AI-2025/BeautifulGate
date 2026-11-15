@@ -19,7 +19,7 @@ import {
 
 export default function HomePage() {
   const router = useRouter();
-  const { currentUser, isLoaded, profiles, bookings, vehicles } = useApp();
+  const { currentUser, isLoaded, profiles, bookings, vehicles, getDriverRating } = useApp();
   const { t } = useLanguage();
 
   // If already authenticated and session loaded, redirect immediately to respective dashboard
@@ -42,11 +42,7 @@ export default function HomePage() {
   const driverProfile = profiles.find(p => p.role === 'driver');
   const vehiclePlate = activeVehicle?.plate || driverProfile?.assigned_vehicle_plate || 'NDC 9751';
   const driverName = driverProfile?.full_name || 'Wong Kok Fu';
-
-  const ratedBookings = bookings.filter(b => typeof b.rating === 'number' && b.rating > 0);
-  const averageRating = ratedBookings.length > 0 
-    ? (ratedBookings.reduce((sum, b) => sum + (b.rating || 0), 0) / ratedBookings.length).toFixed(1)
-    : '5.0';
+  const driverRating = getDriverRating(driverName);
 
   // If user is already logged in, show clean transition while redirecting
   if (isLoaded && currentUser) {
@@ -187,10 +183,10 @@ export default function HomePage() {
                 <div className="text-right shrink-0 pl-2">
                   <div className="inline-flex items-center gap-1 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-lg text-amber-900">
                     <Star className="h-3 w-3 fill-amber-500 text-amber-500" />
-                    <span className="font-mono font-bold text-xs">{averageRating}</span>
+                    <span className="font-mono font-bold text-xs">{driverRating.display}</span>
                   </div>
                   <span className="text-[10px] text-neutral-500 block mt-0.5">
-                    {ratedBookings.length > 0 ? `${ratedBookings.length} reviews` : 'Top Rated'}
+                    {driverRating.count > 0 ? `${driverRating.count} reviews` : 'Initial 5.0'}
                   </span>
                 </div>
               </div>

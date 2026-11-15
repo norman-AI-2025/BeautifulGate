@@ -20,7 +20,8 @@ import {
   CheckCircle2, 
   Accessibility, 
   User, 
-  AlertCircle
+  AlertCircle,
+  Star
 } from 'lucide-react';
 import Image from 'next/image';
 import { ProfileModal } from '@/components/ProfileModal';
@@ -38,7 +39,8 @@ export default function AdminDirectoryPage() {
     approveDriverLeave, 
     rejectDriverLeave, 
     approveDriverAccount, 
-    deleteProfile 
+    deleteProfile,
+    getDriverRating 
   } = useApp();
   const { t } = useLanguage();
 
@@ -632,6 +634,16 @@ export default function AdminDirectoryPage() {
                                 : t('admin.activeStatus', 'Active')}
                             </span>
                           </div>
+                          {(() => {
+                            const dRating = getDriverRating(p.full_name);
+                            return (
+                              <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 border border-amber-200 text-amber-800 text-[10px] font-bold">
+                                <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-500" />
+                                <span>{dRating.display} ★</span>
+                                <span className="text-neutral-400 font-normal">({dRating.count > 0 ? `${dRating.count} reviews` : 'Initial 5.0'})</span>
+                              </div>
+                            );
+                          })()}
                           <p className="text-[11px] text-neutral-500 font-medium truncate max-w-xs">
                             {p.driver_license && !p.driver_license.toLowerCase().includes('gdl')
                               ? p.driver_license

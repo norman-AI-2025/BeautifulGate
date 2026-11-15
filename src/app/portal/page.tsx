@@ -101,11 +101,20 @@ export default function MobileArtisanPortalPage() {
   // Filter pending, active, completed, and declined services
   const pendingServices = useMemo(() => userServices.filter(s => s.isPending && !s.isDeclined), [userServices]);
   const activeServices = useMemo(() => userServices.filter(s => !s.isCompleted && !s.isPending && !s.isDeclined), [userServices]);
-  const completedServices = useMemo(() => userServices.filter(s => s.isCompleted), [userServices]);
+  
+  // USER SPEC: After completed ride, at booking status, don't minimise under completed before user gives review
+  const unreviewedCompletedServices = useMemo(() => {
+    return userServices.filter(s => s.isCompleted && !s.isDeclined && !(s.outbound.rating || s.returnLeg?.rating));
+  }, [userServices]);
+
+  const reviewedCompletedServices = useMemo(() => {
+    return userServices.filter(s => s.isCompleted && !s.isDeclined && Boolean(s.outbound.rating || s.returnLeg?.rating));
+  }, [userServices]);
+
   const declinedServices = useMemo(() => userServices.filter(s => s.isDeclined), [userServices]);
 
-  // Total active or pending trips
-  const activeAlertCount = pendingServices.length + activeServices.length;
+  // Total active or pending trips (plus unreviewed completed trips needing rating action)
+  const activeAlertCount = pendingServices.length + activeServices.length + unreviewedCompletedServices.length;
 
   const handleSlotSelect = (dayName: string, timeSlot: string) => {
     setModalSlot({ day: dayName, slot: timeSlot });
@@ -462,8 +471,89 @@ export default function MobileArtisanPortalPage() {
                   </div>
                 )}
 
-                {/* 3. Completed Services (With Service Rating & Donation Button) */}
-                {completedServices.length > 0 && (
+                {/* 2.5 Unreviewed Completed Services (Prominently displayed, not minimized before review) */}
+                {unreviewedCompletedServices.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="flex h-2.5 w-2.5 rounded-full bg-amber-500 animate-pulse" />
+                        <h3 className="text-sm font-black text-neutral-900 tracking-tight">
+                          {t('portalStatus.rateRecentTrip', 'Ride Completed · Please Rate Your Transit Experience')}
+                        </h3>
+                      </div>
+                      <span className="text-[10px] font-bold text-amber-800 bg-amber-100 border border-amber-300 px-2.5 py-0.5 rounded-full">
+                        {unreviewedCompletedServices.length} {t('portalStatus.reviewPending', 'Review Pending')}
+                      </span>
+                    </div>
+
+                    {unreviewedCompletedServices.map((service) => {
+                      const representativeBooking = service.returnLeg || service.outbound;
+                      const donationRecord = service.returnLeg?.donation || service.outbound.donation;
+
+                      return (
+                        <div
+                          key={service.id}
+                          className="rounded-2xl border-2 border-amber-300/80 bg-white p-4 sm:p-5 shadow-sm space-y-4"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-[10px] font-mono text-neutral-500">
+                                  {t('portalStatus.completedRide', 'Completed Service')} · {service.date} · {service.outbound.appointment_time}
+                                  {service.isRoundtrip && service.returnLeg && ` ⇄ ${service.returnLeg.appointment_time}`}
+                                </span>
+                                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
+                                  service.isRoundtrip
+                                    ? 'bg-amber-100 text-amber-950 border-amber-300'
+                                    : 'bg-blue-100 text-blue-950 border-blue-300'
+                                }`}>
+                                  {service.isRoundtrip ? t('admin.roundtripService', 'Roundtrip Service') : t('admin.goTrip', 'Go: Home → Hospital')}
+                                </span>
+                              </div>
+                              <h4 className="text-base font-bold text-neutral-900 mt-0.5">
+                                {service.outbound.hospital_name}
+                              </h4>
+                              <p className="text-[11px] text-neutral-600">
+                                {service.isRoundtrip
+                                  ? `${service.outbound.pickup_address} ⇄ ${service.outbound.hospital_name}`
+                                  : `${service.outbound.pickup_address} → ${service.outbound.hospital_name}`}
+                              </p>
+                            </div>
+                            <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100 border border-emerald-200 px-2.5 py-0.5 rounded-full shrink-0">
+                              {t('portalStatus.arrivedSafe', 'Arrived & Safe')}
+                            </span>
+                          </div>
+
+                          {/* Open Rating Card for unreviewed ride */}
+                          <ServiceRatingCard booking={representativeBooking} />
+
+                          {/* Voluntary Transit Donation Button */}
+                          <button
+                            type="button"
+                            onClick={() => setSelectedDonationBooking(representativeBooking)}
+                            className={`w-full py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 tap-target transition-all ${
+                              donationRecord
+                                ? 'border border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                                : 'border border-neutral-200 bg-neutral-50 hover:bg-orange-50 hover:border-orange-200 text-neutral-700 hover:text-[#F37021]'
+                            }`}
+                          >
+                            {!donationRecord && <HeartHandshake className="h-4 w-4 text-[#F37021]" />}
+                            {donationRecord ? (
+                              <span>
+                                {t('donation.donated', 'Donation Completed')}: <span className="font-mono font-extrabold text-emerald-950">RM {donationRecord.amount.toFixed(2)}</span> ({donationRecord.method === 'cash' ? t('donation.cashToDriver', 'Cash to Driver') : t('donation.qrDuitNow', 'DuitNow QR')})
+                              </span>
+                            ) : (
+                              <span>{t('donation.button', 'Make a Transit Donation (Cash / QR)')}</span>
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* 3. Completed & Rated Services (Collapsible Accordion) */}
+                {reviewedCompletedServices.length > 0 && (
                   <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden shadow-xs transition-all">
                     {/* Collapsible Header Accordion Toggle */}
                     <button
@@ -481,11 +571,11 @@ export default function MobileArtisanPortalPage() {
                               {t('portalStatus.completedAndRated', 'Completed & Rated Services')}
                             </h4>
                             <span className="font-mono text-[10px] font-black px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 border border-neutral-200">
-                              {completedServices.length}
+                              {reviewedCompletedServices.length}
                             </span>
                           </div>
                           <p className="text-[11px] text-neutral-500 font-medium mt-0.5">
-                            {t('portalStatus.completedSummary', '{count} past service(s) safely completed').replace('{count}', String(completedServices.length))}
+                            {t('portalStatus.completedSummary', '{count} past service(s) safely completed').replace('{count}', String(reviewedCompletedServices.length))}
                           </p>
                         </div>
                       </div>
@@ -507,7 +597,7 @@ export default function MobileArtisanPortalPage() {
                     {/* Expandable Content Body */}
                     {isCompletedExpanded && (
                       <div className="p-4 sm:p-5 pt-0 space-y-4 border-t border-neutral-100 bg-neutral-50/40">
-                        {completedServices.map((service) => {
+                        {reviewedCompletedServices.map((service) => {
                           const representativeBooking = service.returnLeg || service.outbound;
                           const donationRecord = service.returnLeg?.donation || service.outbound.donation;
 

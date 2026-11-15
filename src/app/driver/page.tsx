@@ -15,6 +15,7 @@ import {
   Building2, 
   Car, 
   ChevronRight, 
+  ChevronLeft,
   ChevronDown, 
   Navigation, 
   CheckCircle2, 
@@ -32,7 +33,8 @@ import {
   Check, 
   Camera, 
   X,
-  Sparkles
+  Sparkles,
+  Star
 } from 'lucide-react';
 import { TransitBooking, TransitStatus } from '@/types';
 
@@ -109,12 +111,12 @@ export interface WeekDayItem {
   isToday: boolean;
 }
 
-export const generateCurrentWeekDays = (): WeekDayItem[] => {
+export const generateWeekDays = (offsetWeeks: number = 0): WeekDayItem[] => {
   const now = new Date();
   const dayOfWeek = now.getDay();
   const diffToMonday = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
   const monday = new Date(now);
-  monday.setDate(now.getDate() + diffToMonday);
+  monday.setDate(now.getDate() + diffToMonday + (offsetWeeks * 7));
 
   const dayNamesEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const dayNamesZh = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
@@ -147,6 +149,8 @@ export const generateCurrentWeekDays = (): WeekDayItem[] => {
   }
   return days;
 };
+
+export const generateCurrentWeekDays = (): WeekDayItem[] => generateWeekDays(0);
 
 const getDayLabel = (d: WeekDayItem, lang: string): string => {
   if (lang === 'zh') return d.dayNameZh;
@@ -182,7 +186,8 @@ export default function DriverPage() {
     driverLeaves, 
     requestDriverLeave, 
     isDateBlockedByLeave,
-    verifyDonation 
+    verifyDonation,
+    getDriverRating
   } = useApp();
   const { t, language } = useLanguage();
 
@@ -196,6 +201,9 @@ export default function DriverPage() {
     }
   }, [isLoaded, currentUser, router]);
 
+  // Week navigation and view mode
+  const [weekOffset, setWeekOffset] = useState<number>(0);
+  const [viewMode, setViewMode] = useState<'selected_day' | 'week'>('selected_day');
   const [weekDaysList, setWeekDaysList] = useState<WeekDayItem[]>([]);
   const [selectedYmd, setSelectedYmd] = useState<string>('');
   const [leaveDate, setLeaveDate] = useState<string>('');
@@ -203,22 +211,33 @@ export default function DriverPage() {
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState<boolean>(false);
   const [cashDonationModalBooking, setCashDonationModalBooking] = useState<TransitBooking | null>(null);
 
-  // Sync with client-side date dynamically
+  // Sync with client-side date and weekOffset dynamically
   useEffect(() => {
-    const liveWeek = generateCurrentWeekDays();
+    const liveWeek = generateWeekDays(weekOffset);
     setWeekDaysList(liveWeek);
-    const todayItem = liveWeek.find(d => d.isToday) || liveWeek[0];
-    if (todayItem) {
+    const todayItem = liveWeek.find(d => d.isToday);
+    if (weekOffset === 0 && todayItem) {
       setSelectedYmd(todayItem.ymd);
       setLeaveDate(todayItem.ymd);
+    } else if (liveWeek.length > 0) {
+      const existsInWeek = liveWeek.some(d => d.ymd === selectedYmd);
+      if (!existsInWeek) {
+        setSelectedYmd(liveWeek[0].ymd);
+        setLeaveDate(liveWeek[0].ymd);
+      }
     }
-  }, []);
+  }, [weekOffset]);
 
   // Driver profile being viewed/edited
   const driverProfile = useMemo(() => {
     if (currentUser?.role === 'driver') return currentUser;
     return profiles.find(p => p.role === 'driver') || currentUser;
   }, [currentUser, profiles]);
+
+  // Driver rating from real passenger reviews across app
+  const driverRating = useMemo(() => {
+    return getDriverRating(driverProfile?.full_name || '');
+  }, [getDriverRating, driverProfile]);
 
   // AUTO-POPUP FOR DRIVER: Cash collection notice
   const pendingCashDonationBooking = useMemo(() => {
@@ -326,6 +345,15 @@ export default function DriverPage() {
 
     return jobsList;
   }, [allJohanApprovedBookings]);
+
+  // Filter jobs based on selected view mode (selected date vs entire week)
+  const displayedJobs = useMemo(() => {
+    if (viewMode === 'selected_day') {
+      return allDriverJobs.filter(j => j.ymd === selectedYmd);
+    }
+    const weekYmds = new Set(weekDaysList.map(d => d.ymd));
+    return allDriverJobs.filter(j => weekYmds.has(j.ymd));
+  }, [allDriverJobs, viewMode, selectedYmd, weekDaysList]);
 
   // Determine current active job or first upcoming non-completed job
   const currentJob = useMemo(() => {
@@ -594,11 +622,17 @@ export default function DriverPage() {
                 </div>
 
                 <div className="text-left hidden xs:block pr-1">
-                  <p className="text-xs font-black text-white leading-tight group-hover:text-orange-200 transition-colors">
-                    {driverProfile?.full_name || t('nav.driverRole', 'Driver')}
-                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-black text-white leading-tight group-hover:text-orange-200 transition-colors">
+                      {driverProfile?.full_name || t('nav.driverRole', 'Driver')}
+                    </p>
+                    <span className="inline-flex items-center gap-0.5 text-[10px] font-black bg-amber-400 text-neutral-950 px-1.5 py-0.2 rounded-full shadow-xs">
+                      <Star className="h-2.5 w-2.5 fill-current" />
+                      <span>{driverRating.display}</span>
+                    </span>
+                  </div>
                   <p className="text-[10px] text-orange-200 font-bold">
-                    {t('profile.edit', 'Edit Profile')}
+                    {t('profile.edit', 'Edit Profile')} • {driverRating.count > 0 ? `${driverRating.count} reviews` : 'Initial 5.0 ★'}
                   </p>
                 </div>
               </button>
@@ -625,6 +659,51 @@ export default function DriverPage() {
         {/* UPCOMING DAYS THIS WEEK CALENDAR BAR                           */}
         {/* ============================================================== */}
         <div className="rounded-2xl border border-neutral-200 bg-white p-4 sm:p-5 shadow-xs space-y-3.5">
+          {/* Week Navigation Header */}
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-100 pb-3">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setWeekOffset(w => w - 1)}
+                className="p-1.5 rounded-lg border border-neutral-200 hover:bg-neutral-100 text-neutral-600 transition-colors tap-target cursor-pointer"
+                title="Previous Week"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setWeekOffset(w => w + 1)}
+                className="p-1.5 rounded-lg border border-neutral-200 hover:bg-neutral-100 text-neutral-600 transition-colors tap-target cursor-pointer"
+                title="Next Week"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+              <span className="text-xs sm:text-sm font-bold text-neutral-800 ml-1">
+                {weekDaysList.length > 0 && `${weekDaysList[0].dateNum} – ${weekDaysList[6].dateNum} ${weekDaysList[6].ymd.split('-')[0]}`}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              {weekOffset !== 0 ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWeekOffset(0);
+                    const todayItem = generateWeekDays(0).find(d => d.isToday);
+                    if (todayItem) setSelectedYmd(todayItem.ymd);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-orange-100 hover:bg-orange-200 text-[#F37021] text-xs font-black transition-colors cursor-pointer"
+                >
+                  {t('driver.thisWeek', 'Current Week')}
+                </button>
+              ) : (
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-md">
+                  {t('driver.activeWeek', 'This Week')}
+                </span>
+              )}
+            </div>
+          </div>
+
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2.5">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-[#F37021] border border-orange-200/60 shadow-xs">
@@ -635,13 +714,13 @@ export default function DriverPage() {
                   {t('driver.upcomingWeekCalendar', 'Transit Schedule & Week Days')}
                 </h3>
                 <p className="text-[11px] text-neutral-500 font-medium">
-                  {t('driver.tapDayToScroll', 'Tap any day to jump directly to its dispatch runs.')}
+                  {t('driver.tapDayToScroll', 'Tap any day to view and jump directly to its dispatch runs.')}
                 </p>
               </div>
             </div>
 
             <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-lg bg-neutral-900 text-white shadow-xs shrink-0 tabular-nums">
-              {allDriverJobs.length} {t('driver.totalRuns', 'Runs')}
+              {allDriverJobs.filter(j => weekDaysList.some(d => d.ymd === j.ymd)).length} {t('driver.totalRuns', 'Runs')}
             </span>
           </div>
 
@@ -720,6 +799,38 @@ export default function DriverPage() {
               );
             })}
           </div>
+
+          {/* View Mode Filter Switcher: Selected Day vs Entire Week */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-neutral-100">
+            <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl">
+              <button
+                type="button"
+                onClick={() => setViewMode('selected_day')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === 'selected_day'
+                    ? 'bg-white text-neutral-900 shadow-xs'
+                    : 'text-neutral-500 hover:text-neutral-900'
+                }`}
+              >
+                {t('driver.selectedDayTasks', 'Selected Day')} ({allDriverJobs.filter(j => j.ymd === selectedYmd).length})
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('week')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === 'week'
+                    ? 'bg-white text-neutral-900 shadow-xs'
+                    : 'text-neutral-500 hover:text-neutral-900'
+                }`}
+              >
+                {t('driver.entireWeekTasks', 'Entire Week')} ({allDriverJobs.filter(j => weekDaysList.some(d => d.ymd === j.ymd)).length})
+              </button>
+            </div>
+
+            <span className="text-[11px] font-semibold text-neutral-600">
+              {selectedYmd && formatDisplayDate(selectedYmd, language)}
+            </span>
+          </div>
         </div>
 
         {/* ON LEAVE NOTICE BANNER */}
@@ -748,25 +859,39 @@ export default function DriverPage() {
               </h2>
             </div>
             <span className="text-xs font-semibold text-neutral-500 tabular-nums">
-              {allDriverJobs.filter(j => !j.isCompleted).length} {t('driver.upcomingCount', 'Upcoming')}
+              {displayedJobs.filter(j => !j.isCompleted).length} {t('driver.upcomingCount', 'Upcoming')}
             </span>
           </div>
 
-          {allDriverJobs.length === 0 ? (
+          {displayedJobs.length === 0 ? (
             <div className="rounded-2xl border border-neutral-200 bg-white p-8 text-center space-y-3 shadow-xs">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-neutral-100 text-neutral-400 mx-auto">
                 <Car className="h-6 w-6 text-neutral-400" />
               </div>
               <h3 className="text-sm font-bold text-neutral-900">
-                {t('driver.noJobsFound', 'No Scheduled Missions Found')}
+                {viewMode === 'selected_day' 
+                  ? `No Scheduled Missions on ${formatDisplayDate(selectedYmd, language)}`
+                  : t('driver.noJobsFound', 'No Scheduled Missions Found')}
               </h3>
               <p className="text-xs text-neutral-500 font-medium max-w-sm mx-auto">
-                {t('driver.noJobsDesc', 'There are no active or upcoming transit missions assigned. Check back later or notify the Beautiful Gate Seremban transport supervisor.')}
+                {viewMode === 'selected_day'
+                  ? 'There are no active or upcoming transit missions on this day. Switch to Entire Week view or select another day.'
+                  : t('driver.noJobsDesc', 'There are no active or upcoming transit missions assigned. Check back later or notify the Beautiful Gate Seremban transport supervisor.')}
               </p>
+              {viewMode === 'selected_day' && allDriverJobs.filter(j => weekDaysList.some(d => d.ymd === j.ymd)).length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setViewMode('week')}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-50 border border-orange-200 text-[#F37021] text-xs font-bold hover:bg-orange-100 transition-colors cursor-pointer"
+                >
+                  <Calendar className="h-3.5 w-3.5" />
+                  <span>View All {allDriverJobs.filter(j => weekDaysList.some(d => d.ymd === j.ymd)).length} Runs This Week</span>
+                </button>
+              )}
             </div>
           ) : (
             <div className="space-y-6 pt-2">
-              {allDriverJobs.map((job) => {
+              {displayedJobs.map((job) => {
                 const isCentered = centeredJobId === job.id;
                 const isCompleted = job.isCompleted;
                 const isCurrentJob = currentJob?.id === job.id;
@@ -823,6 +948,36 @@ export default function DriverPage() {
                           <span className="font-mono text-xs sm:text-sm font-bold px-2.5 py-0.5 rounded-lg bg-orange-50 text-orange-950 border border-orange-200 shadow-xs tabular-nums">
                             {job.displayTime}
                           </span>
+
+                          {/* Real-time date & time status pill */}
+                          {(() => {
+                            const now = new Date();
+                            const todayYmd = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                            const isToday = job.ymd === todayYmd;
+                            const currentMins = now.getHours() * 60 + now.getMinutes();
+                            const jobMins = parseTimeToMinutes(job.displayTime);
+
+                            if (job.isCompleted) return null;
+
+                            if (isToday) {
+                              if (Math.abs(currentMins - jobMins) <= 60) {
+                                return (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-black bg-emerald-100 border border-emerald-300 text-emerald-800 px-2 py-0.5 rounded-full animate-pulse">
+                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-600" />
+                                    {t('driver.currentActiveSlot', 'Active Time Slot')}
+                                  </span>
+                                );
+                              } else if (currentMins < jobMins) {
+                                return (
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-blue-50 border border-blue-200 text-blue-800 px-2 py-0.5 rounded-full">
+                                    <Clock className="h-3 w-3 text-blue-600" />
+                                    {t('driver.upcomingToday', 'Upcoming Today')}
+                                  </span>
+                                );
+                              }
+                            }
+                            return null;
+                          })()}
                         </div>
 
                         {/* Customer count & Seat capacity */}

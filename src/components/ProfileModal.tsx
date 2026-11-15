@@ -21,7 +21,8 @@ import {
   FileText, 
   Lock, 
   Trash2,
-  LogOut 
+  LogOut,
+  Star 
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Profile, MobilityType, UserRole, BeneficiaryType } from '@/types';
@@ -53,7 +54,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   mode = 'edit_self',
 }) => {
   const router = useRouter();
-  const { currentUser, profiles, updateProfile, deleteProfile, logout } = useApp();
+  const { currentUser, profiles, updateProfile, deleteProfile, logout, getDriverRating } = useApp();
   const { t } = useLanguage();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -278,6 +279,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
                 {profile.chinese_name}
               </span>
             )}
+            {profile.role === 'driver' && (() => {
+              const dRating = getDriverRating(profile.full_name);
+              return (
+                <span className="inline-flex items-center gap-1 text-xs font-black bg-amber-400/20 border border-amber-300/40 text-amber-200 px-2 py-0.5 rounded-full">
+                  <Star className="h-3 w-3 fill-amber-300 text-amber-300" />
+                  <span>{dRating.display}</span>
+                  <span className="text-[10px] font-normal text-amber-200/80">({dRating.count > 0 ? `${dRating.count} reviews` : 'Initial 5.0'})</span>
+                </span>
+              );
+            })()}
           </div>
 
           <h2 className="text-xl sm:text-2xl font-black tracking-tight text-white mt-1.5">

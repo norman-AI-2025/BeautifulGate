@@ -286,6 +286,12 @@ export const translations = {
       submitLeaveError: 'Failed to submit leave request.',
       staffDispatch: 'Staff Dispatch',
       defaultLeaveReason: 'Driver Personal Leave',
+      thisWeek: 'Current Week',
+      activeWeek: 'This Week',
+      selectedDayTasks: 'Selected Day',
+      entireWeekTasks: 'Entire Week',
+      currentActiveSlot: 'Active Time Slot',
+      upcomingToday: 'Upcoming Today',
     },
     // Driver Manifest & Stages
     driverManifest: {
@@ -878,9 +884,9 @@ export const translations = {
   zh: {
     // Brand & Header
     brand: {
-      name: '芙蓉美门残障关怀 (Beautiful Gate Seremban)',
+      name: '芙蓉美门残章关怀中心',
       subtitle: '无障碍接送',
-      foundation: '美门残障关怀基金会',
+      foundation: '芙蓉美门残章关怀中心',
     },
     nav: {
       portal: '受惠者门户',
@@ -895,7 +901,7 @@ export const translations = {
     },
     // Home Landing Page
     home: {
-      pill: '美门残障关怀基金会',
+      pill: '芙蓉美门残章关怀中心',
       title: '无障碍接送与手艺工坊管理平台',
       signUpNow: '立即注册',
       signInNow: '直接登录',
@@ -1147,6 +1153,12 @@ export const translations = {
       submitLeaveError: '提交请假申请失败。',
       staffDispatch: '员工调度',
       defaultLeaveReason: '司机个人事假',
+      thisWeek: '回到本周',
+      activeWeek: '本周任务',
+      selectedDayTasks: '所选日期',
+      entireWeekTasks: '整周任务',
+      currentActiveSlot: '当前执行时段',
+      upcomingToday: '今日稍后执行',
     },
     // Driver Manifest & Stages
     driverManifest: {
@@ -1488,7 +1500,7 @@ export const translations = {
       qrOption: 'DuitNow / 线上二维码',
       qrDesc: '使用马来西亚各大银行 App（Maybank, CIMB, Public Bank 等）或电子钱包（Touch \'n Go, GrabPay）扫码转账。',
       duitNowTitle: 'DuitNow 国家标准二维码',
-      beneficiaryName: '芙蓉美门残障关怀基金会 (Beautiful Gate Seremban Foundation)',
+      beneficiaryName: '芙蓉美门残章关怀中心',
       bankDetails: '大众银行 (Public Bank) · 账号：3123-4567-8901',
       reference: '付款备注',
       confirmQR: '确认已完成扫码支付',
@@ -2008,6 +2020,12 @@ export const translations = {
       submitLeaveError: 'Gagal menghantar permohonan cuti.',
       staffDispatch: 'Penugasan Staf',
       defaultLeaveReason: 'Cuti Peribadi Pemandu',
+      thisWeek: 'Kembali Minggu Ini',
+      activeWeek: 'Minggu Semasa',
+      selectedDayTasks: 'Hari Dipilih',
+      entireWeekTasks: 'Sepanjang Minggu',
+      currentActiveSlot: 'Slot Masa Semasa',
+      upcomingToday: 'Akan Datang Hari Ini',
     },
     // Driver Manifest & Stages
     driverManifest: {

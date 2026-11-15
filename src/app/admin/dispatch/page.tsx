@@ -14,7 +14,8 @@ import {
   HeartHandshake, 
   ChevronUp, 
   ChevronDown,
-  LayoutGrid
+  LayoutGrid,
+  Star
 } from 'lucide-react';
 import { TransitBooking, TransitStatus, TransitService } from '@/types';
 import { groupBookingsIntoServices } from '@/lib/transitService';
@@ -27,7 +28,8 @@ export default function AdminDispatchPage() {
     approveBooking, 
     declineBooking, 
     updateBookingStatus, 
-    verifyDonation 
+    verifyDonation,
+    getDriverRating 
   } = useApp();
   const { t } = useLanguage();
 
@@ -707,6 +709,80 @@ export default function AdminDispatchPage() {
                                   })()}
                                 </div>
                               )}
+
+                              {/* Driver Service Rating & Passenger Review */}
+                              {(() => {
+                                const serviceRating = returnLeg?.rating || outbound.rating;
+                                const serviceFeedback = returnLeg?.feedback || outbound.feedback;
+                                const driverName = outbound.assigned_driver || 'Wong Kok Fu';
+                                const driverRating = getDriverRating(driverName);
+
+                                return (
+                                  <div className="p-3.5 sm:p-4 rounded-xl bg-amber-50/70 border border-amber-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                                    <div className="space-y-1">
+                                      <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="font-bold text-amber-950 flex items-center gap-1.5 uppercase text-[11px] tracking-wider">
+                                          <Star className="h-4 w-4 fill-amber-400 text-amber-500" />
+                                          {t('admin.driverRatingTitle', 'Driver Rating & Feedback')}:
+                                        </span>
+                                        <span className="font-black text-neutral-900">
+                                          {driverName}
+                                        </span>
+                                        {serviceRating ? (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-900 border border-emerald-300 font-bold text-[10px]">
+                                            <Check className="h-2.5 w-2.5 text-emerald-700" />
+                                            {t('admin.passengerReviewed', 'Passenger Reviewed')}
+                                          </span>
+                                        ) : (
+                                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-600 border border-neutral-200 text-[10px] font-semibold">
+                                            <Clock className="h-2.5 w-2.5 text-neutral-400" />
+                                            {t('admin.awaitingReview', 'Awaiting Passenger Review')}
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {serviceRating ? (
+                                        <div className="space-y-1">
+                                          <div className="flex items-center gap-1 text-amber-500">
+                                            {[1, 2, 3, 4, 5].map((s) => (
+                                              <Star
+                                                key={s}
+                                                className={`h-4 w-4 ${s <= serviceRating ? 'fill-amber-400 text-amber-500' : 'text-neutral-300'}`}
+                                              />
+                                            ))}
+                                            <span className="font-mono font-black text-neutral-900 ml-1.5 text-xs">
+                                              {serviceRating}.0 / 5.0
+                                            </span>
+                                          </div>
+                                          {serviceFeedback && (
+                                            <p className="text-[11px] text-neutral-700 italic bg-white/80 p-2 rounded-lg border border-amber-200/60 mt-1">
+                                              &ldquo;{serviceFeedback}&rdquo;
+                                            </p>
+                                          )}
+                                        </div>
+                                      ) : (
+                                        <div className="flex items-center gap-2 text-neutral-500 text-[11px]">
+                                          <div className="flex items-center gap-0.5 text-neutral-300">
+                                            {[1, 2, 3, 4, 5].map((s) => (
+                                              <Star key={s} className="h-3.5 w-3.5" />
+                                            ))}
+                                          </div>
+                                          <span>
+                                            {t('admin.driverBaselineScore', 'Driver Overall Record')}: <strong className="text-amber-700">{driverRating.display} ★</strong> ({driverRating.count > 0 ? `${driverRating.count} reviews` : 'Initial 5.0'})
+                                          </span>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    <div className="text-left sm:text-right shrink-0">
+                                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-amber-200 shadow-xs text-neutral-900">
+                                        <span className="text-[10px] text-neutral-500 font-bold uppercase">{t('admin.overallScore', 'Driver Overall')}:</span>
+                                        <span className="font-mono font-black text-amber-600 text-sm">{driverRating.display} ★</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })()}
                             </div>
                           </td>
                         </tr>

@@ -95,6 +95,7 @@ interface AppContextType {
   overrideWorkLog: (logId: string, units: number) => void;
   // Stats helpers
   getArtisanStats: (workerId: string) => ArtisanSummary;
+  getDriverRating: (driverNameOrId?: string) => { average: number; count: number; display: string; stars: number };
   exportPayrollCSV: () => void;
   // Profile management
   updateProfile: (profileId: string, updates: Partial<Profile>) => void;
@@ -1218,6 +1219,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [profiles, currentUser, workLogs]);
 
+  // True driver rating derived from verified passenger feedback (defaults to 5.0 when no ratings yet)
+  const getDriverRating = useCallback((driverNameOrId?: string): { average: number; count: number; display: string; stars: number } => {
+    const driverProfile = profiles.find(p => p.role === 'driver');
+    const targetDriverName = driverNameOrId || driverProfile?.full_name || 'Wong Kok Fu';
+
+    const ratedBookings = bookings.filter(b => {
+      const isAssigned = !driverNameOrId || b.assigned_driver === targetDriverName || (driverProfile && b.assigned_driver === driverProfile.full_name);
+      return isAssigned && typeof b.rating === 'number' && b.rating > 0;
+    });
+
+    if (ratedBookings.length === 0) {
+      return {
+        average: 5.0,
+        count: 0,
+        display: '5.0',
+        stars: 5,
+      };
+    }
+
+    const sum = ratedBookings.reduce((acc, b) => acc + (b.rating || 0), 0);
+    const avg = Number((sum / ratedBookings.length).toFixed(1));
+    return {
+      average: avg,
+      count: ratedBookings.length,
+      display: avg.toFixed(1),
+      stars: Math.round(avg),
+    };
+  }, [bookings, profiles]);
+
   // Export Payroll CSV for direct bank disbursement
   const exportPayrollCSV = useCallback(() => {
     const customers = profiles.filter(p => p.role === 'customer');
@@ -1308,6 +1338,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addWorkLog,
     overrideWorkLog,
     getArtisanStats,
+    getDriverRating,
     exportPayrollCSV,
     updateProfile,
     deleteProfile,
@@ -1346,6 +1377,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addWorkLog,
     overrideWorkLog,
     getArtisanStats,
+    getDriverRating,
     exportPayrollCSV,
     updateProfile,
     deleteProfile,

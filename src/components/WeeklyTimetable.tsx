@@ -114,8 +114,9 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
   onSelectSlot,
 }) => {
   const { t, language } = useLanguage();
-  const { profiles, vehicles, isDateBlockedByLeave } = useApp();
+  const { profiles, vehicles, isDateBlockedByLeave, getDriverRating } = useApp();
   const driverProfile = profiles.find(p => p.role === 'driver');
+  const driverRating = getDriverRating(driverProfile?.full_name);
   const activeVehicle = vehicles?.[0] || {
     plate: 'NDC 9751',
     brand: 'Toyota',
@@ -611,12 +612,18 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
                           {t('vanInfo.driverTitle', 'Dedicated NGO Assisted Transit Driver')}
                         </p>
                         
-                        {/* Rating Stars */}
+                        {/* Rating Stars from real user feedback */}
                         <div className="flex items-center gap-1 text-amber-500 mt-1">
                           {[1, 2, 3, 4, 5].map((s) => (
-                            <Star key={s} className="h-3 w-3 fill-amber-400 text-amber-500" />
+                            <Star 
+                              key={s} 
+                              className={`h-3 w-3 ${s <= driverRating.stars ? 'fill-amber-400 text-amber-500' : 'text-neutral-300'}`} 
+                            />
                           ))}
-                          <span className="text-[11px] font-black text-neutral-800 ml-1">5.0</span>
+                          <span className="text-[11px] font-black text-neutral-800 ml-1 font-mono">{driverRating.display}</span>
+                          <span className="text-[10px] text-neutral-400 font-medium">
+                            ({driverRating.count > 0 ? `${driverRating.count} reviews` : 'Initial 5.0'})
+                          </span>
                         </div>
                       </div>
                     </div>
