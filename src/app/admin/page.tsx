@@ -899,17 +899,24 @@ export default function AdminOverviewDashboard() {
                 </div>
               ) : (
                 collaboratorDonutData.segments.map((seg) => (
-                  <div key={seg.id} className="flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2 min-w-0 max-w-[65%]">
+                  <div key={seg.id} className="flex items-center justify-between text-xs py-0.5">
+                    <div className="flex items-center gap-2.5 min-w-0 max-w-[70%]">
                       <span 
-                        className="h-2.5 w-1 rounded-full shrink-0" 
+                        className="h-3.5 w-1.5 rounded-full shrink-0" 
                         style={{ backgroundColor: seg.color }}
                       />
-                      <span className="font-semibold text-neutral-700 truncate" title={seg.name}>
-                        {seg.name}
-                      </span>
+                      <div className="min-w-0 flex flex-col">
+                        <span className="font-bold text-neutral-900 truncate text-xs leading-tight" title={seg.resort ? `${seg.resort} (${seg.name})` : seg.name}>
+                          {seg.resort || seg.name}
+                        </span>
+                        {seg.resort && (
+                          <span className="text-[10px] text-neutral-500 font-medium truncate leading-tight mt-0.5" title={seg.name}>
+                            {seg.name}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span className="font-mono font-bold text-neutral-900 shrink-0">
+                    <span className="font-mono font-bold text-neutral-900 shrink-0 text-right">
                       {seg.units.toLocaleString()} <span className="text-[10px] text-neutral-400 font-sans">({seg.percentage}%)</span>
                     </span>
                   </div>
