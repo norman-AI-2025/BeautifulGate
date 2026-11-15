@@ -175,9 +175,9 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
   existingBookingsForSlot,
   onBookingSuccess,
 }) => {
-  const { currentUser, createBooking, isDateBlockedByLeave, vehicles, bookings } = useApp();
+  const { currentUser, createBooking, isDateBlockedByLeave, isDateBlockedByMaintenance, vehicles, bookings } = useApp();
   const activeVehicle = vehicles?.[0];
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   // USER SPEC: "each booking can book up to 2 seats"
   const [selectedSeats, setSelectedSeats] = useState<AssignedSpace[]>([]);
@@ -406,6 +406,17 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (isDateBlockedByMaintenance(selectedDay)) {
+      setErrorMsg(
+        language === 'zh'
+          ? '接送专车正进行定期机械保养检修，该日期无法提交预约。'
+          : language === 'ms'
+          ? 'Tempahan van tidak dapat dibuat kerana kenderaan sedang diselenggara.'
+          : 'Transport bookings are unavailable on this date because the van is under scheduled maintenance.'
+      );
+      return;
+    }
+
     if (isDateBlockedByLeave(selectedDay)) {
       setErrorMsg(t('vanModal.driverOnLeave', 'Transport bookings are unavailable on this date because the van driver is on approved leave.'));
       return;
@@ -519,6 +530,24 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
 
         {/* Form Body - Scrollable */}
         <form onSubmit={handleSubmit} className="overflow-y-auto p-5 sm:p-7 flex-1 space-y-6">
+          {isDateBlockedByMaintenance(selectedDay) && (
+            <div className="rounded-xl bg-rose-50 border border-rose-300 p-4 text-xs font-semibold text-rose-950 flex items-center gap-2.5 animate-in fade-in-50">
+              <AlertCircle className="h-4 w-4 text-rose-600 shrink-0" />
+              <div>
+                <p className="font-bold text-sm">
+                  {language === 'zh' ? '接送专车检修保养中' : language === 'ms' ? 'Kenderaan Dalam Penyelenggaraan' : 'Vehicle Under Scheduled Maintenance'}
+                </p>
+                <p className="text-rose-800 font-medium">
+                  {language === 'zh'
+                    ? `接送专车（${activeVehicle?.plate || 'NDC 9751'}）在 ${selectedDay} 正进行定期机械保养，所有接送预约已关闭。`
+                    : language === 'ms'
+                    ? `Tempahan untuk ${selectedDay} ditutup kerana kenderaan transit (${activeVehicle?.plate || 'NDC 9751'}) sedang menjalani penyelenggaraan.`
+                    : `Van bookings for ${selectedDay} are disabled because the transit vehicle (${activeVehicle?.plate || 'NDC 9751'}) is under scheduled maintenance.`}
+                </p>
+              </div>
+            </div>
+          )}
+
           {isDateBlockedByLeave(selectedDay) && (
             <div className="rounded-xl bg-amber-50 border border-amber-300 p-4 text-xs font-semibold text-amber-950 flex items-center gap-2.5 animate-in fade-in-50">
               <AlertCircle className="h-4 w-4 text-amber-600 shrink-0" />
@@ -955,15 +984,17 @@ export const VanFloorPlanModal: React.FC<VanFloorPlanModalProps> = ({
           <div className="pt-2 border-t border-neutral-200">
             <button
               type="submit"
-              disabled={selectedSeats.length === 0 || !destQuery.trim() || isDateBlockedByLeave(selectedDay) || (isBookingReturn && !selectedReturnSlot)}
+              disabled={selectedSeats.length === 0 || !destQuery.trim() || isDateBlockedByLeave(selectedDay) || isDateBlockedByMaintenance(selectedDay) || (isBookingReturn && !selectedReturnSlot)}
               className={`w-full py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-md tap-target transition-all active:scale-[0.99] ${
-                selectedSeats.length === 0 || !destQuery.trim() || isDateBlockedByLeave(selectedDay) || (isBookingReturn && !selectedReturnSlot)
+                selectedSeats.length === 0 || !destQuery.trim() || isDateBlockedByLeave(selectedDay) || isDateBlockedByMaintenance(selectedDay) || (isBookingReturn && !selectedReturnSlot)
                   ? 'bg-neutral-300 text-neutral-500 cursor-not-allowed shadow-none'
                   : 'bg-[#F37021] hover:bg-[#D9530F] text-white shadow-orange-500/20'
               }`}
             >
               <span>
-                {isDateBlockedByLeave(selectedDay) 
+                {isDateBlockedByMaintenance(selectedDay)
+                  ? (language === 'zh' ? '接送专车检修中（无法预约）' : language === 'ms' ? 'Kenderaan Diselenggara (Tempahan Ditutup)' : 'Booking Unavailable (Vehicle Maintenance)')
+                  : isDateBlockedByLeave(selectedDay) 
                   ? t('timetable.bookingUnavailableDriverLeave', 'Booking Unavailable (Driver On Leave)') 
                   : isBookingReturn && selectedReturnSlot
                   ? t('vanModal.bookRoundtrip', 'Book Roundtrip')

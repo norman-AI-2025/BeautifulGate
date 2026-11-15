@@ -32,7 +32,8 @@ import {
   ChevronUp,
   Camera,
   Phone,
-  MessageSquare
+  MessageSquare,
+  Wrench
 } from 'lucide-react';
 import { TransitBooking, TransitService } from '@/types';
 
@@ -45,8 +46,10 @@ export default function MobileArtisanPortalPage() {
     products, 
     getArtisanStats, 
     workLogs,
-    profiles 
+    profiles,
+    getMaintenanceNotice
   } = useApp();
+  const maintenanceNotice = getMaintenanceNotice();
   const { t } = useLanguage();
 
   // Route Authentication Guard: Only authenticated users can access
@@ -226,6 +229,81 @@ export default function MobileArtisanPortalPage() {
       </div>
 
       <main className="max-w-2xl mx-auto px-4 pt-4 sm:pt-6 space-y-5">
+        {/* ============================================================== */}
+        {/* ======== TRI-LANGUAGE VEHICLE MAINTENANCE ADVISORY =========== */}
+        {/* ============================================================== */}
+        {maintenanceNotice && (
+          <div className="rounded-2xl border-2 border-amber-400 bg-gradient-to-br from-amber-50/95 via-orange-50/70 to-amber-100/40 p-4 sm:p-5 shadow-sm space-y-3.5 animate-in fade-in-50">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200/80 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500 text-white shadow-xs shrink-0">
+                  <Wrench className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500 text-white">
+                      Maintenance Advisory
+                    </span>
+                    <span className="font-mono text-xs font-black text-amber-950 bg-white/90 border border-amber-300 px-2 py-0.5 rounded-lg shadow-2xs">
+                      {maintenanceNotice.vehicle.brand} ({maintenanceNotice.vehicle.plate})
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {(maintenanceNotice.startDate || maintenanceNotice.endDate) && (
+                <div className="flex items-center gap-1.5 text-xs font-black text-amber-950 bg-white/90 border border-amber-300 px-2.5 py-1 rounded-xl shadow-2xs">
+                  <Calendar className="h-3.5 w-3.5 text-amber-600 shrink-0" />
+                  <span className="font-mono">
+                    {maintenanceNotice.startDate}
+                    {maintenanceNotice.endDate && maintenanceNotice.endDate !== maintenanceNotice.startDate && ` → ${maintenanceNotice.endDate}`}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2.5 text-xs">
+              {/* EN */}
+              <div className="p-2.5 rounded-xl bg-white/80 border border-amber-200/60 space-y-0.5">
+                <div className="flex items-center gap-1.5 text-[10px] font-black text-amber-900 uppercase tracking-wide">
+                  <span className="px-1.5 py-0.5 rounded bg-amber-200 text-amber-900 font-mono">EN</span>
+                  <span>Vehicle Under Scheduled Maintenance · Service Suspended</span>
+                </div>
+                <p className="text-neutral-700 text-[11px] leading-relaxed font-medium">
+                  The Beautiful Gate Seremban transit van ({maintenanceNotice.vehicle.plate}) is undergoing scheduled maintenance
+                  {maintenanceNotice.startDate ? ` from ${maintenanceNotice.startDate}${maintenanceNotice.endDate && maintenanceNotice.endDate !== maintenanceNotice.startDate ? ` to ${maintenanceNotice.endDate}` : ''}` : ''}.
+                  Transit bookings during this period are temporarily unavailable.
+                </p>
+              </div>
+
+              {/* 中文 */}
+              <div className="p-2.5 rounded-xl bg-white/80 border border-amber-200/60 space-y-0.5">
+                <div className="flex items-center gap-1.5 text-[10px] font-black text-amber-900 uppercase tracking-wide">
+                  <span className="px-1.5 py-0.5 rounded bg-orange-200 text-orange-950 font-mono">中文</span>
+                  <span>接送专车定期检修保养 · 接送服务暂停</span>
+                </div>
+                <p className="text-neutral-700 text-[11px] leading-relaxed font-medium">
+                  芙蓉美门残章关怀中心接送专车（{maintenanceNotice.vehicle.plate}）定于
+                  {maintenanceNotice.startDate ? ` ${maintenanceNotice.startDate}${maintenanceNotice.endDate && maintenanceNotice.endDate !== maintenanceNotice.startDate ? ` 至 ${maintenanceNotice.endDate}` : ''}` : ''}
+                  进行定期机械检修与保养，该期间所有接送预约服务暂停。感谢您的体谅与配合。
+                </p>
+              </div>
+
+              {/* MS */}
+              <div className="p-2.5 rounded-xl bg-white/80 border border-amber-200/60 space-y-0.5">
+                <div className="flex items-center gap-1.5 text-[10px] font-black text-amber-900 uppercase tracking-wide">
+                  <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-950 font-mono">MS</span>
+                  <span>Kenderaan Dalam Penyelenggaraan · Perkhidmatan Digantung</span>
+                </div>
+                <p className="text-neutral-700 text-[11px] leading-relaxed font-medium">
+                  Kenderaan transit Beautiful Gate Seremban ({maintenanceNotice.vehicle.plate}) sedang menjalani penyelenggaraan berjadual
+                  {maintenanceNotice.startDate ? ` dari ${maintenanceNotice.startDate}${maintenanceNotice.endDate && maintenanceNotice.endDate !== maintenanceNotice.startDate ? ` hingga ${maintenanceNotice.endDate}` : ''}` : ''}.
+                  Semua tempahan van transit pada tempoh tersebut digantung buat sementara waktu.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
         {/* ============================================================== */}
         {/* ======================= VAN TRANSIT TAB ======================= */}
         {/* ============================================================== */}

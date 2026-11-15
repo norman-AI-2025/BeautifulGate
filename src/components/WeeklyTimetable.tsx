@@ -114,7 +114,7 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
   onSelectSlot,
 }) => {
   const { t, language } = useLanguage();
-  const { profiles, vehicles, isDateBlockedByLeave, getDriverRating } = useApp();
+  const { profiles, vehicles, isDateBlockedByLeave, isDateBlockedByMaintenance, getDriverRating } = useApp();
   const driverProfile = profiles.find(p => p.role === 'driver');
   const driverRating = getDriverRating(driverProfile?.full_name);
   const activeVehicle = vehicles?.[0] || {
@@ -225,6 +225,10 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
       return { status: 'close', label: 'Driver On Leave' };
     }
 
+    if (isDateBlockedByMaintenance(day.isoDate) || isDateBlockedByMaintenance(day.dateStr)) {
+      return { status: 'close', label: language === 'zh' ? '车辆检修中' : language === 'ms' ? 'Penyelenggaraan Van' : 'Van Maintenance' };
+    }
+
     // Date & Time sensitivity check:
     // 1. Date must be from today onwards (past dates are closed)
     // 2. If date is today, time must be at least 2 hours from current time
@@ -274,7 +278,14 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
   };
 
   const handleCellClick = (day: DaySchedule, slot: string, slotStatus: string) => {
-    if (slotStatus === 'close' || slotStatus === 'booked' || isDateBlockedByLeave(day.isoDate) || isDateBlockedByLeave(day.dateStr)) {
+    if (
+      slotStatus === 'close' || 
+      slotStatus === 'booked' || 
+      isDateBlockedByLeave(day.isoDate) || 
+      isDateBlockedByLeave(day.dateStr) ||
+      isDateBlockedByMaintenance(day.isoDate) ||
+      isDateBlockedByMaintenance(day.dateStr)
+    ) {
       return;
     }
     const cleanTime = slot.split(' - ')[0].toUpperCase();
@@ -444,6 +455,29 @@ export const WeeklyTimetable: React.FC<WeeklyTimetableProps> = ({
             <ChevronDown className="h-4 w-4 text-neutral-500 group-hover:text-[#F37021]" />
           </button>
         </div>
+
+        {/* VEHICLE UNDER MAINTENANCE WARNING BANNER - TRANSLATED IN EN, ZH, MS */}
+        {(isDateBlockedByMaintenance(selectedIsoDate) || isDateBlockedByMaintenance(selectedDayObj.dateStr)) && (
+          <div className="rounded-xl border border-rose-300 bg-rose-50 p-4 shadow-xs space-y-1 animate-in fade-in-50">
+            <div className="flex items-center gap-2 text-rose-950 font-bold text-xs sm:text-sm">
+              <span className="h-2 w-2 rounded-full bg-rose-600 animate-pulse" />
+              <span>
+                {language === 'zh'
+                  ? '接送专车定期检修中 · 暂停预约服务'
+                  : language === 'ms'
+                  ? 'Kenderaan Dalam Penyelenggaraan · Tempahan Ditutup'
+                  : 'Vehicle Under Scheduled Maintenance · Bookings Unavailable'}
+              </span>
+            </div>
+            <p className="text-xs text-rose-900 font-medium leading-relaxed">
+              {language === 'zh'
+                ? `接送专车（${activeVehicle.plate}）于 ${getLocalizedDayName(selectedDayObj.name)}, ${selectedDayObj.dateStr} 安排机械保养检修，所有接送预约时段均已关闭。`
+                : language === 'ms'
+                ? `Kenderaan transit (${activeVehicle.plate}) dijadualkan untuk penyelenggaraan mekanikal pada ${selectedDayObj.dateStr}. Semua slot ditutup dan tempahan tidak dapat dibuat.`
+                : `The transit vehicle (${activeVehicle.plate}) is undergoing scheduled maintenance on ${selectedDayObj.dateStr}. All booking slots are suspended for this date.`}
+            </p>
+          </div>
+        )}
 
         {/* DRIVER ON LEAVE WARNING BANNER - TRANSLATED IN EN, ZH, MS */}
         {(isDateBlockedByLeave(selectedIsoDate) || isDateBlockedByLeave(selectedDayObj.dateStr)) && (

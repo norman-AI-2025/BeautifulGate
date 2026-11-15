@@ -115,6 +115,8 @@ interface AppContextType {
   approveDriverLeave: (leaveId: string) => void;
   rejectDriverLeave: (leaveId: string) => void;
   isDateBlockedByLeave: (dateStr: string) => boolean;
+  isDateBlockedByMaintenance: (dateStr: string) => boolean;
+  getMaintenanceNotice: () => { vehicle: Vehicle; startDate?: string; endDate?: string } | null;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -764,6 +766,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, [driverLeaves]);
 
+  // Check if date is blocked by vehicle maintenance window
+  const isDateBlockedByMaintenance = useCallback((dateStr: string): boolean => {
+    if (!dateStr) return false;
+    const cleanQuery = dateStr.trim();
+    
+    // Normalize target date to YYYY-MM-DD
+    let targetYmd = '';
+    const ymdMatch = cleanQuery.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (ymdMatch) {
+      targetYmd = `${ymdMatch[1]}-${ymdMatch[2]}-${ymdMatch[3]}`;
+    } else {
+      const dayMonthMatch = cleanQuery.match(/(\d{1,2})\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*,?\s*(\d{4})?/i);
+      if (dayMonthMatch) {
+        const day = dayMonthMatch[1].padStart(2, '0');
+        const monthNames: Record<string, string> = {
+          jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06',
+          jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12'
+        };
+        const month = monthNames[dayMonthMatch[2].toLowerCase().slice(0, 3)] || '11';
+        const year = dayMonthMatch[3] || '2026';
+        targetYmd = `${year}-${month}-${day}`;
+      } else {
+        const parsed = new Date(cleanQuery.replace(/,/g, ' '));
+        if (!isNaN(parsed.getTime())) {
+          targetYmd = `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, '0')}-${String(parsed.getDate()).padStart(2, '0')}`;
+        }
+      }
+    }
+
+    if (!targetYmd) return false;
+
+    return vehicles.some(v => {
+      if (v.status !== 'maintenance') return false;
+      const start = v.maintenance_start_date;
+      const end = v.maintenance_end_date || start;
+      if (!start) return true; // If vehicle is under maintenance without specific dates, all bookings suspended
+      return targetYmd >= start && targetYmd <= (end || start);
+    });
+  }, [vehicles]);
+
+  // Get active vehicle maintenance notice if any vehicle is under maintenance
+  const getMaintenanceNotice = useCallback(() => {
+    const v = vehicles.find(veh => veh.status === 'maintenance');
+    if (!v) return null;
+    return {
+      vehicle: v,
+      startDate: v.maintenance_start_date,
+      endDate: v.maintenance_end_date || v.maintenance_start_date,
+    };
+  }, [vehicles]);
+
   const logout = useCallback(() => {
     saveCurrentUser(null);
   }, [saveCurrentUser]);
@@ -785,6 +838,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     journey_type?: 'outbound' | 'return';
     linked_booking_id?: string;
   }): Promise<TransitBooking> => {
+    if (data.date && isDateBlockedByMaintenance(data.date)) {
+      throw new Error('Transit bookings are unavailable on this date because the van is under scheduled maintenance.');
+    }
     // Find active AND approved driver if one exists in the roster
     const activeDriver = profiles.find(p => p.role === 'driver' && p.is_approved !== false && p.driver_status !== 'on_leave');
 
@@ -1354,6 +1410,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     approveDriverLeave,
     rejectDriverLeave,
     isDateBlockedByLeave,
+    isDateBlockedByMaintenance,
+    getMaintenanceNotice,
   }), [
     currentUser,
     profiles,
@@ -1393,6 +1451,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     approveDriverLeave,
     rejectDriverLeave,
     isDateBlockedByLeave,
+    isDateBlockedByMaintenance,
+    getMaintenanceNotice,
   ]);
 
   return (

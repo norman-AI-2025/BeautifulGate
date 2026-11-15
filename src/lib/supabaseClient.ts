@@ -465,29 +465,58 @@ export async function dbFetchVehicles(): Promise<Vehicle[] | null> {
     console.warn('Supabase fetchVehicles error:', error);
     return null;
   }
-  return (data || []).map((v: any): Vehicle => ({
-    id: v.id,
-    plate: v.plate,
-    brand: v.brand,
-    model: v.model,
-    color: v.color,
-    seats: v.seats,
-    image_url: v.image_url || '/images/toyota-hiace-van.jpg',
-    status: v.status || 'active',
-    notes: v.notes || '',
-    created_at: v.created_at,
-    updated_at: v.updated_at,
-  }));
+  return (data || []).map((v: any): Vehicle => {
+    const rawNotes = v.notes || '';
+    const match = rawNotes.match(/\[MAINTENANCE:(.*?)\.\.(.*?)\]/);
+    const maintenance_start_date = match ? match[1] : (v.maintenance_start_date || undefined);
+    const maintenance_end_date = match ? match[2] : (v.maintenance_end_date || undefined);
+    const cleanNotes = rawNotes.replace(/\[MAINTENANCE:.*?\]/g, '').trim();
+
+    return {
+      id: v.id,
+      plate: v.plate,
+      brand: v.brand,
+      model: v.model,
+      color: v.color,
+      seats: v.seats,
+      image_url: v.image_url || '/images/toyota-hiace-van.jpg',
+      status: v.status || 'active',
+      notes: cleanNotes,
+      maintenance_start_date,
+      maintenance_end_date,
+      created_at: v.created_at,
+      updated_at: v.updated_at,
+    };
+  });
 }
 
 export async function dbUpsertVehicle(vehicle: Vehicle): Promise<boolean> {
   if (!supabase) return false;
+
+  // Encode maintenance dates into notes for reliable persistence across Supabase instances
+  let cleanNotes = (vehicle.notes || '').replace(/\[MAINTENANCE:.*?\]/g, '').trim();
+  if (vehicle.status === 'maintenance' && vehicle.maintenance_start_date) {
+    const end = vehicle.maintenance_end_date || vehicle.maintenance_start_date;
+    cleanNotes = `[MAINTENANCE:${vehicle.maintenance_start_date}..${end}] ${cleanNotes}`.trim();
+  }
+
+  // Construct payload safe for PostgREST
+  const payload: any = {
+    id: vehicle.id,
+    plate: vehicle.plate,
+    brand: vehicle.brand,
+    model: vehicle.model,
+    color: vehicle.color,
+    seats: vehicle.seats,
+    image_url: vehicle.image_url,
+    status: vehicle.status,
+    notes: cleanNotes,
+    updated_at: new Date().toISOString(),
+  };
+
   const { error } = await supabase
     .from('vehicles')
-    .upsert({
-      ...vehicle,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'id' });
+    .upsert(payload, { onConflict: 'id' });
 
   if (error) {
     console.error('Supabase upsertVehicle error:', error);

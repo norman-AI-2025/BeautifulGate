@@ -10,7 +10,9 @@ import {
   Check, 
   Trash2, 
   CheckCircle2, 
-  AlertCircle 
+  AlertCircle,
+  Wrench,
+  Calendar
 } from 'lucide-react';
 import { Vehicle } from '@/types';
 import { useApp } from '@/context/AppContext';
@@ -50,6 +52,8 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
   const [color, setColor] = useState('');
   const [seats, setSeats] = useState('');
   const [status, setStatus] = useState<'active' | 'maintenance' | 'standby'>('active');
+  const [maintenanceStartDate, setMaintenanceStartDate] = useState<string>('');
+  const [maintenanceEndDate, setMaintenanceEndDate] = useState<string>('');
   const [imageUrl, setImageUrl] = useState<string>('/images/toyota-hiace-van.jpg');
   const [notes, setNotes] = useState('');
 
@@ -69,6 +73,8 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
       setColor(activeVehicle.color || '');
       setSeats(activeVehicle.seats || '');
       setStatus(activeVehicle.status || 'active');
+      setMaintenanceStartDate(activeVehicle.maintenance_start_date || '');
+      setMaintenanceEndDate(activeVehicle.maintenance_end_date || activeVehicle.maintenance_start_date || '');
       setImageUrl(activeVehicle.image_url || '/images/toyota-hiace-van.jpg');
       setNotes(activeVehicle.notes || '');
       setErrorMsg('');
@@ -108,6 +114,11 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
       return;
     }
 
+    if (status === 'maintenance' && !maintenanceStartDate.trim()) {
+      setErrorMsg(t('vehicleModal.maintenanceDateRequired', 'Please specify the maintenance date range during which the vehicle is unavailable.'));
+      return;
+    }
+
     try {
       await updateVehicle(activeVehicle.id, {
         plate: plate.trim(),
@@ -116,6 +127,8 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
         color: color.trim(),
         seats: seats.trim(),
         status,
+        maintenance_start_date: status === 'maintenance' ? maintenanceStartDate : undefined,
+        maintenance_end_date: status === 'maintenance' ? (maintenanceEndDate || maintenanceStartDate) : undefined,
         image_url: imageUrl,
         notes: notes.trim(),
       });
@@ -254,7 +267,15 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
               </label>
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value as any)}
+                onChange={(e) => {
+                  const newStatus = e.target.value as any;
+                  setStatus(newStatus);
+                  if (newStatus === 'maintenance' && !maintenanceStartDate) {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    setMaintenanceStartDate(todayStr);
+                    setMaintenanceEndDate(todayStr);
+                  }
+                }}
                 className="apple-input w-full font-bold text-xs"
               >
                 <option value="active">{t('vehicleModal.statusActive', 'Active in Fleet')}</option>
@@ -263,6 +284,53 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
               </select>
             </div>
           </div>
+
+          {/* Unavailable Maintenance Dates - Displayed when 'maintenance' is selected */}
+          {status === 'maintenance' && (
+            <div className="rounded-xl border border-amber-300 bg-amber-50/80 p-3.5 space-y-3 animate-in fade-in-50">
+              <div className="flex items-center gap-2 text-amber-950 font-bold text-xs">
+                <Wrench className="h-4 w-4 text-amber-600 shrink-0" />
+                <span>{t('vehicleModal.maintenanceDatesTitle', 'Scheduled Maintenance Unavailable Dates')}</span>
+              </div>
+              <p className="text-[11px] text-amber-800 leading-relaxed font-medium">
+                {t('vehicleModal.maintenanceDatesDesc', 'Specify the date range during which this vehicle is under maintenance. Public beneficiary bookings on these dates will be automatically suspended and marked as unavailable.')}
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="block text-[11px] font-bold text-neutral-700 mb-1">
+                    {t('vehicleModal.maintenanceStart', 'Unavailable From (Start Date)')} *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={maintenanceStartDate}
+                    onChange={(e) => {
+                      setMaintenanceStartDate(e.target.value);
+                      if (!maintenanceEndDate || maintenanceEndDate < e.target.value) {
+                        setMaintenanceEndDate(e.target.value);
+                      }
+                    }}
+                    className="apple-input w-full text-xs font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-neutral-700 mb-1">
+                    {t('vehicleModal.maintenanceEnd', 'Unavailable Until (End Date)')} *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    min={maintenanceStartDate}
+                    value={maintenanceEndDate}
+                    onChange={(e) => setMaintenanceEndDate(e.target.value)}
+                    className="apple-input w-full text-xs font-bold"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Brand, Model & Colour */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

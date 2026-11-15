@@ -44,6 +44,8 @@ export interface Vehicle {
   image_url?: string;
   status: 'active' | 'maintenance' | 'standby';
   notes?: string;
+  maintenance_start_date?: string; // YYYY-MM-DD
+  maintenance_end_date?: string;   // YYYY-MM-DD
   created_at?: string;
   updated_at?: string;
 }
