@@ -27,40 +27,54 @@ export default function AdminDonationsPage() {
   // Helper to test if a donation falls within the time range
   const isWithinTimeRange = (dateStr?: string, range: '1_week' | '1_month' | '1_year' = '1_month') => {
     if (!dateStr) return true;
-    const d = new Date(dateStr);
+    let d = new Date(dateStr);
+    if (isNaN(d.getTime()) && dateStr.includes(',')) {
+      const parts = dateStr.split(',');
+      d = new Date(parts.slice(1).join(' ').trim());
+    }
     if (isNaN(d.getTime())) return true;
-    const nowMs = Date.now();
-    const diffDays = Math.abs(nowMs - d.getTime()) / (1000 * 60 * 60 * 24);
 
-    if (range === '1_week') return diffDays <= 7;
-    if (range === '1_month') return diffDays <= 30;
-    if (range === '1_year') return diffDays <= 365;
+    const nowMs = Date.now();
+    const diffMs = nowMs - d.getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+
+    // Allow upcoming/scheduled bookings (up to 7 days ahead) or in the past:
+    if (range === '1_week') return diffDays >= -7 && diffDays <= 7;
+    if (range === '1_month') return diffDays >= -30 && diffDays <= 30;
+    if (range === '1_year') return diffDays >= -365 && diffDays <= 365;
     return true;
   };
 
-  // Card 1: Donation in a Month
-  const monthDonations = useMemo(() => {
-    return donatedBookings.filter(b => isWithinTimeRange(b.donation?.timestamp, '1_month'));
-  }, [donatedBookings]);
-  const monthTotal = useMemo(() => monthDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [monthDonations]);
-  const monthCount = monthDonations.length;
+  // Card 1: Total Donations for Selected Period (1 Week / 1 Month / 1 Year)
+  const periodDonations = useMemo(() => {
+    return donatedBookings.filter(b => isWithinTimeRange(b.donation?.timestamp || b.date, donationTimeRange));
+  }, [donatedBookings, donationTimeRange]);
+  const periodTotal = useMemo(() => periodDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [periodDonations]);
+  const periodCount = periodDonations.length;
+
+  const periodCardTitle = donationTimeRange === '1_week'
+    ? t('admin.donationInWeek', 'Donation in 1 Week')
+    : donationTimeRange === '1_year'
+    ? t('admin.donationInYear', 'Donation in 1 Year')
+    : t('admin.donationInMonth', 'Donation in a Month');
 
   // Card 2: Donation via QR
   const qrDonations = useMemo(() => {
-    return donatedBookings.filter(b => b.donation?.method === 'qr' && isWithinTimeRange(b.donation?.timestamp, donationTimeRange));
+    return donatedBookings.filter(b => b.donation?.method === 'qr' && isWithinTimeRange(b.donation?.timestamp || b.date, donationTimeRange));
   }, [donatedBookings, donationTimeRange]);
   const qrTotal = useMemo(() => qrDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [qrDonations]);
 
   // Card 3: Donation via Driver (Cash)
   const cashDonations = useMemo(() => {
-    return donatedBookings.filter(b => b.donation?.method === 'cash' && isWithinTimeRange(b.donation?.timestamp, donationTimeRange));
+    return donatedBookings.filter(b => b.donation?.method === 'cash' && isWithinTimeRange(b.donation?.timestamp || b.date, donationTimeRange));
   }, [donatedBookings, donationTimeRange]);
   const cashTotal = useMemo(() => cashDonations.reduce((sum, b) => sum + (b.donation?.amount || 0), 0), [cashDonations]);
 
   // Filtered donations for Donation Audit Ledger
   const filteredDonations = useMemo(() => {
     return donatedBookings.filter(b => {
-      if (!isWithinTimeRange(b.donation?.timestamp, donationTimeRange)) return false;
+      const rawDate = b.donation?.timestamp || b.date;
+      if (!isWithinTimeRange(rawDate, donationTimeRange)) return false;
       if (donationMethodFilter === 'qr') return b.donation?.method === 'qr';
       if (donationMethodFilter === 'cash') return b.donation?.method === 'cash';
       return true;
@@ -68,10 +82,17 @@ export default function AdminDonationsPage() {
   }, [donatedBookings, donationTimeRange, donationMethodFilter]);
 
   const formatBookingDate = (dateStr?: string): string => {
-    if (!dateStr) return '10 Nov 2026';
-    const parts = dateStr.split(',');
-    if (parts.length >= 2) {
-      return parts.slice(1).join(' ').trim();
+    if (!dateStr) return '—';
+    if (dateStr.includes(',')) {
+      const parts = dateStr.split(',');
+      if (parts.length >= 2) {
+        return parts.slice(1).join(' ').trim();
+      }
+    }
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
     }
     return dateStr;
   };
@@ -101,17 +122,17 @@ export default function AdminDonationsPage() {
 
       {/* 3 Prioritized Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Card 1: Donation in a Month */}
+        {/* Card 1: Total Donation in Selected Period */}
         <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-5 shadow-xs">
           <span className="text-[10px] font-bold uppercase tracking-wider text-orange-950 flex items-center gap-1.5">
             <HeartHandshake className="h-4 w-4 text-[#F37021]" />
-            {t('admin.donationInMonth', 'Donation in a Month')}
+            {periodCardTitle}
           </span>
           <p className="text-3xl font-black text-[#D9530F] mt-2 font-mono tabular-nums">
-            RM {monthTotal.toFixed(2)}
+            RM {periodTotal.toFixed(2)}
           </p>
           <p className="text-[11px] text-neutral-600 mt-1">
-            {monthCount} {t('admin.contributions', 'contributions')}
+            {periodCount} {t('admin.contributions', 'contributions')}
           </p>
         </div>
 
@@ -204,7 +225,7 @@ export default function AdminDonationsPage() {
                     : 'text-neutral-600 hover:text-black'
                 }`}
               >
-                {t('admin.filterAllDonations', 'All')}
+                {t('admin.filterAllDonations', 'All Donations')}
               </button>
               <button
                 type="button"
@@ -281,7 +302,7 @@ export default function AdminDonationsPage() {
                         {b.assigned_driver}
                       </span>
                       <span className="font-mono text-[10px] text-neutral-500 block mt-0.5">
-                        {b.assigned_vehicle.plate}
+                        {b.assigned_vehicle?.plate || 'WVV 4108'}
                       </span>
                     </td>
 
