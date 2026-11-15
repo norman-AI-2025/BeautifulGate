@@ -74,4 +74,12 @@ export function downloadCSV(filename: string, rows: (string | number | null | un
   URL.revokeObjectURL(url);
 }
 
+/**
+ * Returns today's ISO date string: YYYY-MM-DD
+ */
+export function getTodayDateString(): string {
+  const now = new Date();
+  return now.toISOString().split('T')[0];
+}
+
 

@@ -12,21 +12,17 @@ import {
   ArtisanSummary, 
   MobilityType, 
   Vehicle, 
+  VehicleSpec,
   DriverLeave, 
   LeaveStatus,
   BeneficiaryType 
 } from '@/types';
 import { 
-  INITIAL_PROFILES, 
-  INITIAL_PRODUCTS, 
-  INITIAL_WORK_LOGS, 
-  INITIAL_TRANSIT_BOOKINGS, 
-  DEFAULT_VEHICLE, 
-  INITIAL_VEHICLES, 
-  INITIAL_DRIVER_LEAVES, 
+  formatPhoneNumber, 
+  formatICNumber, 
+  downloadCSV, 
   getTodayDateString 
-} from '@/lib/mockData';
-import { formatPhoneNumber, formatICNumber, downloadCSV } from '@/lib/formatters';
+} from '@/lib/formatters';
 import {
   isSupabaseConfigured,
   supabase,
@@ -144,18 +140,27 @@ export function hashPassword(pwd: string): string {
   return 'bg_' + Math.abs(hash).toString(16);
 }
 
+// Default vehicle specification when not assigned
+const DEFAULT_VEHICLE: VehicleSpec = {
+  plate: 'WVV 4108',
+  brand: 'Toyota',
+  model: 'HiAce High-Roof Commuter',
+  color: 'Pearl White',
+  configuration: 'Row 1: Driver + 1 Pax | Row 2: 4 Regular Seats | Row 3: 2 Wheelchair Bays',
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isSupabaseLive, setIsSupabaseLive] = useState(false);
   const [currentUser, setCurrentUser] = useState<Profile | null>(null);
-  const [profiles, setProfiles] = useState<Profile[]>(INITIAL_PROFILES);
-  const [bookings, setBookings] = useState<TransitBooking[]>(INITIAL_TRANSIT_BOOKINGS);
-  const [workLogs, setWorkLogs] = useState<CardWorkLog[]>(INITIAL_WORK_LOGS);
-  const [products, setProducts] = useState<CardProduct[]>(INITIAL_PRODUCTS);
-  const [vehicles, setVehicles] = useState<Vehicle[]>(INITIAL_VEHICLES);
-  const [driverLeaves, setDriverLeaves] = useState<DriverLeave[]>(INITIAL_DRIVER_LEAVES);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [bookings, setBookings] = useState<TransitBooking[]>([]);
+  const [workLogs, setWorkLogs] = useState<CardWorkLog[]>([]);
+  const [products, setProducts] = useState<CardProduct[]>([]);
+  const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [driverLeaves, setDriverLeaves] = useState<DriverLeave[]>([]);
 
-  // Initialize and Sync (Supabase or LocalStorage)
+  // Initialize and Sync (100% Supabase-driven)
   useEffect(() => {
     let isSubscribed = true;
     let activeChannel: any = null;
@@ -186,7 +191,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           ]);
 
           if (isSubscribed) {
-            if (sbProfiles && sbProfiles.length > 0) {
+            if (sbProfiles) {
               setProfiles(sbProfiles);
               try { localStorage.setItem(STORAGE_KEYS.PROFILES, JSON.stringify(sbProfiles)); } catch {}
             }
@@ -194,7 +199,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               setBookings(sbBookings);
               try { localStorage.setItem(STORAGE_KEYS.BOOKINGS, JSON.stringify(sbBookings)); } catch {}
             }
-            if (sbProducts && sbProducts.length > 0) {
+            if (sbProducts) {
               setProducts(sbProducts);
               try { localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(sbProducts)); } catch {}
             }
@@ -202,7 +207,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               setWorkLogs(sbWorkLogs);
               try { localStorage.setItem(STORAGE_KEYS.WORK_LOGS, JSON.stringify(sbWorkLogs)); } catch {}
             }
-            if (sbVehicles && sbVehicles.length > 0) {
+            if (sbVehicles) {
               setVehicles(sbVehicles);
               try { localStorage.setItem(STORAGE_KEYS.VEHICLES, JSON.stringify(sbVehicles)); } catch {}
             }
