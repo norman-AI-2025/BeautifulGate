@@ -722,18 +722,23 @@ export default function AdminOverviewDashboard() {
                       className="rounded-xl bg-neutral-50/70 p-4 border border-neutral-200/80 space-y-3 flex flex-col justify-between"
                     >
                       <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="text-base">{rankIcons[rankIdx]}</span>
+                        <div className="flex items-center justify-between gap-1.5">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-base shrink-0">{rankIcons[rankIdx]}</span>
                             <UserAvatar
                               src={artisan.profile.avatar_url}
                               name={artisan.profile.full_name}
                               size={28}
-                              className="rounded-lg"
+                              className="rounded-lg shrink-0"
                             />
                             <div className="min-w-0">
-                              <p className="font-extrabold text-neutral-900 text-xs truncate">
-                                {artisan.profile.full_name}
+                              <p 
+                                className="font-extrabold text-neutral-900 text-xs truncate" 
+                                title={artisan.profile.full_name}
+                              >
+                                {artisan.profile.full_name.length > 15 
+                                  ? artisan.profile.full_name.trim().split(/\s+/)[0] 
+                                  : artisan.profile.full_name}
                               </p>
                               {artisan.profile.chinese_name && (
                                 <p className="text-[10px] text-neutral-500 truncate">
@@ -742,7 +747,7 @@ export default function AdminOverviewDashboard() {
                               )}
                             </div>
                           </div>
-                          <span className="text-xs font-mono font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200">
+                          <span className="text-xs font-mono font-bold text-teal-700 bg-teal-50 px-2 py-0.5 rounded border border-teal-200 shrink-0">
                             #{rankIdx + 1}
                           </span>
                         </div>
@@ -809,7 +814,11 @@ export default function AdminOverviewDashboard() {
                     size={18}
                     className="rounded-full"
                   />
-                  <span>{artisan.profile.full_name}</span>
+                  <span>
+                    {artisan.profile.full_name.length > 15 
+                      ? artisan.profile.full_name.trim().split(/\s+/)[0] 
+                      : artisan.profile.full_name}
+                  </span>
                   <span className="text-[10px] opacity-70 font-mono">({artisan.yearUnits})</span>
                 </button>
               ))}
