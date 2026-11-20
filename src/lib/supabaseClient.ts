@@ -78,7 +78,7 @@ export async function dbFetchProfiles(): Promise<Profile[] | null> {
       phone: formatPhoneNumber(p.phone),
       ic_or_oku_number: formatICNumber(p.ic_or_oku_number),
       beneficiary_type: beneficiaryType,
-      password_hash: passwordHash,
+      password_hash: undefined, // Stripped for security: client should never store or see password hashes
       welfare_number: welfareNumber,
       notes: cleanNotes || undefined,
     };

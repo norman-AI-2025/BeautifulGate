@@ -144,8 +144,16 @@ create table if not exists public.driver_leaves (
 );
 
 -- ==============================================================================
--- ROW LEVEL SECURITY (RLS) POLICIES
+-- ROW LEVEL SECURITY (RLS) POLICIES (HARDENED)
 -- ==============================================================================
+
+-- Revoke destructive delete permissions from anonymous client keys
+revoke delete on public.profiles from anon;
+revoke delete on public.transit_bookings from anon;
+revoke delete on public.card_products from anon;
+revoke delete on public.card_work_logs from anon;
+revoke delete on public.vehicles from anon;
+revoke delete on public.driver_leaves from anon;
 
 alter table public.profiles enable row level security;
 alter table public.transit_bookings enable row level security;
@@ -160,9 +168,11 @@ drop policy if exists "Allow public insert on profiles" on public.profiles;
 drop policy if exists "Allow public update on profiles" on public.profiles;
 drop policy if exists "Allow public delete on profiles" on public.profiles;
 create policy "Allow public select on profiles" on public.profiles for select using (true);
-create policy "Allow public insert on profiles" on public.profiles for insert with check (true);
-create policy "Allow public update on profiles" on public.profiles for update using (true);
-create policy "Allow public delete on profiles" on public.profiles for delete using (true);
+create policy "Allow public insert on profiles" on public.profiles for insert with check (role in ('customer', 'driver'));
+create policy "Allow public update on profiles" on public.profiles for update using (true) with check (
+  role in ('customer', 'driver') or (select p.role from public.profiles p where p.id = profiles.id) = 'admin'
+);
+create policy "Allow public delete on profiles" on public.profiles for delete using (false);
 
 -- Transit Bookings RLS
 drop policy if exists "Allow public select on transit_bookings" on public.transit_bookings;
@@ -172,7 +182,7 @@ drop policy if exists "Allow public delete on transit_bookings" on public.transi
 create policy "Allow public select on transit_bookings" on public.transit_bookings for select using (true);
 create policy "Allow public insert on transit_bookings" on public.transit_bookings for insert with check (true);
 create policy "Allow public update on transit_bookings" on public.transit_bookings for update using (true);
-create policy "Allow public delete on transit_bookings" on public.transit_bookings for delete using (true);
+create policy "Allow public delete on transit_bookings" on public.transit_bookings for delete using (false);
 
 -- Card Products RLS
 drop policy if exists "Allow public select on card_products" on public.card_products;
@@ -182,7 +192,7 @@ drop policy if exists "Allow public delete on card_products" on public.card_prod
 create policy "Allow public select on card_products" on public.card_products for select using (true);
 create policy "Allow public insert on card_products" on public.card_products for insert with check (true);
 create policy "Allow public update on card_products" on public.card_products for update using (true);
-create policy "Allow public delete on card_products" on public.card_products for delete using (true);
+create policy "Allow public delete on card_products" on public.card_products for delete using (false);
 
 -- Card Work Logs RLS
 drop policy if exists "Allow public select on card_work_logs" on public.card_work_logs;
@@ -192,7 +202,7 @@ drop policy if exists "Allow public delete on card_work_logs" on public.card_wor
 create policy "Allow public select on card_work_logs" on public.card_work_logs for select using (true);
 create policy "Allow public insert on card_work_logs" on public.card_work_logs for insert with check (true);
 create policy "Allow public update on card_work_logs" on public.card_work_logs for update using (true);
-create policy "Allow public delete on card_work_logs" on public.card_work_logs for delete using (true);
+create policy "Allow public delete on card_work_logs" on public.card_work_logs for delete using (false);
 
 -- Vehicles RLS
 drop policy if exists "Allow public select on vehicles" on public.vehicles;
@@ -202,7 +212,7 @@ drop policy if exists "Allow public delete on vehicles" on public.vehicles;
 create policy "Allow public select on vehicles" on public.vehicles for select using (true);
 create policy "Allow public insert on vehicles" on public.vehicles for insert with check (true);
 create policy "Allow public update on vehicles" on public.vehicles for update using (true);
-create policy "Allow public delete on vehicles" on public.vehicles for delete using (true);
+create policy "Allow public delete on vehicles" on public.vehicles for delete using (false);
 
 -- Driver Leaves RLS
 drop policy if exists "Allow public select on driver_leaves" on public.driver_leaves;
@@ -212,7 +222,7 @@ drop policy if exists "Allow public delete on driver_leaves" on public.driver_le
 create policy "Allow public select on driver_leaves" on public.driver_leaves for select using (true);
 create policy "Allow public insert on driver_leaves" on public.driver_leaves for insert with check (true);
 create policy "Allow public update on driver_leaves" on public.driver_leaves for update using (true);
-create policy "Allow public delete on driver_leaves" on public.driver_leaves for delete using (true);
+create policy "Allow public delete on driver_leaves" on public.driver_leaves for delete using (false);
 
 -- ==============================================================================
 -- REALTIME REPLICATION (For live dispatch & notifications across devices)

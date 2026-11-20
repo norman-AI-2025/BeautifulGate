@@ -390,6 +390,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
       } else {
         localStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+        if (typeof window !== 'undefined') {
+          fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+        }
       }
     } catch (e) {
       console.warn(e);
@@ -415,9 +418,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     role?: UserRole
   ): Promise<{ success: boolean; error?: string }> => {
     const trimmedEmail = email.trim().toLowerCase();
+
+    // 1. Attempt secure server-side login with rate-limiting and tamper-proof HTTP-only cookie
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: trimmedEmail, password: password || '' }),
+      });
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data?.success && data?.user) {
+        saveCurrentUser(data.user);
+        return { success: true };
+      } else if (data?.error === 'too_many_attempts') {
+        return { success: false, error: data.message || 'too_many_attempts' };
+      } else if (data?.error && data.error !== 'server_error') {
+        return { success: false, error: data.error };
+      }
+    } catch (apiErr) {
+      console.warn('API auth login error, checking local fallback:', apiErr);
+    }
+
+    // 2. Client-side fallback if server API is unavailable
     let match = profiles.find(p => p.email.toLowerCase() === trimmedEmail);
-    
-    // If Supabase is active and not matched locally, check live Supabase profiles
     if (!match && isSupabaseConfigured()) {
       const liveProfiles = await dbFetchProfiles();
       if (liveProfiles) {
@@ -503,6 +527,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     // Persist to Supabase if configured
     await dbUpsertProfile(newProfile);
+
+    // Establish secure session cookie for Next.js middleware and API routes
+    if (userData.password) {
+      try {
+        await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: userData.email, password: userData.password }),
+        });
+      } catch (err) {
+        console.warn('Auto-session signin on signup error:', err);
+      }
+    }
 
     saveCurrentUser(newProfile);
     return newProfile;
@@ -817,7 +854,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [vehicles]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    try {
+      if (typeof window !== 'undefined') {
+        await fetch('/api/auth/logout', { method: 'POST' });
+      }
+    } catch (e) {
+      console.warn('API logout error:', e);
+    }
     saveCurrentUser(null);
   }, [saveCurrentUser]);
 

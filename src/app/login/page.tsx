@@ -52,7 +52,20 @@ export default function LoginPage() {
           }
         } catch {}
 
-        if (role === 'admin') {
+        const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const redirectParam = searchParams?.get('redirect');
+
+        if (redirectParam && redirectParam.startsWith('/')) {
+          const isAdminPath = redirectParam.startsWith('/admin');
+          const isDriverPath = redirectParam.startsWith('/driver');
+          if (isAdminPath && role !== 'admin') {
+            router.push(role === 'driver' ? '/driver' : '/portal');
+          } else if (isDriverPath && role !== 'driver' && role !== 'admin') {
+            router.push('/portal');
+          } else {
+            router.push(redirectParam);
+          }
+        } else if (role === 'admin') {
           router.push('/admin');
         } else if (role === 'driver') {
           router.push('/driver');
@@ -64,8 +77,10 @@ export default function LoginPage() {
           setErrorMsg(t('auth.invalidPassword', 'Incorrect password. Please try again.'));
         } else if (result.error === 'account_not_found') {
           setErrorMsg(t('auth.accountNotFound', 'Account not found with this email. Please create an account.'));
+        } else if (result.error?.includes('wait') || result.error === 'too_many_attempts') {
+          setErrorMsg(result.error);
         } else {
-          setErrorMsg(t('auth.invalidCredentials', 'Invalid email or password. Please try again.'));
+          setErrorMsg(result.error || t('auth.invalidCredentials', 'Invalid email or password. Please try again.'));
         }
       }
     } catch {
